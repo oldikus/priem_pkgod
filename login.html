@@ -1,5 +1,283 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Вход - Приемная комиссия</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"></head>
-<body><div class="login-container"><div class="login-card"><div class="login-header"><h1>📄 Приемная комиссия</h1><p>ЕПК - Единая платформа</p></div><form id="loginForm"><div class="form-group"><label>Логин</label><input type="text" id="login" required></div><div class="form-group"><label>Пароль</label><input type="password" id="password" required></div><button type="submit" class="submit-btn">Войти</button></form><div id="loginError" class="alert alert-error" style="display:none; margin-top:16px"></div></div></div><script src="js/auth.js"></script><script>document.getElementById('loginForm').addEventListener('submit',function(e){e.preventDefault(); let res=login(document.getElementById('login').value, document.getElementById('password').value); if(res.success) window.location.href='index.html'; else { let errDiv=document.getElementById('loginError'); errDiv.innerText=res.error; errDiv.style.display='block'; }});</script></body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Приемная комиссия</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo p {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        .welcome {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .welcome h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1f36;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            transform: none;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .test-accounts {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .test-accounts p {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .test-accounts strong {
+            color: #4f46e5;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #eff6ff;
+            border-radius: 20px;
+            font-size: 10px;
+            margin-left: 8px;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <h1>📄 Приемная комиссия</h1>
+                <p>Единая платформа приема документов</p>
+            </div>
+            
+            <div class="welcome">
+                <h2>Добро пожаловать!</h2>
+                <p>Войдите в систему</p>
+            </div>
+            
+            <div id="alert" class="alert"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Логин</label>
+                    <input type="text" id="login" required placeholder="admin" autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">Войти в систему</button>
+            </form>
+            
+            <div class="test-accounts">
+                <p><strong>👑 Администратор:</strong> admin / admin123 <span class="role-badge">полный доступ</span></p>
+                <p><strong>👔 Ответственный секретарь:</strong> osokin / 123456 <span class="role-badge">статистика + расписки</span></p>
+                <p><strong>👔 Зам. секретаря:</strong> tsygankova / 123456 <span class="role-badge">статистика + расписки</span></p>
+                <p><strong>📄 Специалист</strong> vorobyeva / 123456 <span class="role-badge">только расписки</span></p>
+                <p><strong>📄 Специалист</strong> khanakova / 123456 <span class="role-badge">только расписки</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="auth.js"></script>
+    <script>
+        // Функция показа уведомлений
+        function showAlert(message, type) {
+            var alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert alert-' + type;
+            alertDiv.style.display = 'block';
+            setTimeout(function() {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Обработчик отправки формы
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var loginVal = document.getElementById('login').value.trim().toLowerCase();
+            var password = document.getElementById('password').value;
+            var loginBtn = document.getElementById('loginBtn');
+            var originalText = loginBtn.innerHTML;
+            
+            if (!loginVal || !password) {
+                showAlert('Заполните все поля', 'error');
+                return;
+            }
+            
+            loginBtn.innerHTML = '<span class="spinner"></span> Вход...';
+            loginBtn.disabled = true;
+            
+            var result = login(loginVal, password);
+            
+            if (result.success) {
+                showAlert('Добро пожаловать, ' + result.user.name + '!', 'success');
+                setTimeout(function() {
+                    // Перенаправляем на главный каркас (index.html)
+                    window.location.href = 'index.html';
+                }, 500);
+            } else {
+                showAlert(result.error, 'error');
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        });
+        
+        // Вход по Enter
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        // Автофокус на поле логина
+        document.getElementById('login').focus();
+    </script>
+</body>
 </html>
