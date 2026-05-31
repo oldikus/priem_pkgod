@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Приемная комиссия - ЕПК</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
-        /* ========== СТИЛИ (как в предыдущем сообщении) ========== */
         * {
             margin: 0;
             padding: 0;
@@ -20,18 +18,11 @@
             color: #1a1f36;
         }
 
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Сайдбар */
+        /* САЙДБАР */
         .sidebar {
             width: 280px;
             background: white;
             border-right: 1px solid #e2e8f0;
-            display: flex;
-            flex-direction: column;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
@@ -57,7 +48,6 @@
         }
 
         .nav-menu {
-            flex: 1;
             padding: 20px 16px;
         }
 
@@ -69,7 +59,6 @@
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             color: #94a3b8;
             margin-bottom: 12px;
             padding-left: 12px;
@@ -105,14 +94,13 @@
             margin: 16px 0;
         }
 
-        /* Основной контент */
+        /* ОСНОВНОЙ КОНТЕНТ */
         .main-content {
-            flex: 1;
             margin-left: 280px;
             padding: 24px 32px;
         }
 
-        /* Топ бар */
+        /* ТОП БАР */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -132,12 +120,6 @@
             margin-top: 4px;
         }
 
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
         .user-info {
             text-align: right;
         }
@@ -153,14 +135,14 @@
         }
 
         .logout-btn {
+            margin-left: 20px;
             padding: 8px 16px;
             background: #f1f5f9;
             border: none;
             border-radius: 10px;
             color: #64748b;
-            font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-size: 13px;
         }
 
         .logout-btn:hover {
@@ -168,7 +150,7 @@
             color: #ef4444;
         }
 
-        /* Карточки статистики */
+        /* КАРТОЧКИ СТАТИСТИКИ */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -181,11 +163,6 @@
             border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 20px;
-            transition: all 0.2s;
-        }
-
-        .stat-card:hover {
-            border-color: #2563eb;
         }
 
         .stat-icon {
@@ -205,7 +182,7 @@
             margin-top: 4px;
         }
 
-        /* Таблица рейтинга */
+        /* ТАБЛИЦА */
         .stats-table-container {
             background: white;
             border: 1px solid #e2e8f0;
@@ -243,10 +220,6 @@
             font-size: 14px;
         }
 
-        .stats-table tr:hover td {
-            background: #f8fafc;
-        }
-
         .rank-badge {
             display: inline-block;
             width: 28px;
@@ -257,7 +230,6 @@
             line-height: 28px;
             font-weight: 600;
             font-size: 12px;
-            color: #475569;
         }
 
         .rank-1 { background: #fef3c7; color: #d97706; }
@@ -272,17 +244,10 @@
             font-weight: 500;
         }
 
-        .status-active {
-            background: #dcfce7;
-            color: #16a34a;
-        }
+        .status-active { background: #dcfce7; color: #16a34a; }
+        .status-inactive { background: #fee2e2; color: #dc2626; }
 
-        .status-inactive {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* Форма */
+        /* ФОРМА */
         .form-container {
             background: white;
             border: 1px solid #e2e8f0;
@@ -317,7 +282,6 @@
             border: 1px solid #e2e8f0;
             border-radius: 10px;
             font-size: 14px;
-            color: #1a1f36;
         }
 
         .form-group input:focus,
@@ -375,19 +339,13 @@
             color: white;
             cursor: pointer;
             margin-top: 16px;
-            transition: all 0.2s;
         }
 
         .submit-btn:hover {
             background: #1d4ed8;
         }
 
-        .submit-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        /* История */
+        /* ИСТОРИЯ */
         .receipt-card {
             background: white;
             border: 1px solid #e2e8f0;
@@ -397,10 +355,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .receipt-card:hover {
-            border-color: #2563eb;
         }
 
         .receipt-number {
@@ -425,19 +379,16 @@
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            color: #475569;
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s;
         }
 
         .btn-print:hover {
             background: #2563eb;
             color: white;
-            border-color: #2563eb;
         }
 
-        /* Профиль */
+        /* ПРОФИЛЬ */
         .profile-field {
             margin-bottom: 16px;
         }
@@ -526,159 +477,152 @@
     </style>
 </head>
 <body>
-    <div class="app">
-        <!-- САЙДБАР -->
-        <div class="sidebar">
-            <div class="logo-area">
-                <h1>📄 Приемная комиссия</h1>
-                <p>Единая платформа</p>
+    <div class="sidebar">
+        <div class="logo-area">
+            <h1>📄 Приемная комиссия</h1>
+            <p>Единая платформа</p>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-group">
+                <div class="nav-group-title">ОСНОВНОЕ</div>
+                <div class="nav-item active" data-tab="create">
+                    <span>📝</span> Создать расписку
+                </div>
+                <div class="nav-item" data-tab="history">
+                    <span>📋</span> Мои расписки
+                </div>
+                <div class="nav-item" data-tab="profile">
+                    <span>👤</span> Профиль
+                </div>
             </div>
             
-            <div class="nav-menu">
-                <div class="nav-group">
-                    <div class="nav-group-title">ОСНОВНОЕ</div>
-                    <div class="nav-item active" data-tab="create">
-                        <span>📝</span> Создать расписку
-                    </div>
-                    <div class="nav-item" data-tab="history">
-                        <span>📋</span> Мои расписки
-                    </div>
-                    <div class="nav-item" data-tab="profile">
-                        <span>👤</span> Профиль
-                    </div>
+            <div class="nav-group" id="statsGroup" style="display: none;">
+                <div class="nav-group-title">АНАЛИТИКА</div>
+                <div class="nav-item" data-tab="stats">
+                    <span>📊</span> Статистика
                 </div>
-                
-                <div class="nav-group" id="statsGroup" style="display: none;">
-                    <div class="nav-group-title">АНАЛИТИКА</div>
-                    <div class="nav-item" data-tab="stats">
-                        <span>📊</span> Статистика
-                    </div>
-                </div>
-                
-                <div class="nav-divider"></div>
-                
-                <div class="nav-group" id="adminGroup" style="display: none;">
-                    <div class="nav-group-title">УПРАВЛЕНИЕ</div>
-                    <div class="nav-item" onclick="window.location.href='admin.html'">
-                        <span>⚙️</span> Админ панель
-                    </div>
+            </div>
+            
+            <div class="nav-divider" id="adminDivider" style="display: none;"></div>
+            
+            <div class="nav-group" id="adminGroup" style="display: none;">
+                <div class="nav-group-title">УПРАВЛЕНИЕ</div>
+                <div class="nav-item" id="adminNav">
+                    <span>⚙️</span> Админ панель
                 </div>
             </div>
         </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="greeting">
+                <h2>Привет, <span id="userNameShort"></span> 😊</h2>
+                <p>Отдых на выходных — лучшая профилактика авралов.</p>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div class="user-info">
+                    <div class="user-name" id="userName"></div>
+                    <div class="user-role" id="userRole"></div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Выйти</button>
+            </div>
+        </div>
         
-        <!-- ОСНОВНОЙ КОНТЕНТ -->
-        <div class="main-content">
-            <div class="top-bar">
-                <div class="greeting">
-                    <h2>Привет, <span id="userNameShort"></span> 😊</h2>
-                    <p>Отдых на выходных — лучшая профилактика авралов.</p>
-                </div>
-                <div class="user-menu">
-                    <div class="user-info">
-                        <div class="user-name" id="userName"></div>
-                        <div class="user-role" id="userRole"></div>
+        <!-- Создание расписки -->
+        <div id="createTab" class="tab-content active">
+            <div class="form-container">
+                <h2>📝 Создание новой расписки</h2>
+                <div id="alert" class="alert"></div>
+                
+                <form id="receiptForm">
+                    <div class="form-group">
+                        <label>ФИО абитуриента *</label>
+                        <input type="text" id="fullName" required placeholder="Иванов Иван Иванович">
                     </div>
-                    <button class="logout-btn" onclick="logout()">Выйти</button>
-                </div>
-            </div>
-            
-            <!-- Вкладка создания расписки -->
-            <div id="createTab" class="tab-content active">
-                <div class="form-container">
-                    <h2>📝 Создание новой расписки</h2>
-                    <div id="alert" class="alert"></div>
                     
-                    <form id="receiptForm">
-                        <div class="form-group">
-                            <label>ФИО абитуриента *</label>
-                            <input type="text" id="fullName" required placeholder="Иванов Иван Иванович">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Специальность *</label>
-                            <select id="specialty" required>
-                                <option value="">Выберите специальность</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Номер аттестата/диплома</label>
-                                <input type="text" id="diplomaNumber" placeholder="№ документа">
-                            </div>
-                            <div class="form-group">
-                                <label>Дата выдачи</label>
-                                <input type="date" id="diplomaDate">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Кем выдан аттестат</label>
-                            <input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Принятые документы</label>
-                            <div class="checkbox-group" id="documentsCheckboxes"></div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Количество фотографий (0-4)</label>
-                                <input type="number" id="photosCount" min="0" max="4" value="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Баллы ГИА</label>
-                                <input type="text" id="score" placeholder="Баллы">
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Город получения аттестата</label>
-                                <input type="text" id="city" placeholder="Город">
-                            </div>
-                            <div class="form-group">
-                                <label>Сотрудник</label>
-                                <input type="text" id="employeeField" readonly>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Вкладка истории расписок -->
-            <div id="historyTab" class="tab-content">
-                <div class="form-container">
-                    <h2>📋 Мои расписки</h2>
-                    <div id="receiptsList"></div>
-                </div>
-            </div>
-            
-            <!-- Вкладка профиля -->
-            <div id="profileTab" class="tab-content">
-                <div class="form-container">
-                    <h2>👤 Мой профиль</h2>
-                    <div id="profileInfo"></div>
-                </div>
-            </div>
-            
-            <!-- Вкладка статистики -->
-            <div id="statsTab" class="tab-content">
-                <div class="stats-grid" id="statsGrid"></div>
-                <div class="stats-table-container">
-                    <div class="stats-table-header">
-                        <h3>🏆 Рейтинг сотрудников</h3>
+                    <div class="form-group">
+                        <label>Специальность *</label>
+                        <select id="specialty" required>
+                            <option value="">Выберите специальность</option>
+                        </select>
                     </div>
-                    <table class="stats-table">
-                        <thead>
-                            <tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr>
-                        </thead>
-                        <tbody id="employeeStatsBody"></tbody>
-                    </table>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Номер аттестата/диплома</label>
+                            <input type="text" id="diplomaNumber" placeholder="№ документа">
+                        </div>
+                        <div class="form-group">
+                            <label>Дата выдачи</label>
+                            <input type="date" id="diplomaDate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Кем выдан аттестат</label>
+                        <input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Принятые документы</label>
+                        <div class="checkbox-group" id="documentsCheckboxes"></div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Количество фотографий (0-4)</label>
+                            <input type="number" id="photosCount" min="0" max="4" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Баллы ГИА</label>
+                            <input type="text" id="score" placeholder="Баллы">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Город получения аттестата</label>
+                            <input type="text" id="city" placeholder="Город">
+                        </div>
+                        <div class="form-group">
+                            <label>Сотрудник</label>
+                            <input type="text" id="employeeField" readonly>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- История расписок -->
+        <div id="historyTab" class="tab-content">
+            <div class="form-container">
+                <h2>📋 Мои расписки</h2>
+                <div id="receiptsList"></div>
+            </div>
+        </div>
+        
+        <!-- Профиль -->
+        <div id="profileTab" class="tab-content">
+            <div class="form-container">
+                <h2>👤 Мой профиль</h2>
+                <div id="profileInfo"></div>
+            </div>
+        </div>
+        
+        <!-- Статистика -->
+        <div id="statsTab" class="tab-content">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="stats-table-container">
+                <div class="stats-table-header">
+                    <h3>🏆 Рейтинг сотрудников</h3>
                 </div>
+                <table class="stats-table">
+                    <thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead>
+                    <tbody id="employeeStatsBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -688,11 +632,9 @@
     <script>
         // ========== ТЕКУЩИЙ ПОЛЬЗОВАТЕЛЬ ==========
         const currentUser = checkAuth();
-        if (!currentUser) {
-            window.location.href = 'login.html';
-        }
+        if (!currentUser) window.location.href = 'login.html';
         
-        // Отображение информации
+        // Имя
         const firstName = currentUser.name.split(' ')[0];
         document.getElementById('userNameShort').textContent = firstName;
         document.getElementById('userName').textContent = currentUser.name;
@@ -712,6 +654,8 @@
         // Показываем админку для администраторов
         if (currentUser.role === 'admin' || currentUser.role === 'both') {
             document.getElementById('adminGroup').style.display = 'block';
+            document.getElementById('adminDivider').style.display = 'block';
+            document.getElementById('adminNav').onclick = () => window.location.href = 'admin.html';
         }
         
         // ========== ЗАГРУЗКА ДАННЫХ ==========
@@ -719,9 +663,8 @@
             const config = getConfig();
             const select = document.getElementById('specialty');
             select.innerHTML = '<option value="">Выберите специальность</option>';
-            
             Object.entries(config.specialties)
-                .filter(([_, data]) => data.active)
+                .filter(([_, d]) => d.active)
                 .sort((a, b) => a[1].order - b[1].order)
                 .forEach(([key, data]) => {
                     const option = document.createElement('option');
@@ -733,46 +676,37 @@
         
         function loadDocumentCheckboxes() {
             const config = getConfig();
-            const container = document.getElementById('documentsCheckboxes');
-            container.innerHTML = config.documentTypes.map(doc => `
-                <label class="checkbox-item">
-                    <input type="checkbox" value="${doc}">
-                    <span>${doc}</span>
-                </label>
+            document.getElementById('documentsCheckboxes').innerHTML = config.documentTypes.map(doc => `
+                <label class="checkbox-item"><input type="checkbox" value="${doc}"><span>${doc}</span></label>
             `).join('');
         }
         
         document.getElementById('employeeField').value = `${currentUser.name} (${currentUser.position})`;
         
-        function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            alert.textContent = message;
-            alert.className = `alert alert-${type}`;
-            alert.style.display = 'block';
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 5000);
+        function showAlert(msg, type) {
+            const el = document.getElementById('alert');
+            el.textContent = msg;
+            el.className = `alert alert-${type}`;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
         }
         
-        // ========== ОБРАБОТКА ФОРМЫ ==========
+        // ========== СОЗДАНИЕ РАСПИСКИ ==========
         document.getElementById('receiptForm').addEventListener('submit', (e) => {
             e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner"></span> Создание...';
+            btn.disabled = true;
             
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span class="spinner"></span> Создание...';
-            submitBtn.disabled = true;
-            
-            const selectedDocs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked'))
-                .map(cb => cb.value);
-            
-            const formData = {
+            const docs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked')).map(cb => cb.value);
+            const data = {
                 fullName: document.getElementById('fullName').value,
                 specialty: document.getElementById('specialty').value,
                 diplomaNumber: document.getElementById('diplomaNumber').value,
                 diplomaDate: document.getElementById('diplomaDate').value,
                 diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
-                documents: selectedDocs.join('\n'),
+                documents: docs.join('\n'),
                 photosCount: document.getElementById('photosCount').value,
                 score: document.getElementById('score').value,
                 city: document.getElementById('city').value,
@@ -781,50 +715,42 @@
                 employeePosition: currentUser.position
             };
             
-            if (!formData.fullName || !formData.specialty) {
+            if (!data.fullName || !data.specialty) {
                 showAlert('Заполните обязательные поля', 'error');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+                btn.innerHTML = original;
+                btn.disabled = false;
                 return;
             }
             
             const config = getConfig();
-            const specialtyCode = config.specialties[formData.specialty]?.code || 'ОБЩ';
-            const counter = getReceiptCounter(specialtyCode);
-            const receiptNumber = `${specialtyCode}-${counter}`;
+            const code = config.specialties[data.specialty]?.code || 'ОБЩ';
+            const counter = getReceiptCounter(code);
+            const number = `${code}-${counter}`;
+            const receipt = { ...data, receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString() };
             
-            const receiptData = {
-                ...formData,
-                receiptNumber,
-                specialtyCode,
-                createdAt: new Date().toISOString()
-            };
-            
-            saveReceipt(receiptData);
-            openPrintWindow(receiptData);
-            
-            showAlert(`✅ Расписка №${receiptNumber} успешно создана!`, 'success');
+            saveReceipt(receipt);
+            openPrintWindow(receipt);
+            showAlert(`✅ Расписка №${number} создана!`, 'success');
             
             document.getElementById('receiptForm').reset();
             document.getElementById('photosCount').value = '0';
             document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
-            loadReceiptsHistory();
+            if (document.getElementById('historyTab').classList.contains('active')) loadReceiptsHistory();
             
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
+            btn.innerHTML = original;
+            btn.disabled = false;
         });
         
-        function openPrintWindow(receipt) {
+        function openPrintWindow(r) {
             const now = new Date();
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
+            const w = window.open('', '_blank');
+            w.document.write(`
                 <!DOCTYPE html>
-                <html>
-                <head><meta charset="UTF-8"><title>Расписка №${receipt.receiptNumber}</title>
+                <html><head><meta charset="UTF-8"><title>Расписка №${r.receiptNumber}</title>
                 <style>
                     body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; background: white; color: black; }
                     .header { text-align: center; margin-bottom: 30px; }
-                    .title { font-size: 18px; font-weight: bold; margin: 20px 0; }
+                    h3 { font-size: 18px; font-weight: bold; margin: 20px 0; }
                     .content { line-height: 1.6; }
                     .signature { margin-top: 50px; }
                     button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
@@ -838,44 +764,37 @@
                     </div>
                     <div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div>
                     <div class="content">
-                        <p>Настоящая расписка выдана абитуриенту <strong>${receipt.fullName}</strong> о том, что от него приняты следующие документы:</p>
-                        <ul>${receipt.documents.split('\n').filter(d => d.trim()).map(d => `<li>${d.trim()}</li>`).join('')}</ul>
-                        <p><strong>Специальность:</strong> ${receipt.specialty}</p>
-                        <p><strong>Номер расписки:</strong> ${receipt.receiptNumber}</p>
+                        <p>Настоящая расписка выдана абитуриенту <strong>${r.fullName}</strong> о том, что от него приняты следующие документы:</p>
+                        <ul>${r.documents.split('\n').filter(d => d.trim()).map(d => `<li>${d.trim()}</li>`).join('')}</ul>
+                        <p><strong>Специальность:</strong> ${r.specialty}</p>
+                        <p><strong>Номер расписки:</strong> ${r.receiptNumber}</p>
                         <p><strong>Дата выдачи:</strong> ${now.toLocaleDateString('ru-RU')}</p>
-                        <div class="signature"><p>____________________</p><p><strong>${receipt.employee}</strong></p><p>${receipt.employeePosition}</p></div>
+                        <div class="signature"><p>____________________</p><p><strong>${r.employee}</strong></p><p>${r.employeePosition}</p></div>
                     </div>
                     <script>setTimeout(() => window.print(), 500);</script>
                 </body>
                 </html>
             `);
-            printWindow.document.close();
+            w.document.close();
         }
         
         function loadReceiptsHistory() {
-            const receipts = getEmployeeReceipts(currentUser.login);
+            const list = getEmployeeReceipts(currentUser.login);
             const container = document.getElementById('receiptsList');
-            
-            if (receipts.length === 0) {
+            if (!list.length) {
                 container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>';
                 return;
             }
-            
-            container.innerHTML = receipts.map(receipt => `
+            container.innerHTML = list.map(r => `
                 <div class="receipt-card">
-                    <div>
-                        <div class="receipt-number">${receipt.receiptNumber}</div>
-                        <div class="receipt-student">${receipt.fullName}</div>
-                        <div class="receipt-date">${new Date(receipt.createdAt).toLocaleDateString('ru-RU')}</div>
-                    </div>
-                    <button class="btn-print" onclick='openPrintWindow(${JSON.stringify(receipt).replace(/'/g, "\\'")})'>🖨️ Печать</button>
+                    <div><div class="receipt-number">${r.receiptNumber}</div><div class="receipt-student">${r.fullName}</div><div class="receipt-date">${new Date(r.createdAt).toLocaleDateString('ru-RU')}</div></div>
+                    <button class="btn-print" onclick='openPrintWindow(${JSON.stringify(r).replace(/'/g, "\\'")})'>🖨️ Печать</button>
                 </div>
             `).join('');
         }
         
         function loadProfile() {
-            const container = document.getElementById('profileInfo');
-            container.innerHTML = `
+            document.getElementById('profileInfo').innerHTML = `
                 <div class="profile-field"><label>ФИО</label><input type="text" value="${currentUser.name}" readonly></div>
                 <div class="profile-field"><label>Логин</label><input type="text" value="${currentUser.login}" readonly></div>
                 <div class="profile-field"><label>Должность</label><input type="text" value="${currentUser.position}" readonly></div>
@@ -886,55 +805,25 @@
         
         function loadStats() {
             const stats = getSystemStats();
-            
             document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-icon">📄</div>
-                    <div class="stat-value">${stats.totalReceipts || 0}</div>
-                    <div class="stat-label">Всего расписок</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-value">${stats.todayReceipts || 0}</div>
-                    <div class="stat-label">Сегодня</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-value">${stats.totalEmployees || 0}</div>
-                    <div class="stat-label">Сотрудников</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⭐</div>
-                    <div class="stat-value">${stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0}%</div>
-                    <div class="stat-label">Активность сегодня</div>
-                </div>
+                <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">${stats.totalReceipts || 0}</div><div class="stat-label">Всего расписок</div></div>
+                <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">${stats.todayReceipts || 0}</div><div class="stat-label">Сегодня</div></div>
+                <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">${stats.totalEmployees || 0}</div><div class="stat-label">Сотрудников</div></div>
+                <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">${stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0}%</div><div class="stat-label">Активность сегодня</div></div>
             `;
-            
-            const sortedEmployees = [...(stats.employeeStats || [])].sort((a, b) => (b.receiptCount || 0) - (a.receiptCount || 0));
-            
-            if (sortedEmployees.length === 0) {
-                document.getElementById('employeeStatsBody').innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет данных</td></tr>';
-                return;
-            }
-            
-            document.getElementById('employeeStatsBody').innerHTML = sortedEmployees.map((emp, idx) => `
-                <tr>
-                    <td><span class="rank-badge ${idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : ''}">${idx + 1}</span></td>
-                    <td><strong>${emp.name}</strong></td>
-                    <td>${emp.position || '-'}</td>
-                    <td style="font-weight: 700; color: #2563eb;">${emp.receiptCount || 0}</td>
-                    <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
-                </tr>
+            const sorted = [...(stats.employeeStats || [])].sort((a,b) => (b.receiptCount||0) - (a.receiptCount||0));
+            document.getElementById('employeeStatsBody').innerHTML = sorted.map((e,i) => `
+                <tr><td><span class="rank-badge ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}">${i+1}</span></td>
+                <td><strong>${e.name}</strong></td><td>${e.position||'-'}</td>
+                <td style="font-weight:700;color:#2563eb">${e.receiptCount||0}</td>
+                <td><span class="status-badge ${e.isActive?'status-active':'status-inactive'}">${e.isActive?'Активен':'Неактивен'}</span></td></tr>
             `).join('');
         }
         
         // ========== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ==========
         function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(`${tabId}Tab`).classList.add('active');
-            
             if (tabId === 'history') loadReceiptsHistory();
             if (tabId === 'profile') loadProfile();
             if (tabId === 'stats') loadStats();
@@ -942,10 +831,9 @@
         
         document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
             item.addEventListener('click', () => {
-                const tabId = item.getAttribute('data-tab');
-                switchTab(tabId);
-                
-                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                const id = item.getAttribute('data-tab');
+                switchTab(id);
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 item.classList.add('active');
             });
         });
