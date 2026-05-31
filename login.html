@@ -149,7 +149,7 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label>Логин</label>
-                    <input type="text" id="login" required placeholder="osokin" autocomplete="off">
+                    <input type="text" id="username" required placeholder="admin" autocomplete="off">
                 </div>
                 
                 <div class="form-group">
@@ -161,67 +161,176 @@
             </form>
             
             <div class="test-accounts">
-                <p><strong>Тестовые учётные записи (создаются в админ-панели):</strong></p>
+                <p><strong>Тестовые учётные записи:</strong></p>
                 <p>👑 <strong>admin</strong> / admin123 — полный доступ</p>
                 <p>📊 <strong>osokin</strong> / 123456 — ответственный секретарь</p>
                 <p>📊 <strong>tsygankova</strong> / 123456 — зам. ответственного секретаря</p>
                 <p>📝 <strong>vorobyeva</strong> / 123456 — специалист</p>
+                <p>📝 <strong>khanakova</strong> / 123456 — специалист</p>
             </div>
         </div>
     </div>
     
-    <script src="auth.js"></script>
     <script>
-        // Дополнительная проверка инициализации только для admin
-        (function ensureAdminExists() {
-            const users = JSON.parse(localStorage.getItem('receipt_system_users') || '{}');
+        // ========== ВСЯ ЛОГИКА ВНУТРИ (БЕЗ ВНЕШНИХ ФАЙЛОВ) ==========
+        
+        const STORAGE_KEYS = {
+            USERS: 'receipt_system_users',
+            CURRENT_USER: 'receipt_system_current_user',
+            RECEIPTS: 'receipt_system_receipts',
+            COUNTERS: 'receipt_system_counters'
+        };
+        
+        // Функция хеширования пароля
+        function hashPassword(password) {
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString();
+        }
+        
+        // СОЗДАЁМ ПОЛЬЗОВАТЕЛЕЙ ТОЛЬКО ОДИН РАЗ (при первом запуске)
+        function initializeUsers() {
+            const existing = localStorage.getItem(STORAGE_KEYS.USERS);
+            if (existing) {
+                console.log('📁 Пользователи уже есть в системе');
+                return JSON.parse(existing);
+            }
             
-            // Только если пользователей нет вообще - создаём ТОЛЬКО admin
-            if (Object.keys(users).length === 0) {
-                console.log('👑 Система пуста, создаём главного администратора...');
-                
-                const hashPassword = (pwd) => {
-                    let hash = 0;
-                    for (let i = 0; i < pwd.length; i++) {
-                        const char = pwd.charCodeAt(i);
-                        hash = ((hash << 5) - hash) + char;
-                        hash = hash & hash;
-                    }
-                    return hash.toString();
-                };
-                
-                const adminUser = {
+            console.log('👑 Первый запуск, создаём пользователей...');
+            
+            const users = {
+                'admin': {
                     id: 'admin_1',
                     login: 'admin',
                     password: hashPassword('admin123'),
                     name: 'Главный Администратор',
                     role: 'admin',
-                    position: 'Главный администратор системы',
+                    position: 'Главный администратор',
                     phone: '+7 (499) 156-40-01',
                     createdAt: new Date().toISOString(),
                     isActive: true,
                     canViewStats: true
-                };
-                
-                users['admin'] = adminUser;
-                localStorage.setItem('receipt_system_users', JSON.stringify(users));
-                
-                if (!localStorage.getItem('receipt_system_receipts')) {
-                    localStorage.setItem('receipt_system_receipts', JSON.stringify([]));
+                },
+                'osokin': {
+                    id: 'emp_1',
+                    login: 'osokin',
+                    password: hashPassword('123456'),
+                    name: 'Осокин Константин Вячеславович',
+                    role: 'both',
+                    position: 'Ответственный секретарь',
+                    phone: '+7 (499) 156-40-02',
+                    createdAt: new Date().toISOString(),
+                    isActive: true,
+                    canViewStats: true
+                },
+                'tsygankova': {
+                    id: 'emp_2',
+                    login: 'tsygankova',
+                    password: hashPassword('123456'),
+                    name: 'Цыганкова Юлия Игоревна',
+                    role: 'both',
+                    position: 'Заместитель ответственного секретаря',
+                    phone: '+7 (499) 156-40-03',
+                    createdAt: new Date().toISOString(),
+                    isActive: true,
+                    canViewStats: true
+                },
+                'vorobyeva': {
+                    id: 'emp_3',
+                    login: 'vorobyeva',
+                    password: hashPassword('123456'),
+                    name: 'Воробьева Ирина Алексеевна',
+                    role: 'employee',
+                    position: 'Специалист',
+                    phone: '+7 (499) 156-40-04',
+                    createdAt: new Date().toISOString(),
+                    isActive: true,
+                    canViewStats: false
+                },
+                'khanakova': {
+                    id: 'emp_4',
+                    login: 'khanakova',
+                    password: hashPassword('123456'),
+                    name: 'Ханакова Анастасия Ивановна',
+                    role: 'employee',
+                    position: 'Специалист',
+                    phone: '+7 (499) 156-40-05',
+                    createdAt: new Date().toISOString(),
+                    isActive: true,
+                    canViewStats: false
                 }
-                if (!localStorage.getItem('receipt_system_counters')) {
-                    localStorage.setItem('receipt_system_counters', JSON.stringify({}));
-                }
-                
-                console.log('✅ Главный администратор создан: admin / admin123');
+            };
+            
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+            
+            // Инициализируем пустые массивы для данных
+            if (!localStorage.getItem(STORAGE_KEYS.RECEIPTS)) {
+                localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify([]));
             }
-        })();
+            if (!localStorage.getItem(STORAGE_KEYS.COUNTERS)) {
+                localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify({}));
+            }
+            
+            console.log('✅ Пользователи созданы:', Object.keys(users).join(', '));
+            return users;
+        }
+        
+        // Функция входа
+        function doLogin(login, password) {
+            const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+            const user = users[login];
+            
+            if (!user) {
+                return { success: false, error: `Пользователь "${login}" не найден` };
+            }
+            
+            if (!user.isActive) {
+                return { success: false, error: 'Аккаунт деактивирован. Обратитесь к администратору' };
+            }
+            
+            if (user.password !== hashPassword(password)) {
+                return { success: false, error: 'Неверный пароль' };
+            }
+            
+            // Создаём сессию
+            const session = {
+                userId: user.id,
+                login: user.login,
+                name: user.name,
+                role: user.role,
+                position: user.position,
+                phone: user.phone,
+                canViewStats: user.canViewStats || false,
+                loginTime: new Date().toISOString()
+            };
+            
+            localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+            
+            return { success: true, user: session };
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.style.display = 'block';
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+        initializeUsers();
         
         // Обработчик формы входа
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const login = document.getElementById('login').value.trim();
+            const login = document.getElementById('username').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
             const originalText = loginBtn.innerHTML;
@@ -234,34 +343,27 @@
             loginBtn.innerHTML = '<span class="spinner"></span> Вход...';
             loginBtn.disabled = true;
             
-            // Вызываем функцию login из auth.js
-            const result = login(login, password);
-            
-            if (result.success) {
-                showAlert('Вход выполнен! Перенаправление...', 'success');
-                setTimeout(() => {
-                    if (result.user.role === 'admin' || result.user.role === 'both') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'dashboard.html';
-                    }
-                }, 500);
-            } else {
-                showAlert(result.error, 'error');
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
-            }
-        });
-        
-        function showAlert(message, type) {
-            const alertDiv = document.getElementById('alert');
-            alertDiv.textContent = message;
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.style.display = 'block';
+            // Небольшая задержка для имитации процесса
             setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 3000);
-        }
+                const result = doLogin(login, password);
+                
+                if (result.success) {
+                    showAlert(`Добро пожаловать, ${result.user.name}! Перенаправление...`, 'success');
+                    
+                    setTimeout(() => {
+                        if (result.user.role === 'admin' || result.user.role === 'both') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'dashboard.html';
+                        }
+                    }, 500);
+                } else {
+                    showAlert(result.error, 'error');
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                }
+            }, 300);
+        });
         
         // Вход по Enter
         document.getElementById('password').addEventListener('keypress', (e) => {
@@ -269,6 +371,8 @@
                 document.getElementById('loginForm').dispatchEvent(new Event('submit'));
             }
         });
+        
+        console.log('✅ Страница входа загружена, всё готово');
     </script>
 </body>
 </html>
