@@ -18,7 +18,6 @@
             color: #1a1f36;
         }
 
-        /* САЙДБАР */
         .sidebar {
             width: 280px;
             background: white;
@@ -94,13 +93,11 @@
             margin: 16px 0;
         }
 
-        /* ОСНОВНОЙ КОНТЕНТ */
         .main-content {
             margin-left: 280px;
             padding: 24px 32px;
         }
 
-        /* ТОП БАР */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -150,7 +147,6 @@
             color: #ef4444;
         }
 
-        /* КАРТОЧКИ СТАТИСТИКИ */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -182,7 +178,6 @@
             margin-top: 4px;
         }
 
-        /* ТАБЛИЦА */
         .stats-table-container {
             background: white;
             border: 1px solid #e2e8f0;
@@ -247,7 +242,6 @@
         .status-active { background: #dcfce7; color: #16a34a; }
         .status-inactive { background: #fee2e2; color: #dc2626; }
 
-        /* ФОРМА */
         .form-container {
             background: white;
             border: 1px solid #e2e8f0;
@@ -345,7 +339,6 @@
             background: #1d4ed8;
         }
 
-        /* ИСТОРИЯ */
         .receipt-card {
             background: white;
             border: 1px solid #e2e8f0;
@@ -388,7 +381,6 @@
             color: white;
         }
 
-        /* ПРОФИЛЬ */
         .profile-field {
             margin-bottom: 16px;
         }
@@ -495,16 +487,13 @@
                     <span>👤</span> Профиль
                 </div>
             </div>
-            
             <div class="nav-group" id="statsGroup" style="display: none;">
                 <div class="nav-group-title">АНАЛИТИКА</div>
                 <div class="nav-item" data-tab="stats">
                     <span>📊</span> Статистика
                 </div>
             </div>
-            
             <div class="nav-divider" id="adminDivider" style="display: none;"></div>
-            
             <div class="nav-group" id="adminGroup" style="display: none;">
                 <div class="nav-group-title">УПРАВЛЕНИЕ</div>
                 <div class="nav-item" id="adminNav">
@@ -529,100 +518,51 @@
             </div>
         </div>
         
-        <!-- Создание расписки -->
         <div id="createTab" class="tab-content active">
             <div class="form-container">
                 <h2>📝 Создание новой расписки</h2>
                 <div id="alert" class="alert"></div>
-                
                 <form id="receiptForm">
                     <div class="form-group">
                         <label>ФИО абитуриента *</label>
                         <input type="text" id="fullName" required placeholder="Иванов Иван Иванович">
                     </div>
-                    
                     <div class="form-group">
                         <label>Специальность *</label>
-                        <select id="specialty" required>
-                            <option value="">Выберите специальность</option>
-                        </select>
+                        <select id="specialty" required><option value="">Выберите специальность</option></select>
                     </div>
-                    
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Номер аттестата/диплома</label>
-                            <input type="text" id="diplomaNumber" placeholder="№ документа">
-                        </div>
-                        <div class="form-group">
-                            <label>Дата выдачи</label>
-                            <input type="date" id="diplomaDate">
-                        </div>
+                        <div class="form-group"><label>Номер аттестата/диплома</label><input type="text" id="diplomaNumber" placeholder="№ документа"></div>
+                        <div class="form-group"><label>Дата выдачи</label><input type="date" id="diplomaDate"></div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>Кем выдан аттестат</label>
-                        <input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Принятые документы</label>
-                        <div class="checkbox-group" id="documentsCheckboxes"></div>
-                    </div>
-                    
+                    <div class="form-group"><label>Кем выдан аттестат</label><input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение"></div>
+                    <div class="form-group"><label>Принятые документы</label><div class="checkbox-group" id="documentsCheckboxes"></div></div>
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Количество фотографий (0-4)</label>
-                            <input type="number" id="photosCount" min="0" max="4" value="0">
-                        </div>
-                        <div class="form-group">
-                            <label>Баллы ГИА</label>
-                            <input type="text" id="score" placeholder="Баллы">
-                        </div>
+                        <div class="form-group"><label>Количество фотографий (0-4)</label><input type="number" id="photosCount" min="0" max="4" value="0"></div>
+                        <div class="form-group"><label>Баллы ГИА</label><input type="text" id="score" placeholder="Баллы"></div>
                     </div>
-                    
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Город получения аттестата</label>
-                            <input type="text" id="city" placeholder="Город">
-                        </div>
-                        <div class="form-group">
-                            <label>Сотрудник</label>
-                            <input type="text" id="employeeField" readonly>
-                        </div>
+                        <div class="form-group"><label>Город получения аттестата</label><input type="text" id="city" placeholder="Город"></div>
+                        <div class="form-group"><label>Сотрудник</label><input type="text" id="employeeField" readonly></div>
                     </div>
-                    
                     <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
                 </form>
             </div>
         </div>
         
-        <!-- История расписок -->
         <div id="historyTab" class="tab-content">
-            <div class="form-container">
-                <h2>📋 Мои расписки</h2>
-                <div id="receiptsList"></div>
-            </div>
+            <div class="form-container"><h2>📋 Мои расписки</h2><div id="receiptsList"></div></div>
         </div>
         
-        <!-- Профиль -->
         <div id="profileTab" class="tab-content">
-            <div class="form-container">
-                <h2>👤 Мой профиль</h2>
-                <div id="profileInfo"></div>
-            </div>
+            <div class="form-container"><h2>👤 Мой профиль</h2><div id="profileInfo"></div></div>
         </div>
         
-        <!-- Статистика -->
         <div id="statsTab" class="tab-content">
             <div class="stats-grid" id="statsGrid"></div>
             <div class="stats-table-container">
-                <div class="stats-table-header">
-                    <h3>🏆 Рейтинг сотрудников</h3>
-                </div>
-                <table class="stats-table">
-                    <thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead>
-                    <tbody id="employeeStatsBody"></tbody>
-                </table>
+                <div class="stats-table-header"><h3>🏆 Рейтинг сотрудников</h3></div>
+                <table class="stats-table"><thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead><tbody id="employeeStatsBody"></tbody></table>
             </div>
         </div>
     </div>
@@ -630,218 +570,166 @@
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
-        // ========== ТЕКУЩИЙ ПОЛЬЗОВАТЕЛЬ ==========
-        const currentUser = checkAuth();
-        if (!currentUser) window.location.href = 'login.html';
-        
-        // Имя
-        const firstName = currentUser.name.split(' ')[0];
-        document.getElementById('userNameShort').textContent = firstName;
-        document.getElementById('userName').textContent = currentUser.name;
-        
-        let roleText = '';
-        if (currentUser.role === 'admin') roleText = 'Главный администратор';
-        else if (currentUser.role === 'both') roleText = 'Администратор + Сотрудник';
-        else if (currentUser.role === 'manager') roleText = 'Руководитель';
-        else roleText = 'Сотрудник архива';
-        document.getElementById('userRole').textContent = roleText;
-        
-        // Показываем статистику для руководителей
-        if (currentUser.role === 'admin' || currentUser.role === 'both' || currentUser.role === 'manager') {
-            document.getElementById('statsGroup').style.display = 'block';
-        }
-        
-        // Показываем админку для администраторов
-        if (currentUser.role === 'admin' || currentUser.role === 'both') {
-            document.getElementById('adminGroup').style.display = 'block';
-            document.getElementById('adminDivider').style.display = 'block';
-            document.getElementById('adminNav').onclick = () => window.location.href = 'admin.html';
-        }
-        
-        // ========== ЗАГРУЗКА ДАННЫХ ==========
-        function loadSpecialties() {
-            const config = getConfig();
-            const select = document.getElementById('specialty');
-            select.innerHTML = '<option value="">Выберите специальность</option>';
-            Object.entries(config.specialties)
-                .filter(([_, d]) => d.active)
-                .sort((a, b) => a[1].order - b[1].order)
-                .forEach(([key, data]) => {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.textContent = `${data.code} - ${data.name}`;
-                    select.appendChild(option);
+        (function() {
+            const currentUser = checkAuth();
+            if (!currentUser) { window.location.href = 'login.html'; return; }
+            
+            const firstName = currentUser.name.split(' ')[0];
+            document.getElementById('userNameShort').textContent = firstName;
+            document.getElementById('userName').textContent = currentUser.name;
+            
+            let roleText = '';
+            if (currentUser.role === 'admin') roleText = 'Главный администратор';
+            else if (currentUser.role === 'both') roleText = 'Администратор + Сотрудник';
+            else if (currentUser.role === 'manager') roleText = 'Руководитель';
+            else roleText = 'Сотрудник архива';
+            document.getElementById('userRole').textContent = roleText;
+            
+            if (currentUser.role === 'admin' || currentUser.role === 'both' || currentUser.role === 'manager') {
+                document.getElementById('statsGroup').style.display = 'block';
+            }
+            if (currentUser.role === 'admin' || currentUser.role === 'both') {
+                document.getElementById('adminGroup').style.display = 'block';
+                document.getElementById('adminDivider').style.display = 'block';
+                document.getElementById('adminNav').onclick = function() { window.location.href = 'admin.html'; };
+            }
+            
+            function loadSpecialties() {
+                const config = getConfig();
+                const select = document.getElementById('specialty');
+                select.innerHTML = '<option value="">Выберите специальность</option>';
+                Object.entries(config.specialties).filter(([_,d]) => d.active).sort((a,b) => a[1].order - b[1].order).forEach(([key,data]) => {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = data.code + ' - ' + data.name;
+                    select.appendChild(opt);
                 });
-        }
-        
-        function loadDocumentCheckboxes() {
-            const config = getConfig();
-            document.getElementById('documentsCheckboxes').innerHTML = config.documentTypes.map(doc => `
-                <label class="checkbox-item"><input type="checkbox" value="${doc}"><span>${doc}</span></label>
-            `).join('');
-        }
-        
-        document.getElementById('employeeField').value = `${currentUser.name} (${currentUser.position})`;
-        
-        function showAlert(msg, type) {
-            const el = document.getElementById('alert');
-            el.textContent = msg;
-            el.className = `alert alert-${type}`;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 4000);
-        }
-        
-        // ========== СОЗДАНИЕ РАСПИСКИ ==========
-        document.getElementById('receiptForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            const original = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner"></span> Создание...';
-            btn.disabled = true;
+            }
             
-            const docs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked')).map(cb => cb.value);
-            const data = {
-                fullName: document.getElementById('fullName').value,
-                specialty: document.getElementById('specialty').value,
-                diplomaNumber: document.getElementById('diplomaNumber').value,
-                diplomaDate: document.getElementById('diplomaDate').value,
-                diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
-                documents: docs.join('\n'),
-                photosCount: document.getElementById('photosCount').value,
-                score: document.getElementById('score').value,
-                city: document.getElementById('city').value,
-                employee: currentUser.name,
-                employeeLogin: currentUser.login,
-                employeePosition: currentUser.position
-            };
+            function loadDocumentCheckboxes() {
+                const config = getConfig();
+                const container = document.getElementById('documentsCheckboxes');
+                container.innerHTML = config.documentTypes.map(doc => '<label class="checkbox-item"><input type="checkbox" value="' + doc + '"><span>' + doc + '</span></label>').join('');
+            }
             
-            if (!data.fullName || !data.specialty) {
-                showAlert('Заполните обязательные поля', 'error');
+            document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
+            
+            function showAlert(msg, type) {
+                const el = document.getElementById('alert');
+                el.textContent = msg;
+                el.className = 'alert alert-' + type;
+                el.style.display = 'block';
+                setTimeout(function() { el.style.display = 'none'; }, 4000);
+            }
+            
+            function openPrintWindow(r) {
+                const now = new Date();
+                const w = window.open('', '_blank');
+                w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписка №' + r.receiptNumber + '</title><style>body{font-family:"Times New Roman",serif;padding:40px;max-width:800px;margin:0 auto;background:white;color:black;}.header{text-align:center;margin-bottom:30px;}h3{font-size:18px;font-weight:bold;margin:20px 0;}.content{line-height:1.6;}.signature{margin-top:50px;}button{padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}@media print{.no-print{display:none;}}</style></head><body><div class="no-print" style="text-align:center;margin-bottom:20px;"><button onclick="window.print()">🖨️ Печать</button><button onclick="window.close()">✖️ Закрыть</button></div><div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div><div class="content"><p>Настоящая расписка выдана абитуриенту <strong>' + r.fullName + '</strong> о том, что от него приняты следующие документы:</p><ul>' + r.documents.split('\n').filter(function(d){return d.trim();}).map(function(d){return '<li>' + d.trim() + '</li>';}).join('') + '</ul><p><strong>Специальность:</strong> ' + r.specialty + '</p><p><strong>Номер расписки:</strong> ' + r.receiptNumber + '</p><p><strong>Дата выдачи:</strong> ' + now.toLocaleDateString('ru-RU') + '</p><div class="signature"><p>____________________</p><p><strong>' + r.employee + '</strong></p><p>' + r.employeePosition + '</p></div></div><script>setTimeout(function(){window.print();},500);<\/script></body></html>');
+                w.document.close();
+            }
+            
+            function loadReceiptsHistory() {
+                const list = getEmployeeReceipts(currentUser.login);
+                const container = document.getElementById('receiptsList');
+                if (!list.length) {
+                    container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>';
+                    return;
+                }
+                container.innerHTML = list.map(function(r) {
+                    return '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="openPrintWindow(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
+                }).join('');
+            }
+            
+            function loadProfile() {
+                var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
+                html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
+                html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';
+                html += '<div class="profile-field"><label>Телефон</label><input type="text" value="' + (currentUser.phone || 'Не указан') + '" readonly></div>';
+                var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
+                html += '<div class="profile-field"><label>Роль</label><input type="text" value="' + roleTxt + '" readonly></div>';
+                document.getElementById('profileInfo').innerHTML = html;
+            }
+            
+            function loadStats() {
+                const stats = getSystemStats();
+                document.getElementById('statsGrid').innerHTML = 
+                    '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">' + (stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0) + '%</div><div class="stat-label">Активность сегодня</div></div>';
+                const sorted = (stats.employeeStats || []).slice().sort(function(a,b){ return (b.receiptCount||0) - (a.receiptCount||0); });
+                document.getElementById('employeeStatsBody').innerHTML = sorted.map(function(e,i){
+                    return '<tr><td><span class="rank-badge' + (i===0?' rank-1':i===1?' rank-2':i===2?' rank-3':'') + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position||'-') + '</td><td style="font-weight:700;color:#2563eb">' + (e.receiptCount||0) + '</td><td><span class="status-badge ' + (e.isActive?'status-active':'status-inactive') + '">' + (e.isActive?'Активен':'Неактивен') + '</span></td></tr>';
+                }).join('');
+            }
+            
+            document.getElementById('receiptForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = document.getElementById('submitBtn');
+                const original = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner"></span> Создание...';
+                btn.disabled = true;
+                
+                const docs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked')).map(function(cb){ return cb.value; });
+                const data = {
+                    fullName: document.getElementById('fullName').value,
+                    specialty: document.getElementById('specialty').value,
+                    diplomaNumber: document.getElementById('diplomaNumber').value,
+                    diplomaDate: document.getElementById('diplomaDate').value,
+                    diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
+                    documents: docs.join('\n'),
+                    photosCount: document.getElementById('photosCount').value,
+                    score: document.getElementById('score').value,
+                    city: document.getElementById('city').value,
+                    employee: currentUser.name,
+                    employeeLogin: currentUser.login,
+                    employeePosition: currentUser.position
+                };
+                if (!data.fullName || !data.specialty) {
+                    showAlert('Заполните обязательные поля', 'error');
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    return;
+                }
+                const config = getConfig();
+                const code = config.specialties[data.specialty]?.code || 'ОБЩ';
+                const counter = getReceiptCounter(code);
+                const number = code + '-' + counter;
+                const receipt = Object.assign({}, data, { receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString() });
+                saveReceipt(receipt);
+                openPrintWindow(receipt);
+                showAlert('✅ Расписка №' + number + ' создана!', 'success');
+                document.getElementById('receiptForm').reset();
+                document.getElementById('photosCount').value = '0';
+                document.querySelectorAll('#documentsCheckboxes input').forEach(function(cb){ cb.checked = false; });
+                if (document.getElementById('historyTab').classList.contains('active')) loadReceiptsHistory();
                 btn.innerHTML = original;
                 btn.disabled = false;
-                return;
-            }
-            
-            const config = getConfig();
-            const code = config.specialties[data.specialty]?.code || 'ОБЩ';
-            const counter = getReceiptCounter(code);
-            const number = `${code}-${counter}`;
-            const receipt = { ...data, receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString() };
-            
-            saveReceipt(receipt);
-            openPrintWindow(receipt);
-            showAlert(`✅ Расписка №${number} создана!`, 'success');
-            
-            document.getElementById('receiptForm').reset();
-            document.getElementById('photosCount').value = '0';
-            document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
-            if (document.getElementById('historyTab').classList.contains('active')) loadReceiptsHistory();
-            
-            btn.innerHTML = original;
-            btn.disabled = false;
-        });
-        
-        function openPrintWindow(r) {
-            const now = new Date();
-            const w = window.open('', '_blank');
-            w.document.write(`
-                <!DOCTYPE html>
-                <html><head><meta charset="UTF-8"><title>Расписка №${r.receiptNumber}</title>
-                <style>
-                    body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; background: white; color: black; }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    h3 { font-size: 18px; font-weight: bold; margin: 20px 0; }
-                    .content { line-height: 1.6; }
-                    .signature { margin-top: 50px; }
-                    button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
-                    @media print { .no-print { display: none; } }
-                </style>
-                </head>
-                <body>
-                    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
-                        <button onclick="window.print()">🖨️ Печать</button>
-                        <button onclick="window.close()">✖️ Закрыть</button>
-                    </div>
-                    <div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div>
-                    <div class="content">
-                        <p>Настоящая расписка выдана абитуриенту <strong>${r.fullName}</strong> о том, что от него приняты следующие документы:</p>
-                        <ul>${r.documents.split('\n').filter(d => d.trim()).map(d => `<li>${d.trim()}</li>`).join('')}</ul>
-                        <p><strong>Специальность:</strong> ${r.specialty}</p>
-                        <p><strong>Номер расписки:</strong> ${r.receiptNumber}</p>
-                        <p><strong>Дата выдачи:</strong> ${now.toLocaleDateString('ru-RU')}</p>
-                        <div class="signature"><p>____________________</p><p><strong>${r.employee}</strong></p><p>${r.employeePosition}</p></div>
-                    </div>
-                    <script>setTimeout(() => window.print(), 500);</script>
-                </body>
-                </html>
-            `);
-            w.document.close();
-        }
-        
-        function loadReceiptsHistory() {
-            const list = getEmployeeReceipts(currentUser.login);
-            const container = document.getElementById('receiptsList');
-            if (!list.length) {
-                container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>';
-                return;
-            }
-            container.innerHTML = list.map(r => `
-                <div class="receipt-card">
-                    <div><div class="receipt-number">${r.receiptNumber}</div><div class="receipt-student">${r.fullName}</div><div class="receipt-date">${new Date(r.createdAt).toLocaleDateString('ru-RU')}</div></div>
-                    <button class="btn-print" onclick='openPrintWindow(${JSON.stringify(r).replace(/'/g, "\\'")})'>🖨️ Печать</button>
-                </div>
-            `).join('');
-        }
-        
-        function loadProfile() {
-            document.getElementById('profileInfo').innerHTML = `
-                <div class="profile-field"><label>ФИО</label><input type="text" value="${currentUser.name}" readonly></div>
-                <div class="profile-field"><label>Логин</label><input type="text" value="${currentUser.login}" readonly></div>
-                <div class="profile-field"><label>Должность</label><input type="text" value="${currentUser.position}" readonly></div>
-                <div class="profile-field"><label>Телефон</label><input type="text" value="${currentUser.phone || 'Не указан'}" readonly></div>
-                <div class="profile-field"><label>Роль</label><input type="text" value="${currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'))}" readonly></div>
-            `;
-        }
-        
-        function loadStats() {
-            const stats = getSystemStats();
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">${stats.totalReceipts || 0}</div><div class="stat-label">Всего расписок</div></div>
-                <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">${stats.todayReceipts || 0}</div><div class="stat-label">Сегодня</div></div>
-                <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">${stats.totalEmployees || 0}</div><div class="stat-label">Сотрудников</div></div>
-                <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">${stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0}%</div><div class="stat-label">Активность сегодня</div></div>
-            `;
-            const sorted = [...(stats.employeeStats || [])].sort((a,b) => (b.receiptCount||0) - (a.receiptCount||0));
-            document.getElementById('employeeStatsBody').innerHTML = sorted.map((e,i) => `
-                <tr><td><span class="rank-badge ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}">${i+1}</span></td>
-                <td><strong>${e.name}</strong></td><td>${e.position||'-'}</td>
-                <td style="font-weight:700;color:#2563eb">${e.receiptCount||0}</td>
-                <td><span class="status-badge ${e.isActive?'status-active':'status-inactive'}">${e.isActive?'Активен':'Неактивен'}</span></td></tr>
-            `).join('');
-        }
-        
-        // ========== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ==========
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(`${tabId}Tab`).classList.add('active');
-            if (tabId === 'history') loadReceiptsHistory();
-            if (tabId === 'profile') loadProfile();
-            if (tabId === 'stats') loadStats();
-        }
-        
-        document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
-            item.addEventListener('click', () => {
-                const id = item.getAttribute('data-tab');
-                switchTab(id);
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                item.classList.add('active');
             });
-        });
-        
-        // ========== ИНИЦИАЛИЗАЦИЯ ==========
-        loadSpecialties();
-        loadDocumentCheckboxes();
-        loadReceiptsHistory();
+            
+            function switchTab(tabId) {
+                document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+                document.getElementById(tabId + 'Tab').classList.add('active');
+                if (tabId === 'history') loadReceiptsHistory();
+                if (tabId === 'profile') loadProfile();
+                if (tabId === 'stats') loadStats();
+            }
+            
+            document.querySelectorAll('.nav-item[data-tab]').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    var id = this.getAttribute('data-tab');
+                    switchTab(id);
+                    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+                    this.classList.add('active');
+                });
+            });
+            
+            window.openPrintWindow = openPrintWindow;
+            loadSpecialties();
+            loadDocumentCheckboxes();
+            loadReceiptsHistory();
+        })();
     </script>
 </body>
 </html>
