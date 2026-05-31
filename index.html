@@ -134,6 +134,36 @@
         </div>
     </div>
 
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="employeeModalTitle">Добавить сотрудника</h3><button class="modal-close" onclick="closeEmployeeModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="editLogin">
+                <div class="form-group"><label>ФИО *</label><input type="text" id="empName" placeholder="Иванов Иван Иванович"></div>
+                <div class="form-group"><label>Логин *</label><input type="text" id="empLogin" placeholder="login"></div>
+                <div class="form-group"><label>Пароль *</label><input type="password" id="empPassword" placeholder="••••••••"></div>
+                <div class="form-group"><label>Должность</label><input type="text" id="empPosition" placeholder="Специалист"></div>
+                <div class="form-group"><label>Телефон</label><input type="text" id="empPhone" placeholder="+7 (XXX) XXX-XX-XX"></div>
+                <div class="form-group"><label>Роль</label><select id="empRole"><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="both">Админ+Сотрудник</option></select></div>
+                <div class="form-group"><label>Статус</label><select id="empStatus"><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
+            </div>
+            <div class="modal-footer"><button class="action-btn" onclick="closeEmployeeModal()">Отмена</button><button class="add-btn" onclick="saveEmployee()">Сохранить</button></div>
+        </div>
+    </div>
+
+    <div id="specialtyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="specialtyModalTitle">Добавить специальность</h3><button class="modal-close" onclick="closeSpecialtyModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="editSpecialtyKey">
+                <div class="form-group"><label>Код *</label><input type="text" id="specialtyCode" placeholder="ЛА"></div>
+                <div class="form-group"><label>Полное название *</label><input type="text" id="specialtyName" placeholder="24.02.01 Производство..."></div>
+                <div class="form-group"><label>Порядок</label><input type="number" id="specialtyOrder" value="99"></div>
+            </div>
+            <div class="modal-footer"><button class="action-btn" onclick="closeSpecialtyModal()">Отмена</button><button class="add-btn" onclick="saveSpecialty()">Сохранить</button></div>
+        </div>
+    </div>
+
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
@@ -210,7 +240,6 @@
                 else { item.classList.remove('active'); }
             }
             
-            // Вызываем функцию инициализации для загруженной страницы
             setTimeout(function() {
                 if (pageName === 'home' && typeof window.loadHomeStats === 'function') window.loadHomeStats();
                 if (pageName === 'stats' && typeof window.loadStatsPage === 'function') window.loadStatsPage();
@@ -218,9 +247,113 @@
                 if (pageName === 'profile' && typeof window.loadProfilePage === 'function') window.loadProfilePage();
                 if (pageName === 'charts' && typeof window.loadChartsPage === 'function') window.loadChartsPage();
                 if (pageName === 'rating' && typeof window.updateRatingList === 'function') window.updateRatingList();
-                if (pageName === 'admin' && typeof window.loadAdminPanel === 'function') window.loadAdminPanel();
-            }, 50);
+                if (pageName === 'admin') {
+                    if (typeof loadAdminStats === 'function') loadAdminStats();
+                    if (typeof loadAdminEmployees === 'function') loadAdminEmployees();
+                    if (typeof loadAdminSpecialties === 'function') loadAdminSpecialties();
+                    if (typeof loadAdminDocuments === 'function') loadAdminDocuments();
+                    if (typeof loadCounters === 'function') loadCounters();
+                    if (typeof loadAdminSettings === 'function') loadAdminSettings();
+                }
+            }, 100);
         }
+        
+        // ========== МОДАЛЬНЫЕ ОКНА ==========
+        window.openEmployeeModal = function() {
+            var modal = document.getElementById('employeeModal');
+            if (modal) {
+                document.getElementById('employeeModalTitle').innerHTML = 'Добавить сотрудника';
+                document.getElementById('editLogin').value = '';
+                document.getElementById('empName').value = '';
+                document.getElementById('empLogin').value = '';
+                document.getElementById('empPassword').value = '';
+                document.getElementById('empPosition').value = '';
+                document.getElementById('empPhone').value = '';
+                document.getElementById('empRole').value = 'employee';
+                document.getElementById('empStatus').value = 'true';
+                modal.style.display = 'flex';
+            }
+        };
+        
+        window.closeEmployeeModal = function() {
+            var modal = document.getElementById('employeeModal');
+            if (modal) modal.style.display = 'none';
+        };
+        
+        window.openSpecialtyModal = function() {
+            var modal = document.getElementById('specialtyModal');
+            if (modal) {
+                document.getElementById('specialtyModalTitle').innerHTML = 'Добавить специальность';
+                document.getElementById('editSpecialtyKey').value = '';
+                document.getElementById('specialtyCode').value = '';
+                document.getElementById('specialtyName').value = '';
+                document.getElementById('specialtyOrder').value = '99';
+                modal.style.display = 'flex';
+            }
+        };
+        
+        window.closeSpecialtyModal = function() {
+            var modal = document.getElementById('specialtyModal');
+            if (modal) modal.style.display = 'none';
+        };
+        
+        window.openDocumentModal = function() {
+            var newDoc = prompt('Введите название документа:');
+            if (newDoc) {
+                var config = getConfig();
+                config.documentTypes.push(newDoc);
+                saveConfig(config);
+                if (window.showToast) window.showToast('Документ добавлен', 'success');
+                if (document.querySelector('.nav-item.active') && document.querySelector('.nav-item.active').getAttribute('data-page') === 'admin') {
+                    loadPage('admin');
+                }
+            }
+        };
+        
+        window.saveEmployee = function() {
+            var editLogin = document.getElementById('editLogin').value;
+            var login = document.getElementById('empLogin').value;
+            var name = document.getElementById('empName').value;
+            var password = document.getElementById('empPassword').value;
+            var position = document.getElementById('empPosition').value;
+            var phone = document.getElementById('empPhone').value;
+            var role = document.getElementById('empRole').value;
+            var isActive = document.getElementById('empStatus').value === 'true';
+            if (!name || !login) { if (window.showToast) window.showToast('Заполните обязательные поля', 'error'); return; }
+            var result;
+            if (editLogin) {
+                var updates = { name: name, position: position, phone: phone, role: role, isActive: isActive };
+                if (password) updates.password = password;
+                result = updateEmployee(editLogin, updates);
+            } else {
+                if (!password) { if (window.showToast) window.showToast('Введите пароль', 'error'); return; }
+                result = addEmployee({ login: login, name: name, password: password, position: position, phone: phone, role: role });
+            }
+            if (result.success) {
+                if (window.showToast) window.showToast(editLogin ? 'Сотрудник обновлён' : 'Сотрудник добавлен', 'success');
+                window.closeEmployeeModal();
+                if (document.querySelector('.nav-item.active') && document.querySelector('.nav-item.active').getAttribute('data-page') === 'admin') {
+                    loadPage('admin');
+                }
+            } else { if (window.showToast) window.showToast(result.error, 'error'); }
+        };
+        
+        window.saveSpecialty = function() {
+            var oldKey = document.getElementById('editSpecialtyKey').value;
+            var code = document.getElementById('specialtyCode').value;
+            var name = document.getElementById('specialtyName').value;
+            var order = parseInt(document.getElementById('specialtyOrder').value);
+            if (!code || !name) { if (window.showToast) window.showToast('Заполните все поля', 'error'); return; }
+            var config = getConfig();
+            if (oldKey && oldKey !== name) delete config.specialties[oldKey];
+            config.specialties[name] = { code: code, name: name.split(' ').slice(1).join(' ') || name, active: true, order: order };
+            saveConfig(config);
+            window.closeSpecialtyModal();
+            if (document.querySelector('.nav-item.active') && document.querySelector('.nav-item.active').getAttribute('data-page') === 'admin') {
+                loadPage('admin');
+            }
+            if (window.showToast) window.showToast('Специальность сохранена', 'success');
+        };
         
         // ========== ОБРАБОТЧИКИ ==========
         function setupEventListeners() {
@@ -387,9 +520,9 @@
             for (var i = 0; i < withScores.length; i++) {
                 var r = withScores[i];
                 var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + r.fullName + '</strong></td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '</td><td><span class="status-badge status-active">Подано</span></td></tr>';
+                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + r.fullName + '</strong><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '<td><span class="status-badge status-active">Подано</span></td></tr>';
             }
-            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных</td></tr>';
+            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных<\/td></tr>';
             var tableBody = document.getElementById('ratingTableBody');
             if (tableBody) tableBody.innerHTML = html;
         };
@@ -426,7 +559,7 @@
             for (var i = 0; i < sorted.length; i++) {
                 var e = sorted[i];
                 var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
+                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td>:<strong>' + e.name + '</strong></td>:' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td>:<span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
             }
             var empBody = document.getElementById('employeeStatsBody');
             if (empBody) empBody.innerHTML = html;
@@ -519,18 +652,6 @@
                     options: { responsive: true } 
                 });
             }
-        };
-        
-        window.loadAdminPanel = function() {
-            // Функции для админки определены в admin.js
-            setTimeout(function() {
-                if (typeof loadAdminStats === 'function') loadAdminStats();
-                if (typeof loadAdminEmployees === 'function') loadAdminEmployees();
-                if (typeof loadAdminSpecialties === 'function') loadAdminSpecialties();
-                if (typeof loadAdminDocuments === 'function') loadAdminDocuments();
-                if (typeof loadCounters === 'function') loadCounters();
-                if (typeof loadAdminSettings === 'function') loadAdminSettings();
-            }, 100);
         };
         
         init();
