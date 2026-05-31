@@ -9,7 +9,7 @@
     <style>
         .dashboard {
             min-height: 100vh;
-            background: #f9fafb;
+            background: var(--bg-primary);
         }
         
         .sidebar {
@@ -18,27 +18,28 @@
             top: 0;
             bottom: 0;
             width: 280px;
-            background: white;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
         }
         
         .sidebar-header {
             padding: 30px 24px;
-            border-bottom: 1px solid #e5e7eb;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
         }
         
         .sidebar-header h2 {
             font-size: 20px;
             margin-bottom: 8px;
+            color: white;
         }
         
         .employee-info {
             font-size: 12px;
             opacity: 0.9;
+            color: white;
         }
         
         .sidebar-nav {
@@ -53,18 +54,18 @@
             padding: 12px 16px;
             margin-bottom: 8px;
             border-radius: 12px;
-            color: #6b7280;
+            color: var(--text-secondary);
             transition: all 0.3s;
             cursor: pointer;
         }
         
         .nav-item:hover {
-            background: #f3f4f6;
-            color: #374151;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
         
         .nav-item.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
         
@@ -73,131 +74,29 @@
             padding: 30px;
         }
         
-        .form-container {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #374151;
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 15px;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        
-        .submit-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .stat-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
             color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
-        }
-        
-        .submit-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .receipts-list {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-        }
-        
-        .receipt-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .receipt-number {
-            font-weight: 600;
-            color: #667eea;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
         }
         
         .btn-print {
             padding: 8px 16px;
-            background: #4CAF50;
+            background: var(--success);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
         }
         
-        .alert {
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .alert-success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-        
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid white;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 8px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .btn-print:hover {
+            opacity: 0.9;
+            transform: none;
         }
         
         @media (max-width: 768px) {
@@ -211,9 +110,6 @@
             }
             .main-content {
                 margin-left: 0;
-            }
-            .form-row {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -246,8 +142,7 @@
             <div id="createTab" class="tab-content">
                 <div class="form-container">
                     <h2 style="margin-bottom: 24px;">Создание новой расписки</h2>
-                    
-                    <div id="alert" class="alert"></div>
+                    <div id="alert" class="alert" style="display: none;"></div>
                     
                     <form id="receiptForm">
                         <div class="form-group">
@@ -262,7 +157,7 @@
                             </select>
                         </div>
                         
-                        <div class="form-row">
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div class="form-group">
                                 <label>Номер аттестата/диплома</label>
                                 <input type="text" id="diplomaNumber" placeholder="№ документа">
@@ -280,10 +175,12 @@
                         
                         <div class="form-group">
                             <label>Принятые документы</label>
-                            <textarea id="documents" rows="4" placeholder="Заявление&#10;Аттестат/диплом (оригинал)&#10;Фотокарточки (4 шт)"></textarea>
+                            <div class="checkbox-group" id="documentsCheckboxes">
+                                <!-- Чекбоксы будут загружены из config.js -->
+                            </div>
                         </div>
                         
-                        <div class="form-row">
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div class="form-group">
                                 <label>Количество фотографий (0-4)</label>
                                 <input type="number" id="photosCount" min="0" max="4" value="0">
@@ -294,18 +191,18 @@
                             </div>
                         </div>
                         
-                        <div class="form-row">
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div class="form-group">
                                 <label>Город получения аттестата</label>
                                 <input type="text" id="city" placeholder="Город">
                             </div>
                             <div class="form-group">
                                 <label>Сотрудник</label>
-                                <input type="text" id="employeeField" readonly style="background: #f3f4f6;">
+                                <input type="text" id="employeeField" readonly style="background: var(--bg-input); opacity: 0.8;">
                             </div>
                         </div>
                         
-                        <button type="submit" class="submit-btn" id="submitBtn">
+                        <button type="submit" class="submit-btn" id="submitBtn" style="width: 100%; margin-top: 20px;">
                             📄 Создать расписку
                         </button>
                     </form>
@@ -314,7 +211,7 @@
             
             <!-- Вкладка истории расписок -->
             <div id="historyTab" class="tab-content" style="display: none;">
-                <div class="receipts-list">
+                <div class="form-container">
                     <h2 style="margin-bottom: 20px;">📋 Мои расписки</h2>
                     <div id="receiptsList"></div>
                 </div>
@@ -333,29 +230,42 @@
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
-        // ========== КОНФИГУРАЦИЯ ==========
-        // ⚠️ ВСТАВЬТЕ СВОЙ URL ОТ GOOGLE APPS SCRIPT!
+        // Конфигурация API
         const API_URL = 'https://script.google.com/macros/s/AKfycbzQs5DtZDu8_O4pL7r49GuR0lDKd5Kgd4-fZGsH2eunZ7WAzH-HoMB8GHV0QQgxDaoH/exec';
         
-        // Проверка авторизации
         const currentUser = checkAuth();
         if (!currentUser) {
             window.location.href = 'login.html';
         }
         
-        // Если админ - перенаправляем в админку
-        if (currentUser.role === 'admin') {
-            window.location.href = 'admin.html';
+        // Если админ или both - показываем кнопку в админку
+        if (currentUser.role === 'admin' || currentUser.role === 'both') {
+            const adminLink = document.createElement('div');
+            adminLink.className = 'nav-item';
+            adminLink.innerHTML = '<span>⚙️</span> Админ панель';
+            adminLink.onclick = () => window.location.href = 'admin.html';
+            document.querySelector('.sidebar-nav').insertBefore(adminLink, document.querySelector('.sidebar-nav').firstChild);
         }
         
-        // Отображение информации о сотруднике
         document.getElementById('employeeInfo').innerHTML = `
             <strong>${currentUser.name}</strong><br>
             ${currentUser.position}<br>
-            ${currentUser.email}
+            ${currentUser.login}
         `;
         
-        // Загрузка специальностей из конфига
+        // Загрузка чекбоксов документов
+        function loadDocumentCheckboxes() {
+            const config = getConfig();
+            const container = document.getElementById('documentsCheckboxes');
+            container.innerHTML = config.documentTypes.map(doc => `
+                <label class="checkbox-item">
+                    <input type="checkbox" value="${doc}">
+                    <span>${doc}</span>
+                </label>
+            `).join('');
+        }
+        
+        // Загрузка специальностей
         function loadSpecialties() {
             const config = getConfig();
             const select = document.getElementById('specialty');
@@ -372,10 +282,8 @@
                 });
         }
         
-        // Подстановка данных сотрудника
         document.getElementById('employeeField').value = `${currentUser.name} (${currentUser.position})`;
         
-        // Показ уведомления
         function showAlert(message, type) {
             const alert = document.getElementById('alert');
             alert.textContent = message;
@@ -392,8 +300,12 @@
             
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span class="spinner"></span> Создание...';
+            submitBtn.innerHTML = '<span class="spinner"></span> Создание расписки...';
             submitBtn.disabled = true;
+            
+            // Собираем выбранные документы из чекбоксов
+            const selectedDocs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked'))
+                .map(cb => cb.value);
             
             const formData = {
                 fullName: document.getElementById('fullName').value,
@@ -401,160 +313,154 @@
                 diplomaNumber: document.getElementById('diplomaNumber').value,
                 diplomaDate: document.getElementById('diplomaDate').value,
                 diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
-                documents: document.getElementById('documents').value,
+                documents: selectedDocs.join('\n'),
                 photosCount: document.getElementById('photosCount').value,
                 score: document.getElementById('score').value,
                 city: document.getElementById('city').value,
                 employee: currentUser.name,
-                employeeEmail: currentUser.email,
+                employeeLogin: currentUser.login,
                 employeePosition: currentUser.position
             };
             
-            // Валидация
-            if (!formData.fullName) {
-                showAlert('Пожалуйста, заполните ФИО абитуриента', 'error');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-                return;
-            }
-            
-            if (!formData.specialty) {
-                showAlert('Пожалуйста, выберите специальность', 'error');
+            if (!formData.fullName || !formData.specialty) {
+                showAlert('Заполните обязательные поля', 'error');
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
                 return;
             }
             
             try {
-                // Отправляем запрос в Google Apps Script
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
+                const config = getConfig();
+                const specialtyCode = config.specialties[formData.specialty]?.code || 'ОБЩ';
+                const counter = getReceiptCounter(specialtyCode);
+                const receiptNumber = `${specialtyCode}-${counter}`;
                 
-                const result = await response.json();
+                // Сохраняем локально
+                const receiptData = {
+                    ...formData,
+                    receiptNumber,
+                    specialtyCode,
+                    createdAt: new Date().toISOString()
+                };
+                saveReceipt(receiptData);
                 
-                if (result.success) {
-                    showAlert(`✅ Расписка №${result.receiptNumber} успешно создана!`, 'success');
-                    
-                    // Открываем PDF в новой вкладке
+                // Пытаемся отправить в Google Apps Script
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...formData, receiptNumber })
+                    });
+                    const result = await response.json();
                     if (result.pdfUrl) {
                         window.open(result.pdfUrl, '_blank');
                     }
-                    
-                    // Сохраняем в локальное хранилище
-                    const receiptData = {
-                        ...formData,
-                        receiptNumber: result.receiptNumber,
-                        specialtyCode: getSpecialtyCode(formData.specialty),
-                        pdfUrl: result.pdfUrl,
-                        createdAt: new Date().toISOString()
-                    };
-                    saveReceipt(receiptData);
-                    
-                    // Очищаем форму
-                    document.getElementById('receiptForm').reset();
-                    document.getElementById('photosCount').value = '0';
-                    
-                    // Обновляем историю
-                    loadReceiptsHistory();
-                } else {
-                    showAlert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'), 'error');
+                } catch (apiError) {
+                    console.warn('Google Apps Script недоступен, используем локальное сохранение');
+                    showAlert(`✅ Расписка №${receiptNumber} создана (локально)`, 'success');
+                    // Открываем окно печати
+                    openPrintWindow(receiptData);
                 }
+                
+                showAlert(`✅ Расписка №${receiptNumber} успешно создана!`, 'success');
+                
+                document.getElementById('receiptForm').reset();
+                document.getElementById('photosCount').value = '0';
+                document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
+                loadReceiptsHistory();
+                
             } catch (error) {
                 console.error('Ошибка:', error);
-                showAlert('❌ Ошибка соединения. Проверьте API_URL', 'error');
+                showAlert('❌ Ошибка при создании расписки', 'error');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         });
         
-        // Загрузка истории расписок
+        function openPrintWindow(receipt) {
+            const now = new Date();
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head><meta charset="UTF-8"><title>Расписка №${receipt.receiptNumber}</title>
+                <style>
+                    body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .title { font-size: 18px; font-weight: bold; margin: 20px 0; }
+                    .content { line-height: 1.6; }
+                    .signature { margin-top: 50px; }
+                    button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+                    @media print { .no-print { display: none; } }
+                </style>
+                </head>
+                <body>
+                    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+                        <button onclick="window.print()">🖨️ Печать</button>
+                        <button onclick="window.close()">✖️ Закрыть</button>
+                    </div>
+                    <div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div>
+                    <div class="content">
+                        <p>Настоящая расписка выдана абитуриенту <strong>${receipt.fullName}</strong> о том, что от него приняты следующие документы:</p>
+                        <ul>${receipt.documents.split('\n').filter(d => d.trim()).map(d => `<li>${d.trim()}</li>`).join('')}</ul>
+                        <p><strong>Специальность:</strong> ${receipt.specialty}</p>
+                        <p><strong>Номер расписки:</strong> ${receipt.receiptNumber}</p>
+                        <p><strong>Дата выдачи:</strong> ${now.toLocaleDateString('ru-RU')}</p>
+                        <div class="signature"><p>____________________</p><p><strong>${receipt.employee}</strong></p><p>${receipt.employeePosition}</p></div>
+                    </div>
+                    <script>setTimeout(() => window.print(), 500);</script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+        
         function loadReceiptsHistory() {
-            const receipts = getEmployeeReceipts(currentUser.email);
+            const receipts = getEmployeeReceipts(currentUser.login);
             const container = document.getElementById('receiptsList');
             
             if (receipts.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #6b7280;">У вас пока нет созданных расписок</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">У вас пока нет созданных расписок</p>';
                 return;
             }
             
             container.innerHTML = receipts.map(receipt => `
-                <div class="receipt-item">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border);">
                     <div>
-                        <div class="receipt-number">${receipt.receiptNumber}</div>
-                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                        <div style="font-weight: 600; color: var(--primary);">${receipt.receiptNumber}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
                             ${receipt.fullName} | ${new Date(receipt.createdAt).toLocaleDateString('ru-RU')}
                         </div>
                     </div>
-                    <button class="btn-print" onclick="printReceipt('${receipt.pdfUrl || receipt.receiptNumber}')">🖨️ Печать</button>
+                    <button class="btn-print" onclick="alert('PDF будет доступен после интеграции с Google Apps Script')">🖨️ Печать</button>
                 </div>
             `).join('');
         }
         
-        // Печать расписки
-        function printReceipt(url) {
-            if (url && url.startsWith('http')) {
-                window.open(url, '_blank');
-            } else {
-                alert('PDF ссылка не найдена');
-            }
-        }
-        
-        // Загрузка профиля
         function loadProfile() {
             const container = document.getElementById('profileInfo');
-            const stats = getSystemStats();
-            const myStats = stats.employeeStats.find(s => s.email === currentUser.email);
-            
             container.innerHTML = `
-                <div class="form-group">
-                    <label>ФИО</label>
-                    <input type="text" value="${currentUser.name}" readonly style="background: #f3f4f6;">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="text" value="${currentUser.email}" readonly style="background: #f3f4f6;">
-                </div>
-                <div class="form-group">
-                    <label>Должность</label>
-                    <input type="text" value="${currentUser.position}" readonly style="background: #f3f4f6;">
-                </div>
-                <div class="form-group">
-                    <label>Телефон</label>
-                    <input type="text" value="${currentUser.phone || 'Не указан'}" readonly style="background: #f3f4f6;">
-                </div>
-                <div class="form-group">
-                    <label>Создано расписок</label>
-                    <input type="text" value="${myStats?.receiptCount || 0}" readonly style="background: #f3f4f6;">
-                </div>
+                <div class="form-group"><label>ФИО</label><input type="text" value="${currentUser.name}" readonly style="background: var(--bg-input);"></div>
+                <div class="form-group"><label>Логин</label><input type="text" value="${currentUser.login}" readonly style="background: var(--bg-input);"></div>
+                <div class="form-group"><label>Должность</label><input type="text" value="${currentUser.position}" readonly style="background: var(--bg-input);"></div>
+                <div class="form-group"><label>Телефон</label><input type="text" value="${currentUser.phone || 'Не указан'}" readonly style="background: var(--bg-input);"></div>
+                <div class="form-group"><label>Роль</label><input type="text" value="${currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : 'Сотрудник')}" readonly style="background: var(--bg-input);"></div>
+                <div class="form-group"><label>Доступ к статистике</label><input type="text" value="${currentUser.canViewStats ? 'Да' : 'Нет'}" readonly style="background: var(--bg-input);"></div>
             `;
         }
         
         function showTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
             document.getElementById(`${tab}Tab`).style.display = 'block';
-            
-            if (tab === 'history') {
-                loadReceiptsHistory();
-            } else if (tab === 'profile') {
-                loadProfile();
-            }
-            
-            // Обновляем активный пункт меню
+            if (tab === 'history') loadReceiptsHistory();
+            if (tab === 'profile') loadProfile();
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            if (event && event.target) {
-                event.target.closest('.nav-item').classList.add('active');
-            }
+            if (event && event.target) event.target.closest('.nav-item').classList.add('active');
         }
         
-        // Инициализация
         loadSpecialties();
+        loadDocumentCheckboxes();
         loadReceiptsHistory();
     </script>
 </body>

@@ -5,14 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ панель - Приемная комиссия</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="admin-style.css">
+    <link rel="stylesheet" href="style.css">
     <style>
+        .admin-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .admin-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .admin-user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logout-btn {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            padding: 8px 20px;
+            border-radius: 10px;
+        }
+        
         .tabs {
             display: flex;
             gap: 8px;
             padding: 0 32px;
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
         }
         
         .tab-btn {
@@ -21,13 +53,13 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            color: #6b7280;
+            color: var(--text-secondary);
             transition: all 0.3s;
         }
         
         .tab-btn.active {
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
         }
         
         .tab-content {
@@ -39,233 +71,327 @@
             display: block;
         }
         
-        .specialties-list {
-            background: white;
-            border-radius: 20px;
-            margin: 32px;
-            overflow: hidden;
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            padding: 32px;
         }
         
-        .specialty-item {
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-top: 8px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
         }
         
-        .specialty-info {
-            flex: 1;
+        .add-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 10px 20px;
+            border-radius: 10px;
         }
         
-        .specialty-code {
-            font-weight: 700;
-            color: #667eea;
-            font-family: monospace;
-            font-size: 16px;
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0 32px 32px 32px;
         }
         
-        .specialty-name {
-            margin-top: 4px;
-            color: #374151;
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
         }
         
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-            margin: 0 16px;
+        .data-table th,
+        .data-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
         }
         
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
+        .data-table th {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-weight: 600;
         }
         
-        .toggle-slider {
-            position: absolute;
+        .data-table td {
+            color: var(--text-secondary);
+        }
+        
+        .data-table tr:hover td {
+            background: var(--bg-input);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
             cursor: pointer;
+            border: none;
+            margin: 0 4px;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
-            transition: 0.3s;
-            border-radius: 24px;
-        }
-        
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .toggle-slider {
-            background-color: #10b981;
-        }
-        
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-        
-        .order-input {
-            width: 60px;
-            padding: 6px;
-            text-align: center;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            margin: 0 16px;
-        }
-        
-        .settings-form {
-            background: white;
-            border-radius: 20px;
-            margin: 32px;
-            padding: 32px;
-        }
-        
-        .checkbox-group {
-            display: flex;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            justify-content: center;
         }
         
-        .checkbox-group input {
-            width: 20px;
-            height: 20px;
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border);
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .checkbox-group-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: var(--bg-input);
+            border-radius: 12px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border-left: 4px solid var(--success);
+            padding: 12px 20px;
+            border-radius: 12px;
+            animation: slideIn 0.3s ease;
+            z-index: 1100;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div class="admin-header">
-        <h1>⚙️ Админ панель приемной комиссии</h1>
+        <h1>⚙️ Админ панель</h1>
         <div class="admin-user-info">
-            <span class="admin-name" id="adminName"></span>
+            <span id="adminName"></span>
             <button class="logout-btn" onclick="logout()">Выйти</button>
         </div>
     </div>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('employees')">👥 Сотрудники</button>
+        <button class="tab-btn active" onclick="switchTab('stats')">📊 Статистика</button>
+        <button class="tab-btn" onclick="switchTab('employees')">👥 Сотрудники</button>
         <button class="tab-btn" onclick="switchTab('specialties')">🎓 Специальности</button>
-        <button class="tab-btn" onclick="switchTab('documents')">📄 Типы документов</button>
+        <button class="tab-btn" onclick="switchTab('documents')">📄 Документы</button>
         <button class="tab-btn" onclick="switchTab('settings')">⚙️ Настройки</button>
-        <button class="tab-btn" onclick="switchTab('stats')">📊 Статистика</button>
     </div>
     
-    <!-- Вкладка сотрудников -->
-    <div id="employeesTab" class="tab-content active">
-        <div class="employees-section">
-            <div class="section-header">
-                <h2>👥 Управление сотрудниками</h2>
-                <button class="add-btn" onclick="openAddModal()">+ Добавить сотрудника</button>
-            </div>
-            <div class="table-wrapper">
-                <table class="employees-table">
-                    <thead>
-                        <tr><th>ФИО</th><th>Email</th><th>Должность</th><th>Телефон</th><th>Расписок</th><th>Статус</th><th>Действия</th></tr>
-                    </thead>
-                    <tbody id="employeesList"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Вкладка специальностей -->
-    <div id="specialtiesTab" class="tab-content">
-        <div class="specialties-list">
-            <div class="section-header">
-                <h2>🎓 Управление специальностями</h2>
-                <button class="add-btn" onclick="openSpecialtyModal()">+ Добавить специальность</button>
-            </div>
-            <div id="specialtiesList"></div>
-        </div>
-    </div>
-    
-    <!-- Вкладка типов документов -->
-    <div id="documentsTab" class="tab-content">
-        <div class="specialties-list">
-            <div class="section-header">
-                <h2>📄 Типы принимаемых документов</h2>
-                <button class="add-btn" onclick="openDocumentModal()">+ Добавить документ</button>
-            </div>
-            <div id="documentsList"></div>
-        </div>
-    </div>
-    
-    <!-- Вкладка настроек -->
-    <div id="settingsTab" class="tab-content">
-        <div class="settings-form">
-            <h2 style="margin-bottom: 24px;">⚙️ Настройки системы</h2>
-            <div class="checkbox-group">
-                <input type="checkbox" id="requireDiplomaNumber">
-                <label>Обязательное поле "Номер аттестата"</label>
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="requireScore">
-                <label>Обязательное поле "Баллы ГИА"</label>
-            </div>
-            <div class="form-group">
-                <label>Максимальное количество фотографий</label>
-                <input type="number" id="maxPhotos" min="0" max="10" style="width: 100px;">
-            </div>
-            <div class="form-group">
-                <label>Название организации</label>
-                <input type="text" id="companyName" style="width: 100%;">
-            </div>
-            <div class="form-group">
-                <label>Телефон для справок</label>
-                <input type="text" id="companyPhone" style="width: 100%;">
-            </div>
-            <button class="save-btn" onclick="saveSettings()">💾 Сохранить настройки</button>
-        </div>
-    </div>
-    
-    <!-- Вкладка статистики -->
-    <div id="statsTab" class="tab-content">
+    <!-- Статистика -->
+    <div id="statsTab" class="tab-content active">
         <div class="stats-container" id="statsContainer"></div>
+        <div class="table-wrapper">
+            <h3 style="margin-bottom: 16px;">📊 Статистика по сотрудникам</h3>
+            <table class="data-table" id="employeeStatsTable">
+                <thead><tr><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead>
+                <tbody id="employeeStatsBody"></tbody>
+            </table>
+        </div>
+        <div class="table-wrapper">
+            <h3 style="margin-bottom: 16px;">📊 Статистика по специальностям</h3>
+            <table class="data-table" id="specialtyStatsTable">
+                <thead><tr><th>Специальность</th><th>Код</th><th>Количество</th></tr></thead>
+                <tbody id="specialtyStatsBody"></tbody>
+            </table>
+        </div>
     </div>
     
-    <!-- Модальное окно для сотрудников -->
+    <!-- Сотрудники -->
+    <div id="employeesTab" class="tab-content">
+        <div class="section-header">
+            <h2>👥 Управление сотрудниками</h2>
+            <button class="add-btn" onclick="openEmployeeModal()">+ Добавить сотрудника</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Статистика</th><th>Статус</th><th>Действия</th></tr></thead>
+                <tbody id="employeesList"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Специальности -->
+    <div id="specialtiesTab" class="tab-content">
+        <div class="section-header">
+            <h2>🎓 Управление специальностями</h2>
+            <button class="add-btn" onclick="openSpecialtyModal()">+ Добавить специальность</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead><tr><th>Код</th><th>Название</th><th>Порядок</th><th>Статус</th><th>Действия</th></tr></thead>
+                <tbody id="specialtiesList"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Типы документов -->
+    <div id="documentsTab" class="tab-content">
+        <div class="section-header">
+            <h2>📄 Типы принимаемых документов</h2>
+            <button class="add-btn" onclick="openDocumentModal()">+ Добавить документ</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead><tr><th>Документ</th><th>Действия</th></tr></thead>
+                <tbody id="documentsList"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Настройки -->
+    <div id="settingsTab" class="tab-content">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Максимум фотографий</div>
+                <input type="number" id="maxPhotos" min="0" max="10" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: white; width: 100%; margin-top: 8px;">
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Название организации</div>
+                <input type="text" id="companyName" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: white; width: 100%; margin-top: 8px;">
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Телефон для справок</div>
+                <input type="text" id="companyPhone" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: white; width: 100%; margin-top: 8px;">
+            </div>
+        </div>
+        <div style="padding: 0 32px 32px 32px;">
+            <button onclick="saveSettings()" class="add-btn">💾 Сохранить настройки</button>
+        </div>
+    </div>
+    
+    <!-- Модальное окно сотрудника -->
     <div id="employeeModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">Добавить сотрудника</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <h3 id="employeeModalTitle">Добавить сотрудника</h3>
+                <button class="modal-close" onclick="closeEmployeeModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editEmail">
-                <div class="form-group">
-                    <label>ФИО</label>
-                    <input type="text" id="empName" placeholder="Иванов Иван Иванович">
+                <input type="hidden" id="editLogin">
+                <div class="form-group"><label>ФИО</label><input type="text" id="empName" placeholder="Иванов Иван Иванович"></div>
+                <div class="form-group"><label>Логин</label><input type="text" id="empLogin" placeholder="login"></div>
+                <div class="form-group"><label>Пароль</label><input type="password" id="empPassword" placeholder="••••••••"></div>
+                <div class="form-group"><label>Должность</label><input type="text" id="empPosition" placeholder="Специалист"></div>
+                <div class="form-group"><label>Телефон</label><input type="text" id="empPhone" placeholder="+7 (XXX) XXX-XX-XX"></div>
+                <div class="form-group"><label>Роль</label>
+                    <select id="empRole">
+                        <option value="employee">Только сотрудник</option>
+                        <option value="admin">Только администратор</option>
+                        <option value="both">Сотрудник + Администратор</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="empEmail" placeholder="email@college.ru">
+                <div class="form-group"><label>Доступ к статистике</label>
+                    <select id="empCanViewStats">
+                        <option value="true">Да</option>
+                        <option value="false">Нет</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                    <label>Пароль</label>
-                    <input type="password" id="empPassword" placeholder="••••••••">
-                </div>
-                <div class="form-group">
-                    <label>Должность</label>
-                    <input type="text" id="empPosition" placeholder="Специалист">
-                </div>
-                <div class="form-group">
-                    <label>Телефон</label>
-                    <input type="text" id="empPhone" placeholder="+7 (XXX) XXX-XX-XX">
-                </div>
-                <div class="form-group">
-                    <label>Статус</label>
+                <div class="form-group"><label>Статус</label>
                     <select id="empStatus">
                         <option value="true">Активен</option>
                         <option value="false">Неактивен</option>
@@ -273,13 +399,13 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="cancel-btn" onclick="closeModal()">Отмена</button>
-                <button class="save-btn" onclick="saveEmployee()">Сохранить</button>
+                <button class="action-btn" onclick="closeEmployeeModal()">Отмена</button>
+                <button class="add-btn" onclick="saveEmployee()">Сохранить</button>
             </div>
         </div>
     </div>
     
-    <!-- Модальное окно для специальностей -->
+    <!-- Модальное окно специальности -->
     <div id="specialtyModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -288,405 +414,19 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editSpecialtyKey">
-                <div class="form-group">
-                    <label>Код специальности</label>
-                    <input type="text" id="specialtyCode" placeholder="ЛА">
-                </div>
-                <div class="form-group">
-                    <label>Полное название</label>
-                    <input type="text" id="specialtyName" placeholder="24.02.01 Производство летательных аппаратов">
-                </div>
-                <div class="form-group">
-                    <label>Порядок отображения</label>
-                    <input type="number" id="specialtyOrder" value="99">
-                </div>
+                <div class="form-group"><label>Код</label><input type="text" id="specialtyCode" placeholder="ЛА"></div>
+                <div class="form-group"><label>Название</label><input type="text" id="specialtyName" placeholder="24.02.01 Производство..."></div>
+                <div class="form-group"><label>Порядок</label><input type="number" id="specialtyOrder" value="99"></div>
             </div>
             <div class="modal-footer">
-                <button class="cancel-btn" onclick="closeSpecialtyModal()">Отмена</button>
-                <button class="save-btn" onclick="saveSpecialty()">Сохранить</button>
+                <button class="action-btn" onclick="closeSpecialtyModal()">Отмена</button>
+                <button class="add-btn" onclick="saveSpecialty()">Сохранить</button>
             </div>
         </div>
     </div>
     
     <script src="config.js"></script>
     <script src="auth.js"></script>
-    <script>
-        // Проверка прав администратора
-        const currentUser = checkAuth();
-        if (!currentUser || currentUser.role !== 'admin') {
-            window.location.href = 'login.html';
-        }
-        
-        document.getElementById('adminName').innerHTML = `<span class="admin-avatar">A</span> ${currentUser.name}`;
-        
-        let currentTab = 'employees';
-        
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(`${tab}Tab`).classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if (tab === 'employees') loadEmployees();
-            if (tab === 'specialties') loadSpecialties();
-            if (tab === 'documents') loadDocuments();
-            if (tab === 'settings') loadSettings();
-            if (tab === 'stats') loadStats();
-        }
-        
-        // Загрузка сотрудников
-        function loadEmployees() {
-            const employees = getEmployees();
-            const tbody = document.getElementById('employeesList');
-            
-            tbody.innerHTML = employees.map(emp => `
-                <tr>
-                    <td>${emp.name}</td>
-                    <td>${emp.email}</td>
-                    <td>${emp.position || '-'}</td>
-                    <td>${emp.phone || '-'}</td>
-                    <td>${emp.receiptCount || 0}</td>
-                    <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
-                    <td class="action-buttons">
-                        <button class="action-btn edit-btn" onclick="editEmployee('${emp.email}')">✏️</button>
-                        <button class="action-btn delete-btn" onclick="deleteEmployeeConfirm('${emp.email}')">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // Загрузка специальностей
-        function loadSpecialties() {
-            const config = getConfig();
-            const container = document.getElementById('specialtiesList');
-            
-            const specialtiesArray = Object.entries(config.specialties)
-                .sort((a, b) => (a[1].order || 999) - (b[1].order || 999));
-            
-            container.innerHTML = specialtiesArray.map(([key, data]) => `
-                <div class="specialty-item">
-                    <div class="specialty-info">
-                        <div class="specialty-code">${data.code}</div>
-                        <div class="specialty-name">${key}</div>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <label class="toggle-switch">
-                            <input type="checkbox" ${data.active !== false ? 'checked' : ''} onchange="toggleSpecialty('${key}', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <input type="number" class="order-input" value="${data.order || 999}" onchange="updateSpecialtyOrder('${key}', this.value)">
-                        <button class="action-btn edit-btn" onclick="editSpecialty('${key}')">✏️</button>
-                        <button class="action-btn delete-btn" onclick="deleteSpecialty('${key}')">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function toggleSpecialty(key, isActive) {
-            const config = getConfig();
-            if (config.specialties[key]) {
-                config.specialties[key].active = isActive;
-                saveConfig(config);
-                showToast('Статус обновлен', 'success');
-            }
-        }
-        
-        function updateSpecialtyOrder(key, order) {
-            const config = getConfig();
-            if (config.specialties[key]) {
-                config.specialties[key].order = parseInt(order);
-                saveConfig(config);
-                loadSpecialties();
-                showToast('Порядок обновлен', 'success');
-            }
-        }
-        
-        function openSpecialtyModal() {
-            document.getElementById('specialtyModalTitle').textContent = 'Добавить специальность';
-            document.getElementById('editSpecialtyKey').value = '';
-            document.getElementById('specialtyCode').value = '';
-            document.getElementById('specialtyName').value = '';
-            document.getElementById('specialtyOrder').value = '99';
-            document.getElementById('specialtyModal').style.display = 'flex';
-        }
-        
-        function editSpecialty(key) {
-            const config = getConfig();
-            const data = config.specialties[key];
-            document.getElementById('specialtyModalTitle').textContent = 'Редактировать специальность';
-            document.getElementById('editSpecialtyKey').value = key;
-            document.getElementById('specialtyCode').value = data.code;
-            document.getElementById('specialtyName').value = key;
-            document.getElementById('specialtyOrder').value = data.order || 99;
-            document.getElementById('specialtyModal').style.display = 'flex';
-        }
-        
-        function saveSpecialty() {
-            const oldKey = document.getElementById('editSpecialtyKey').value;
-            const code = document.getElementById('specialtyCode').value;
-            const name = document.getElementById('specialtyName').value;
-            const order = parseInt(document.getElementById('specialtyOrder').value);
-            
-            if (!code || !name) {
-                showToast('Заполните все поля', 'error');
-                return;
-            }
-            
-            const config = getConfig();
-            
-            if (oldKey && oldKey !== name) {
-                delete config.specialties[oldKey];
-            }
-            
-            config.specialties[name] = {
-                code: code,
-                name: name.split(' ').slice(1).join(' ') || name,
-                active: true,
-                order: order
-            };
-            
-            saveConfig(config);
-            closeSpecialtyModal();
-            loadSpecialties();
-            showToast('Специальность сохранена', 'success');
-        }
-        
-        function deleteSpecialty(key) {
-            if (confirm('Удалить специальность?')) {
-                const config = getConfig();
-                delete config.specialties[key];
-                saveConfig(config);
-                loadSpecialties();
-                showToast('Специальность удалена', 'success');
-            }
-        }
-        
-        function closeSpecialtyModal() {
-            document.getElementById('specialtyModal').style.display = 'none';
-        }
-        
-        // Загрузка типов документов
-        function loadDocuments() {
-            const config = getConfig();
-            const container = document.getElementById('documentsList');
-            
-            container.innerHTML = config.documentTypes.map((doc, index) => `
-                <div class="specialty-item">
-                    <div class="specialty-info">
-                        <div class="specialty-name">${doc}</div>
-                    </div>
-                    <div>
-                        <button class="action-btn edit-btn" onclick="editDocument(${index})">✏️</button>
-                        <button class="action-btn delete-btn" onclick="deleteDocument(${index})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function openDocumentModal() {
-            const newDoc = prompt('Введите название документа:');
-            if (newDoc) {
-                const config = getConfig();
-                config.documentTypes.push(newDoc);
-                saveConfig(config);
-                loadDocuments();
-                showToast('Документ добавлен', 'success');
-            }
-        }
-        
-        function editDocument(index) {
-            const config = getConfig();
-            const newName = prompt('Редактировать документ:', config.documentTypes[index]);
-            if (newName) {
-                config.documentTypes[index] = newName;
-                saveConfig(config);
-                loadDocuments();
-                showToast('Документ обновлен', 'success');
-            }
-        }
-        
-        function deleteDocument(index) {
-            if (confirm('Удалить документ?')) {
-                const config = getConfig();
-                config.documentTypes.splice(index, 1);
-                saveConfig(config);
-                loadDocuments();
-                showToast('Документ удален', 'success');
-            }
-        }
-        
-        // Загрузка настроек
-        function loadSettings() {
-            const config = getConfig();
-            document.getElementById('requireDiplomaNumber').checked = config.settings.requireDiplomaNumber || false;
-            document.getElementById('requireScore').checked = config.settings.requireScore || false;
-            document.getElementById('maxPhotos').value = config.settings.maxPhotosCount || 4;
-            document.getElementById('companyName').value = config.settings.companyName || 'Приемная комиссия';
-            document.getElementById('companyPhone').value = config.settings.companyPhone || '(499) 156-40-01';
-        }
-        
-        function saveSettings() {
-            const config = getConfig();
-            config.settings = {
-                requireDiplomaNumber: document.getElementById('requireDiplomaNumber').checked,
-                requireScore: document.getElementById('requireScore').checked,
-                maxPhotosCount: parseInt(document.getElementById('maxPhotos').value),
-                companyName: document.getElementById('companyName').value,
-                companyPhone: document.getElementById('companyPhone').value
-            };
-            saveConfig(config);
-            showToast('Настройки сохранены', 'success');
-        }
-        
-        // Загрузка статистики
-        function loadStats() {
-            const stats = getSystemStats();
-            const container = document.getElementById('statsContainer');
-            
-            container.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-value">${stats.totalEmployees}</div>
-                    <div class="stat-label">Сотрудников</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📄</div>
-                    <div class="stat-value">${stats.totalReceipts}</div>
-                    <div class="stat-label">Всего расписок</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-value">${stats.todayReceipts}</div>
-                    <div class="stat-label">Сегодня</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🟢</div>
-                    <div class="stat-value">${stats.activeUsers}</div>
-                    <div class="stat-label">Активных</div>
-                </div>
-                <div class="stat-card" style="grid-column: span 2;">
-                    <div class="stat-label">📊 Распределение по специальностям</div>
-                    <div style="margin-top: 16px;">
-                        ${Object.entries(stats.specialtyStats).map(([code, count]) => `
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span>${code}</span>
-                                <span style="font-weight: 700;">${count}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Управление сотрудниками
-        function openAddModal() {
-            document.getElementById('modalTitle').textContent = 'Добавить сотрудника';
-            document.getElementById('editEmail').value = '';
-            document.getElementById('empName').value = '';
-            document.getElementById('empEmail').value = '';
-            document.getElementById('empPassword').value = '';
-            document.getElementById('empPosition').value = '';
-            document.getElementById('empPhone').value = '';
-            document.getElementById('empStatus').value = 'true';
-            document.getElementById('employeeModal').style.display = 'flex';
-        }
-        
-        function editEmployee(email) {
-            const users = getAllUsers();
-            const emp = users.find(u => u.email === email);
-            if (!emp) return;
-            
-            document.getElementById('modalTitle').textContent = 'Редактировать сотрудника';
-            document.getElementById('editEmail').value = email;
-            document.getElementById('empName').value = emp.name;
-            document.getElementById('empEmail').value = emp.email;
-            document.getElementById('empPassword').value = '';
-            document.getElementById('empPosition').value = emp.position || '';
-            document.getElementById('empPhone').value = emp.phone || '';
-            document.getElementById('empStatus').value = emp.isActive ? 'true' : 'false';
-            document.getElementById('employeeModal').style.display = 'flex';
-        }
-        
-        function saveEmployee() {
-            const editEmail = document.getElementById('editEmail').value;
-            const email = document.getElementById('empEmail').value;
-            const name = document.getElementById('empName').value;
-            const password = document.getElementById('empPassword').value;
-            const position = document.getElementById('empPosition').value;
-            const phone = document.getElementById('empPhone').value;
-            const isActive = document.getElementById('empStatus').value === 'true';
-            
-            if (!name || !email) {
-                showToast('Заполните обязательные поля', 'error');
-                return;
-            }
-            
-            if (editEmail) {
-                const updates = { name, position, phone, isActive };
-                if (password) updates.password = password;
-                const result = updateEmployee(editEmail, updates);
-                if (result.success) {
-                    showToast('Сотрудник обновлен', 'success');
-                    closeModal();
-                    loadEmployees();
-                } else {
-                    showToast(result.error, 'error');
-                }
-            } else {
-                if (!password) {
-                    showToast('Введите пароль', 'error');
-                    return;
-                }
-                const result = addEmployee({ email, name, password, position, phone });
-                if (result.success) {
-                    showToast('Сотрудник добавлен', 'success');
-                    closeModal();
-                    loadEmployees();
-                } else {
-                    showToast(result.error, 'error');
-                }
-            }
-        }
-        
-        function deleteEmployeeConfirm(email) {
-            if (confirm('Вы уверены?')) {
-                const result = deleteEmployee(email);
-                if (result.success) {
-                    showToast('Сотрудник удален', 'success');
-                    loadEmployees();
-                } else {
-                    showToast(result.error, 'error');
-                }
-            }
-        }
-        
-        function closeModal() {
-            document.getElementById('employeeModal').style.display = 'none';
-        }
-        
-        function showToast(message, type) {
-            const toast = document.createElement('div');
-            toast.className = `toast-notification toast-${type}`;
-            toast.innerHTML = `
-                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
-                <div class="toast-content">
-                    <div class="toast-title">${type === 'success' ? 'Успех' : 'Ошибка'}</div>
-                    <div class="toast-message">${message}</div>
-                </div>
-                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-        
-        // Инициализация
-        loadEmployees();
-        
-        window.onclick = (event) => {
-            if (event.target === document.getElementById('employeeModal')) closeModal();
-            if (event.target === document.getElementById('specialtyModal')) closeSpecialtyModal();
-        };
-    </script>
+    <script src="admin.js"></script>
 </body>
 </html>

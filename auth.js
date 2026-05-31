@@ -1,4 +1,4 @@
-// ========== СИСТЕМА АВТОРИЗАЦИИ С ИНТЕГРАЦИЕЙ СОТРУДНИКОВ ==========
+// ========== СИСТЕМА АВТОРИЗАЦИИ ==========
 
 const STORAGE_KEYS = {
     USERS: 'receipt_system_users',
@@ -7,51 +7,61 @@ const STORAGE_KEYS = {
     COUNTERS: 'receipt_system_counters'
 };
 
-// Инициализация системы
+function hashPassword(password) {
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString();
+}
+
+// Инициализация пользователей (используем логин вместо email)
 function initializeSystem() {
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
         const defaultUsers = {
-            'admin@college.ru': {
+            'admin': {
                 id: 'admin_1',
-                email: 'admin@college.ru',
+                login: 'admin',
                 password: hashPassword('admin123'),
                 name: 'Администратор Системы',
-                role: 'admin',
+                role: 'admin',  // admin, employee, both
                 position: 'Главный администратор',
                 phone: '+7 (499) 156-40-01',
                 createdAt: new Date().toISOString(),
                 isActive: true,
-                canEditSpecialties: true,
-                canEditEmployees: true,
-                canViewAllReceipts: true
+                canViewStats: true
             },
-            'osokin@college.ru': {
+            'osokin': {
                 id: 'emp_1',
-                email: 'osokin@college.ru',
+                login: 'osokin',
                 password: hashPassword('123456'),
                 name: 'Осокин Константин Вячеславович',
-                role: 'employee',
+                role: 'both',  // может быть и сотрудником, и админом
                 position: 'Ответственный секретарь',
                 phone: '+7 (499) 156-40-02',
                 createdAt: new Date().toISOString(),
                 isActive: true,
-                receiptCount: 0
+                receiptCount: 0,
+                canViewStats: true  // доступ к статистике
             },
-            'tsygankova@college.ru': {
+            'tsygankova': {
                 id: 'emp_2',
-                email: 'tsygankova@college.ru',
+                login: 'tsygankova',
                 password: hashPassword('123456'),
                 name: 'Цыганкова Юлия Игоревна',
-                role: 'employee',
+                role: 'both',
                 position: 'Заместитель ответственного секретаря',
                 phone: '+7 (499) 156-40-03',
                 createdAt: new Date().toISOString(),
                 isActive: true,
-                receiptCount: 0
+                receiptCount: 0,
+                canViewStats: true
             },
-            'vorobyeva@college.ru': {
+            'vorobyeva': {
                 id: 'emp_3',
-                email: 'vorobyeva@college.ru',
+                login: 'vorobyeva',
                 password: hashPassword('123456'),
                 name: 'Воробьева Ирина Алексеевна',
                 role: 'employee',
@@ -59,11 +69,12 @@ function initializeSystem() {
                 phone: '+7 (499) 156-40-04',
                 createdAt: new Date().toISOString(),
                 isActive: true,
-                receiptCount: 0
+                receiptCount: 0,
+                canViewStats: false
             },
-            'khanakova@college.ru': {
+            'khanakova': {
                 id: 'emp_4',
-                email: 'khanakova@college.ru',
+                login: 'khanakova',
                 password: hashPassword('123456'),
                 name: 'Ханакова Анастасия Ивановна',
                 role: 'employee',
@@ -71,7 +82,8 @@ function initializeSystem() {
                 phone: '+7 (499) 156-40-05',
                 createdAt: new Date().toISOString(),
                 isActive: true,
-                receiptCount: 0
+                receiptCount: 0,
+                canViewStats: false
             }
         };
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(defaultUsers));
@@ -86,20 +98,9 @@ function initializeSystem() {
     }
 }
 
-function hashPassword(password) {
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-        const char = password.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return hash.toString();
-}
-
-// Вход в систему
-function login(email, password) {
+function login(login, password) {
     const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-    const user = users[email];
+    const user = users[login];
     
     if (!user) {
         return { success: false, error: 'Пользователь не найден' };
@@ -113,25 +114,21 @@ function login(email, password) {
         return { success: false, error: 'Неверный пароль' };
     }
     
-    // Создаем сессию с полными данными сотрудника
     const session = {
         userId: user.id,
-        email: user.email,
+        login: user.login,
         name: user.name,
         role: user.role,
         position: user.position,
         phone: user.phone,
+        canViewStats: user.canViewStats || false,
         loginTime: new Date().toISOString(),
-        token: generateToken()
+        token: Math.random().toString(36).substr(2) + Date.now().toString(36)
     };
     
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
     
     return { success: true, user: session };
-}
-
-function generateToken() {
-    return Math.random().toString(36).substr(2) + Date.now().toString(36);
 }
 
 function logout() {
@@ -153,10 +150,14 @@ function getCurrentUser() {
     return user ? JSON.parse(user) : null;
 }
 
-function checkRole(allowedRoles) {
-    const user = checkAuth();
-    if (!user) return false;
-    return allowedRoles.includes(user.role);
+function isAdmin() {
+    const user = getCurrentUser();
+    return user && (user.role === 'admin' || user.role === 'both');
+}
+
+function canViewStats() {
+    const user = getCurrentUser();
+    return user && (user.canViewStats || user.role === 'admin');
 }
 
 // ========== УПРАВЛЕНИЕ СОТРУДНИКАМИ ==========
@@ -168,39 +169,40 @@ function getAllUsers() {
 
 function getEmployees() {
     const users = getAllUsers();
-    return users.filter(u => u.role === 'employee');
+    return users.filter(u => u.role === 'employee' || u.role === 'both');
 }
 
 function addEmployee(employeeData) {
     const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
     
-    if (users[employeeData.email]) {
-        return { success: false, error: 'Пользователь с таким email уже существует' };
+    if (users[employeeData.login]) {
+        return { success: false, error: 'Пользователь с таким логином уже существует' };
     }
     
     const newUser = {
         id: 'emp_' + Date.now(),
-        email: employeeData.email,
+        login: employeeData.login,
         password: hashPassword(employeeData.password),
         name: employeeData.name,
-        role: 'employee',
+        role: employeeData.role || 'employee',
         position: employeeData.position,
         phone: employeeData.phone,
         createdAt: new Date().toISOString(),
         isActive: true,
-        receiptCount: 0
+        receiptCount: 0,
+        canViewStats: employeeData.canViewStats || false
     };
     
-    users[employeeData.email] = newUser;
+    users[employeeData.login] = newUser;
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     
     return { success: true, user: newUser };
 }
 
-function updateEmployee(email, updates) {
+function updateEmployee(login, updates) {
     const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
     
-    if (!users[email]) {
+    if (!users[login]) {
         return { success: false, error: 'Пользователь не найден' };
     }
     
@@ -208,24 +210,24 @@ function updateEmployee(email, updates) {
         updates.password = hashPassword(updates.password);
     }
     
-    users[email] = { ...users[email], ...updates };
+    users[login] = { ...users[login], ...updates };
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     
     return { success: true };
 }
 
-function deleteEmployee(email) {
+function deleteEmployee(login) {
     const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
     
-    if (!users[email]) {
+    if (!users[login]) {
         return { success: false, error: 'Пользователь не найден' };
     }
     
-    if (users[email].role === 'admin') {
-        return { success: false, error: 'Нельзя удалить администратора' };
+    if (users[login].login === 'admin') {
+        return { success: false, error: 'Нельзя удалить главного администратора' };
     }
     
-    delete users[email];
+    delete users[login];
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     
     return { success: true };
@@ -242,14 +244,14 @@ function saveReceipt(receiptData) {
     });
     localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(receipts));
     
-    // Обновляем счетчик сотрудника
+    // Обновляем счётчик сотрудника
     const currentUser = getCurrentUser();
-    if (currentUser && currentUser.role === 'employee') {
+    if (currentUser && (currentUser.role === 'employee' || currentUser.role === 'both')) {
         const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-        const user = users[currentUser.email];
+        const user = users[currentUser.login];
         if (user) {
             user.receiptCount = (user.receiptCount || 0) + 1;
-            users[currentUser.email] = user;
+            users[currentUser.login] = user;
             localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
         }
     }
@@ -258,8 +260,8 @@ function saveReceipt(receiptData) {
 function getReceipts(filters = {}) {
     let receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
     
-    if (filters.employeeEmail) {
-        receipts = receipts.filter(r => r.employeeEmail === filters.employeeEmail);
+    if (filters.employeeLogin) {
+        receipts = receipts.filter(r => r.employeeLogin === filters.employeeLogin);
     }
     
     if (filters.startDate) {
@@ -270,11 +272,15 @@ function getReceipts(filters = {}) {
         receipts = receipts.filter(r => new Date(r.createdAt) <= new Date(filters.endDate));
     }
     
+    if (filters.specialty) {
+        receipts = receipts.filter(r => r.specialty === filters.specialty);
+    }
+    
     return receipts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
-function getEmployeeReceipts(employeeEmail) {
-    return getReceipts({ employeeEmail });
+function getEmployeeReceipts(employeeLogin) {
+    return getReceipts({ employeeLogin });
 }
 
 function getReceiptCounter(specialtyCode) {
@@ -296,7 +302,7 @@ function getSystemStats() {
     // Статистика по сотрудникам
     const employeeStats = getEmployees().map(emp => ({
         name: emp.name,
-        email: emp.email,
+        login: emp.login,
         receiptCount: emp.receiptCount || 0,
         position: emp.position,
         isActive: emp.isActive
@@ -310,13 +316,22 @@ function getSystemStats() {
         specialtyStats[code]++;
     });
     
+    // Статистика по месяцам
+    const monthlyStats = {};
+    receipts.forEach(receipt => {
+        const month = new Date(receipt.createdAt).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+        if (!monthlyStats[month]) monthlyStats[month] = 0;
+        monthlyStats[month]++;
+    });
+    
     return {
-        totalEmployees: users.filter(u => u.role === 'employee').length,
+        totalEmployees: users.filter(u => u.role === 'employee' || u.role === 'both').length,
         totalReceipts: receipts.length,
         todayReceipts: todayReceipts.length,
         activeUsers: users.filter(u => u.isActive).length,
         employeeStats,
         specialtyStats,
+        monthlyStats,
         lastReceipts: receipts.slice(0, 10)
     };
 }

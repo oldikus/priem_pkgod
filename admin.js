@@ -1,154 +1,324 @@
-// ========== АДМИН ЛОГИКА ==========
+// ========== АДМИН ПАНЕЛЬ ==========
 
-// Проверка прав администратора
 const currentUser = checkAuth();
-if (!currentUser || currentUser.role !== 'admin') {
+if (!currentUser || !(currentUser.role === 'admin' || currentUser.role === 'both')) {
     window.location.href = 'login.html';
 }
 
-document.getElementById('adminName').textContent = currentUser.name;
+document.getElementById('adminName').innerHTML = `👑 ${currentUser.name}`;
 
-// Загрузка статистики
-function loadStats() {
-    const users = getAllUsers();
-    const receipts = JSON.parse(localStorage.getItem('receipt_system_receipts') || '[]');
-    const today = new Date().toDateString();
-    const todayReceipts = receipts.filter(r => new Date(r.createdAt).toDateString() === today);
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById(`${tab}Tab`).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
     
-    document.getElementById('totalEmployees').textContent = users.filter(u => u.role === 'employee').length;
-    document.getElementById('totalReceipts').textContent = receipts.length;
-    document.getElementById('todayReceipts').textContent = todayReceipts.length;
-    document.getElementById('activeUsers').textContent = users.filter(u => u.isActive).length;
+    if (tab === 'stats') loadStats();
+    if (tab === 'employees') loadEmployees();
+    if (tab === 'specialties') loadSpecialties();
+    if (tab === 'documents') loadDocuments();
+    if (tab === 'settings') loadSettings();
 }
 
-// Загрузка списка сотрудников
+// ========== СТАТИСТИКА ==========
+function loadStats() {
+    const stats = getSystemStats();
+    
+    document.getElementById('statsContainer').innerHTML = `
+        <div class="stat-card"><div class="stat-label">👥 Сотрудников</div><div class="stat-value">${stats.totalEmployees}</div></div>
+        <div class="stat-card"><div class="stat-label">📄 Всего расписок</div><div class="stat-value">${stats.totalReceipts}</div></div>
+        <div class="stat-card"><div class="stat-label">📅 Сегодня</div><div class="stat-value">${stats.todayReceipts}</div></div>
+        <div class="stat-card"><div class="stat-label">🟢 Активных</div><div class="stat-value">${stats.activeUsers}</div></div>
+    `;
+    
+    document.getElementById('employeeStatsBody').innerHTML = stats.employeeStats.map(emp => `
+        <tr><td>${emp.name}</td><td>${emp.position}</td><td>${emp.receiptCount}</td><td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td></tr>
+    `).join('');
+    
+    document.getElementById('specialtyStatsBody').innerHTML = Object.entries(stats.specialtyStats).map(([code, count]) => `
+        <tr><td>${code}</td><td>-</td><td>${count}</td></tr>
+    `).join('');
+}
+
+// ========== УПРАВЛЕНИЕ СОТРУДНИКАМИ ==========
 function loadEmployees() {
-    const users = getAllUsers();
-    const employees = users.filter(u => u.role === 'employee');
+    const employees = getEmployees();
     const tbody = document.getElementById('employeesList');
     
     tbody.innerHTML = employees.map(emp => `
         <tr>
-            <td>${emp.name}</td>
-            <td>${emp.email}</td>
-            <td>${emp.position || '-'}</td>
-            <td>${emp.phone || '-'}</td>
-            <td>
-                <span style="color: ${emp.isActive ? '#10b981' : '#ef4444'}">
-                    ${emp.isActive ? 'Активен' : 'Неактивен'}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-primary" style="margin-right: 8px;" onclick="editEmployee('${emp.email}')">✏️</button>
-                <button class="btn btn-danger" onclick="deleteEmployeeConfirm('${emp.email}')">🗑️</button>
-            </td>
+            <td>${emp.name}</td><td>${emp.login}</td><td>${emp.position || '-'}</td>
+            <td>${emp.role === 'admin' ? 'Админ' : (emp.role === 'both' ? 'Админ+Сотрудник' : 'Сотрудник')}</td>
+            <td>${emp.canViewStats ? '✅ Да' : '❌ Нет'}</td>
+            <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
+            <td><button class="action-btn" onclick="editEmployee('${emp.login}')">✏️</button><button class="action-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button></td>
         </tr>
     `).join('');
 }
 
-// Открытие модального окна добавления
-function openAddModal() {
-    document.getElementById('modalTitle').textContent = 'Добавить сотрудника';
-    document.getElementById('editEmail').value = '';
+function openEmployeeModal() {
+    document.getElementById('employeeModalTitle').textContent = 'Добавить сотрудника';
+    document.getElementById('editLogin').value = '';
     document.getElementById('empName').value = '';
-    document.getElementById('empEmail').value = '';
+    document.getElementById('empLogin').value = '';
     document.getElementById('empPassword').value = '';
     document.getElementById('empPosition').value = '';
     document.getElementById('empPhone').value = '';
+    document.getElementById('empRole').value = 'employee';
+    document.getElementById('empCanViewStats').value = 'false';
     document.getElementById('empStatus').value = 'true';
     document.getElementById('employeeModal').style.display = 'flex';
 }
 
-// Редактирование сотрудника
-function editEmployee(email) {
+function editEmployee(login) {
     const users = getAllUsers();
-    const emp = users.find(u => u.email === email);
+    const emp = users.find(u => u.login === login);
     if (!emp) return;
     
-    document.getElementById('modalTitle').textContent = 'Редактировать сотрудника';
-    document.getElementById('editEmail').value = email;
+    document.getElementById('employeeModalTitle').textContent = 'Редактировать сотрудника';
+    document.getElementById('editLogin').value = login;
     document.getElementById('empName').value = emp.name;
-    document.getElementById('empEmail').value = emp.email;
+    document.getElementById('empLogin').value = emp.login;
     document.getElementById('empPassword').value = '';
     document.getElementById('empPosition').value = emp.position || '';
     document.getElementById('empPhone').value = emp.phone || '';
+    document.getElementById('empRole').value = emp.role || 'employee';
+    document.getElementById('empCanViewStats').value = emp.canViewStats ? 'true' : 'false';
     document.getElementById('empStatus').value = emp.isActive ? 'true' : 'false';
     document.getElementById('employeeModal').style.display = 'flex';
 }
 
-// Сохранение сотрудника
 function saveEmployee() {
-    const editEmail = document.getElementById('editEmail').value;
-    const email = document.getElementById('empEmail').value;
+    const editLogin = document.getElementById('editLogin').value;
+    const login = document.getElementById('empLogin').value;
     const name = document.getElementById('empName').value;
     const password = document.getElementById('empPassword').value;
     const position = document.getElementById('empPosition').value;
     const phone = document.getElementById('empPhone').value;
+    const role = document.getElementById('empRole').value;
+    const canViewStats = document.getElementById('empCanViewStats').value === 'true';
     const isActive = document.getElementById('empStatus').value === 'true';
     
-    if (!name || !email) {
-        alert('Заполните обязательные поля');
+    if (!name || !login) {
+        showToast('Заполните обязательные поля', 'error');
         return;
     }
     
-    if (editEmail) {
-        // Редактирование
-        const updates = { name, position, phone, isActive };
+    if (editLogin) {
+        const updates = { name, position, phone, role, canViewStats, isActive };
         if (password) updates.password = password;
-        const result = updateEmployee(editEmail, updates);
+        const result = updateEmployee(editLogin, updates);
         if (result.success) {
-            alert('Сотрудник обновлен');
-            closeModal();
+            showToast('Сотрудник обновлён', 'success');
+            closeEmployeeModal();
             loadEmployees();
             loadStats();
         } else {
-            alert(result.error);
+            showToast(result.error, 'error');
         }
     } else {
-        // Добавление
         if (!password) {
-            alert('Введите пароль');
+            showToast('Введите пароль', 'error');
             return;
         }
-        const result = addEmployee({ email, name, password, position, phone });
+        const result = addEmployee({ login, name, password, position, phone, role, canViewStats });
         if (result.success) {
-            alert('Сотрудник добавлен');
-            closeModal();
+            showToast('Сотрудник добавлен', 'success');
+            closeEmployeeModal();
             loadEmployees();
             loadStats();
         } else {
-            alert(result.error);
+            showToast(result.error, 'error');
         }
     }
 }
 
-// Подтверждение удаления
-function deleteEmployeeConfirm(email) {
-    if (confirm('Вы уверены, что хотите удалить этого сотрудника?')) {
-        const result = deleteEmployee(email);
+function deleteEmployeeConfirm(login) {
+    if (confirm(`Удалить сотрудника ${login}?`)) {
+        const result = deleteEmployee(login);
         if (result.success) {
-            alert('Сотрудник удален');
+            showToast('Сотрудник удалён', 'success');
             loadEmployees();
             loadStats();
         } else {
-            alert(result.error);
+            showToast(result.error, 'error');
         }
     }
 }
 
-// Закрытие модального окна
-function closeModal() {
+function closeEmployeeModal() {
     document.getElementById('employeeModal').style.display = 'none';
+}
+
+// ========== УПРАВЛЕНИЕ СПЕЦИАЛЬНОСТЯМИ ==========
+function loadSpecialties() {
+    const config = getConfig();
+    const tbody = document.getElementById('specialtiesList');
+    
+    tbody.innerHTML = Object.entries(config.specialties)
+        .sort((a, b) => (a[1].order || 999) - (b[1].order || 999))
+        .map(([key, data]) => `
+            <tr>
+                <td>${data.code}</td><td>${key}</td>
+                <td><input type="number" value="${data.order || 999}" style="width: 60px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 4px; color: white;" onchange="updateSpecialtyOrder('${key}', this.value)"></td>
+                <td><span class="status-badge ${data.active !== false ? 'status-active' : 'status-inactive'}">${data.active !== false ? 'Активна' : 'Скрыта'}</span></td>
+                <td><button class="action-btn" onclick="toggleSpecialty('${key}')">${data.active !== false ? '🔒 Скрыть' : '🔓 Показать'}</button><button class="action-btn" onclick="editSpecialty('${key}')">✏️</button><button class="action-btn" onclick="deleteSpecialty('${key}')">🗑️</button></td>
+            </tr>
+        `).join('');
+}
+
+function toggleSpecialty(key) {
+    const config = getConfig();
+    if (config.specialties[key]) {
+        config.specialties[key].active = config.specialties[key].active === false ? true : false;
+        saveConfig(config);
+        loadSpecialties();
+        showToast('Статус обновлён', 'success');
+    }
+}
+
+function updateSpecialtyOrder(key, order) {
+    const config = getConfig();
+    if (config.specialties[key]) {
+        config.specialties[key].order = parseInt(order);
+        saveConfig(config);
+        loadSpecialties();
+        showToast('Порядок обновлён', 'success');
+    }
+}
+
+function openSpecialtyModal() {
+    document.getElementById('specialtyModalTitle').textContent = 'Добавить специальность';
+    document.getElementById('editSpecialtyKey').value = '';
+    document.getElementById('specialtyCode').value = '';
+    document.getElementById('specialtyName').value = '';
+    document.getElementById('specialtyOrder').value = '99';
+    document.getElementById('specialtyModal').style.display = 'flex';
+}
+
+function editSpecialty(key) {
+    const config = getConfig();
+    const data = config.specialties[key];
+    document.getElementById('specialtyModalTitle').textContent = 'Редактировать специальность';
+    document.getElementById('editSpecialtyKey').value = key;
+    document.getElementById('specialtyCode').value = data.code;
+    document.getElementById('specialtyName').value = key;
+    document.getElementById('specialtyOrder').value = data.order || 99;
+    document.getElementById('specialtyModal').style.display = 'flex';
+}
+
+function saveSpecialty() {
+    const oldKey = document.getElementById('editSpecialtyKey').value;
+    const code = document.getElementById('specialtyCode').value;
+    const name = document.getElementById('specialtyName').value;
+    const order = parseInt(document.getElementById('specialtyOrder').value);
+    
+    if (!code || !name) {
+        showToast('Заполните все поля', 'error');
+        return;
+    }
+    
+    const config = getConfig();
+    if (oldKey && oldKey !== name) delete config.specialties[oldKey];
+    config.specialties[name] = { code, name: name.split(' ').slice(1).join(' ') || name, active: true, order };
+    saveConfig(config);
+    closeSpecialtyModal();
+    loadSpecialties();
+    showToast('Специальность сохранена', 'success');
+}
+
+function deleteSpecialty(key) {
+    if (confirm('Удалить специальность?')) {
+        const config = getConfig();
+        delete config.specialties[key];
+        saveConfig(config);
+        loadSpecialties();
+        showToast('Специальность удалена', 'success');
+    }
+}
+
+function closeSpecialtyModal() {
+    document.getElementById('specialtyModal').style.display = 'none';
+}
+
+// ========== УПРАВЛЕНИЕ ДОКУМЕНТАМИ ==========
+function loadDocuments() {
+    const config = getConfig();
+    const tbody = document.getElementById('documentsList');
+    
+    tbody.innerHTML = config.documentTypes.map((doc, index) => `
+        <tr>
+            <td>${doc}</td>
+            <td><button class="action-btn" onclick="editDocument(${index})">✏️</button><button class="action-btn" onclick="deleteDocument(${index})">🗑️</button></td>
+        </tr>
+    `).join('');
+}
+
+function openDocumentModal() {
+    const newDoc = prompt('Введите название документа:');
+    if (newDoc) {
+        const config = getConfig();
+        config.documentTypes.push(newDoc);
+        saveConfig(config);
+        loadDocuments();
+        showToast('Документ добавлен', 'success');
+    }
+}
+
+function editDocument(index) {
+    const config = getConfig();
+    const newName = prompt('Редактировать документ:', config.documentTypes[index]);
+    if (newName) {
+        config.documentTypes[index] = newName;
+        saveConfig(config);
+        loadDocuments();
+        showToast('Документ обновлён', 'success');
+    }
+}
+
+function deleteDocument(index) {
+    if (confirm('Удалить документ?')) {
+        const config = getConfig();
+        config.documentTypes.splice(index, 1);
+        saveConfig(config);
+        loadDocuments();
+        showToast('Документ удалён', 'success');
+    }
+}
+
+// ========== НАСТРОЙКИ ==========
+function loadSettings() {
+    const config = getConfig();
+    document.getElementById('maxPhotos').value = config.settings.maxPhotosCount || 4;
+    document.getElementById('companyName').value = config.settings.companyName || 'Приемная комиссия';
+    document.getElementById('companyPhone').value = config.settings.companyPhone || '(499) 156-40-01';
+}
+
+function saveSettings() {
+    const config = getConfig();
+    config.settings = {
+        maxPhotosCount: parseInt(document.getElementById('maxPhotos').value),
+        companyName: document.getElementById('companyName').value,
+        companyPhone: document.getElementById('companyPhone').value
+    };
+    saveConfig(config);
+    showToast('Настройки сохранены', 'success');
+}
+
+// ========== ВСПОМОГАТЕЛЬНЫЕ ==========
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.style.borderLeftColor = type === 'success' ? 'var(--success)' : 'var(--danger)';
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 
 // Инициализация
 loadStats();
-loadEmployees();
 
-// Закрытие модального окна при клике вне его
 window.onclick = (event) => {
-    const modal = document.getElementById('employeeModal');
-    if (event.target === modal) {
-        closeModal();
-    }
+    if (event.target === document.getElementById('employeeModal')) closeEmployeeModal();
+    if (event.target === document.getElementById('specialtyModal')) closeSpecialtyModal();
 };
