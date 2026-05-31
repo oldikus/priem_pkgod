@@ -1,34 +1,62 @@
 /* ========== БАЗОВЫЕ ПЕРЕМЕННЫЕ (СВЕТЛАЯ ТЕМА) ========== */
 :root {
-    --bg-primary: #f5f7fa;
-    --bg-secondary: #ffffff;
-    --bg-card: #ffffff;
-    --bg-input: #f8fafc;
-    --text-primary: #1a1f36;
-    --text-secondary: #64748b;
-    --border: #e2e8f0;
-    --primary: #4f46e5;
-    --primary-dark: #4338ca;
-    --secondary: #7c3aed;
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --info: #3b82f6;
-    --shadow: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.1);
+    color-scheme: light;
+    --v-theme-background: 248, 247, 250;
+    --v-theme-surface: 255, 255, 255;
+    --v-theme-primary: 41, 74, 108;
+    --v-theme-secondary: 128, 131, 144;
+    --v-theme-success: 40, 199, 111;
+    --v-theme-warning: 255, 159, 67;
+    --v-theme-error: 255, 76, 81;
+    --v-theme-info: 0, 186, 209;
+    --v-border-color: 47, 43, 61;
+    --v-border-opacity: 0.12;
+    --v-shadow-key-umbra-color: 47, 43, 61;
+    
+    --bg-primary: rgb(var(--v-theme-background));
+    --bg-secondary: rgb(var(--v-theme-surface));
+    --bg-card: rgb(var(--v-theme-surface));
+    --bg-input: rgb(var(--v-theme-background));
+    --text-primary: rgb(47, 43, 61);
+    --text-secondary: rgba(47, 43, 61, 0.7);
+    --border: rgba(var(--v-border-color), var(--v-border-opacity));
+    --primary: rgb(var(--v-theme-primary));
+    --primary-dark: rgb(31, 56, 82);
+    --secondary: rgb(var(--v-theme-secondary));
+    --success: rgb(var(--v-theme-success));
+    --danger: rgb(var(--v-theme-error));
+    --warning: rgb(var(--v-theme-warning));
+    --info: rgb(var(--v-theme-info));
+    --shadow: 0 1px 3px rgba(var(--v-shadow-key-umbra-color), 0.1);
+    --shadow-lg: 0 10px 25px -5px rgba(var(--v-shadow-key-umbra-color), 0.16);
 }
 
 /* ========== ТЁМНАЯ ТЕМА ========== */
 body.dark {
-    --bg-primary: #0a0e27;
-    --bg-secondary: #0d1117;
-    --bg-card: #11152f;
-    --bg-input: #1a1f3e;
-    --text-primary: #ffffff;
-    --text-secondary: #8b92b0;
-    --border: #1e2342;
-    --shadow: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.4);
+    color-scheme: dark;
+    --v-theme-background: 37, 41, 60;
+    --v-theme-surface: 47, 51, 73;
+    --v-theme-primary: 255, 76, 81;
+    --v-theme-secondary: 128, 131, 144;
+    --v-border-color: 225, 222, 245;
+    --v-shadow-key-umbra-color: 19, 17, 32;
+    
+    --bg-primary: rgb(var(--v-theme-background));
+    --bg-secondary: rgb(var(--v-theme-surface));
+    --bg-card: rgb(var(--v-theme-surface));
+    --bg-input: rgb(53, 58, 82);
+    --text-primary: rgb(225, 222, 245);
+    --text-secondary: rgba(225, 222, 245, 0.7);
+    --border: rgba(var(--v-border-color), 0.12);
+    --primary: rgb(var(--v-theme-primary));
+    --primary-dark: rgb(230, 68, 73);
+    --secondary: rgb(var(--v-theme-secondary));
+    --success: rgb(40, 199, 111);
+    --danger: rgb(255, 76, 81);
+    --warning: rgb(255, 159, 67);
+    --info: rgb(0, 186, 209);
+    --shadow: 0 1px 3px rgba(var(--v-shadow-key-umbra-color), 0.16);
+    --shadow-lg: 0 10px 25px -5px rgba(var(--v-shadow-key-umbra-color), 0.24);
 }
 
 /* ========== РЕЖИМ С ОБВОДКОЙ ========== */
@@ -116,7 +144,7 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), 0.2);
 }
 
 .form-row {
@@ -142,7 +170,7 @@ body {
 
 .submit-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 5px 15px rgba(var(--v-theme-primary), 0.3);
 }
 
 .submit-btn:disabled {
@@ -262,7 +290,7 @@ body {
 }
 
 .data-table tr:hover td {
-    background: rgba(79, 70, 229, 0.05);
+    background: rgba(var(--v-theme-primary), 0.05);
 }
 
 /* ========== СТАТУСЫ ========== */
@@ -276,12 +304,12 @@ body {
 }
 
 .status-active {
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(var(--v-theme-success), 0.15);
     color: var(--success);
 }
 
 .status-inactive {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(var(--v-theme-error), 0.15);
     color: var(--danger);
 }
 
@@ -289,7 +317,7 @@ body {
     display: inline-block;
     width: 28px;
     height: 28px;
-    background: rgba(79, 70, 229, 0.15);
+    background: rgba(var(--v-theme-primary), 0.15);
     border-radius: 8px;
     text-align: center;
     line-height: 28px;
@@ -388,17 +416,17 @@ body {
 
 .btn-print {
     padding: 6px 14px;
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: rgba(var(--v-theme-success), 0.15);
+    border: 1px solid rgba(var(--v-theme-success), 0.3);
     border-radius: 8px;
-    color: #10b981;
+    color: var(--success);
     cursor: pointer;
     font-size: 12px;
     transition: all 0.2s;
 }
 
 .btn-print:hover {
-    background: #10b981;
+    background: var(--success);
     color: white;
 }
 
@@ -434,15 +462,15 @@ body {
 }
 
 .alert-success {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: rgba(var(--v-theme-success), 0.15);
+    color: var(--success);
+    border: 1px solid rgba(var(--v-theme-success), 0.3);
 }
 
 .alert-error {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(var(--v-theme-error), 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(var(--v-theme-error), 0.3);
 }
 
 .spinner {
