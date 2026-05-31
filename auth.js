@@ -1,7 +1,23 @@
-// auth.js (Supabase версия)
+// auth.js (Supabase версия без import)
 const STORAGE_KEYS = {
     CURRENT_USER: 'receipt_system_current_user'
 };
+
+// Ждем загрузки Supabase
+function waitForSupabase() {
+    return new Promise((resolve) => {
+        if (window.supabase) {
+            resolve(window.supabase);
+            return;
+        }
+        const checkInterval = setInterval(() => {
+            if (window.supabase) {
+                clearInterval(checkInterval);
+                resolve(window.supabase);
+            }
+        }, 100);
+    });
+}
 
 // Хеширование пароля
 async function hashPassword(password) {
@@ -14,33 +30,43 @@ async function hashPassword(password) {
 // Вход через Supabase
 async function login(login, password) {
     try {
-        // Сначала хешируем пароль (как в БД)
+        await waitForSupabase();
+        
+        // Хешируем пароль
         const hashedPassword = await hashPassword(password);
         
         // Ищем пользователя
-        const { data: users, error } = await supabase
+        const { data: users, error } = await window.supabase
             .from('users')
             .select('*')
-            .eq('login', login)
-            .eq('password', hashedPassword);
+            .eq('login', login);
         
         if (error) throw error;
         
         if (!users || users.length === 0) {
-            // Пробуем с plain паролем (для существующих данных)
-            const { data: plainUsers } = await supabase
-                .from('users')
-                .select('*')
-                .eq('login', login)
-                .eq('password', password);
-            
-            if (!plainUsers || plainUsers.length === 0) {
-                return { success: false, error: 'Неверный логин или пароль' };
-            }
-            users = plainUsers;
+            return { success: false, error: 'Пользователь не найден' };
         }
         
         const user = users[0];
+        
+        // Проверка пароля (сравниваем с хешем)
+        let passwordValid = false;
+        
+        if (user.password === hashedPassword) {
+            passwordValid = true;
+        } else if (user.password === password) {
+            // Для обратной совместимости с plain паролями
+            passwordValid = true;
+            // Обновляем пароль на хеш
+            await window.supabase
+                .from('users')
+                .update({ password: hashedPassword })
+                .eq('login', login);
+        }
+        
+        if (!passwordValid) {
+            return { success: false, error: 'Неверный пароль' };
+        }
         
         if (!user.is_active) {
             return { success: false, error: 'Аккаунт деактивирован' };
@@ -60,6 +86,7 @@ async function login(login, password) {
         return { success: true, user: session };
         
     } catch (error) {
+        console.error('Login error:', error);
         return { success: false, error: error.message };
     }
 }
@@ -86,7 +113,9 @@ function getCurrentUser() {
 // ========== РАБОТА С ДАННЫМИ ==========
 
 async function getAllReceipts() {
-    const { data, error } = await supabase
+    await waitForSupabase();
+    
+    const { data, error } = await window.supabase
         .from('receipts')
         .select('*')
         .order('created_at', { ascending: false });
@@ -99,7 +128,9 @@ async function getAllReceipts() {
 }
 
 async function saveReceipt(receiptData) {
-    const { data, error } = await supabase
+    await waitForSupabase();
+    
+    const { data, error } = await window.supabase
         .from('receipts')
         .insert([receiptData])
         .select();
@@ -109,7 +140,9 @@ async function saveReceipt(receiptData) {
 }
 
 async function getEmployeeReceipts(employeeLogin) {
-    const { data, error } = await supabase
+    await waitForSupabase();
+    
+    const { data, error } = await window.supabase
         .from('receipts')
         .select('*')
         .eq('employee_login', employeeLogin)
@@ -120,7 +153,9 @@ async function getEmployeeReceipts(employeeLogin) {
 }
 
 async function getEmployees() {
-    const { data, error } = await supabase
+    await waitForSupabase();
+    
+    const { data, error } = await window.supabase
         .from('users')
         .select('*')
         .neq('role', 'admin');
@@ -130,7 +165,9 @@ async function getEmployees() {
 }
 
 async function getAllUsers() {
-    const { data, error } = await supabase
+    await waitForSupabase();
+    
+    const { data, error } = await window.supabase
         .from('users')
         .select('*');
     
@@ -139,9 +176,11 @@ async function getAllUsers() {
 }
 
 async function addEmployee(employeeData) {
+    await waitForSupabase();
+    
     const hashedPassword = await hashPassword(employeeData.password);
     
-    const { data, error } = await supabase
+    const { data, error } = await window.supabase
         .from('users')
         .insert([{
             login: employeeData.login,
@@ -160,7 +199,14 @@ async function addEmployee(employeeData) {
 }
 
 async function updateEmployee(login, updates) {
-    const { data, error } = await supabase
+    await waitForSupabase();
+    
+    // Если обновляем пароль, хешируем его
+    if (updates.password) {
+        updates.password = await hashPassword(updates.password);
+    }
+    
+    const { data, error } = await window.supabase
         .from('users')
         .update(updates)
         .eq('login', login);
@@ -170,7 +216,9 @@ async function updateEmployee(login, updates) {
 }
 
 async function deleteEmployee(login) {
-    const { error } = await supabase
+    await waitForSupabase();
+    
+    const { error } = await window.supabase
         .from('users')
         .delete()
         .eq('login', login);
@@ -217,11 +265,7 @@ async function getSystemStats() {
 }
 
 async function getConfig() {
-    const { data, error } = await supabase
-        .from('settings')
-        .select('*');
-    
-    if (error) return {};
+    await waitForSupabase();
     
     const config = {
         documentTypes: [],
@@ -234,7 +278,7 @@ async function getConfig() {
     };
     
     // Загружаем специальности
-    const { data: specialties } = await supabase
+    const { data: specialties } = await window.supabase
         .from('specialties')
         .select('*')
         .eq('active', true)
@@ -252,7 +296,7 @@ async function getConfig() {
     }
     
     // Загружаем типы документов
-    const { data: docs } = await supabase
+    const { data: docs } = await window.supabase
         .from('document_types')
         .select('name')
         .eq('active', true);
@@ -262,8 +306,12 @@ async function getConfig() {
     }
     
     // Загружаем настройки
-    if (data) {
-        data.forEach(setting => {
+    const { data: settings } = await window.supabase
+        .from('settings')
+        .select('*');
+    
+    if (settings) {
+        settings.forEach(setting => {
             if (setting.key === 'max_photos_count') config.settings.maxPhotosCount = parseInt(setting.value);
             if (setting.key === 'company_name') config.settings.companyName = setting.value;
             if (setting.key === 'company_phone') config.settings.companyPhone = setting.value;
@@ -273,8 +321,26 @@ async function getConfig() {
     return config;
 }
 
+async function saveConfig(config) {
+    await waitForSupabase();
+    
+    // Сохраняем настройки
+    const settings = [
+        { key: 'max_photos_count', value: String(config.settings.maxPhotosCount) },
+        { key: 'company_name', value: config.settings.companyName },
+        { key: 'company_phone', value: config.settings.companyPhone }
+    ];
+    
+    for (const setting of settings) {
+        await window.supabase
+            .from('settings')
+            .upsert(setting, { onConflict: 'key' });
+    }
+    
+    return { success: true };
+}
+
 function getReceiptCounter(specialtyCode) {
-    // Получаем счётчик из localStorage (можно перенести в БД)
     const counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
     const current = counters[specialtyCode] || 0;
     counters[specialtyCode] = current + 1;
@@ -282,7 +348,7 @@ function getReceiptCounter(specialtyCode) {
     return current + 1;
 }
 
-// Экспорт глобальных функций
+// Сохраняем функции в глобальный объект window
 window.login = login;
 window.logout = logout;
 window.checkAuth = checkAuth;
@@ -297,6 +363,7 @@ window.updateEmployee = updateEmployee;
 window.deleteEmployee = deleteEmployee;
 window.getSystemStats = getSystemStats;
 window.getConfig = getConfig;
+window.saveConfig = saveConfig;
 window.getReceiptCounter = getReceiptCounter;
 
 console.log('✅ auth.js (Supabase version) загружен');
