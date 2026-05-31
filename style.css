@@ -1,6 +1,6 @@
 :root {
     --bg-primary: #0a0e27;
-    --bg-secondary: #11152f;
+    --bg-secondary: #0d1117;
     --bg-card: #151a3a;
     --bg-input: #1a1f3e;
     --text-primary: #ffffff;
@@ -13,6 +13,7 @@
     --danger: #ef4444;
     --warning: #f59e0b;
     --info: #3b82f6;
+    --gradient: linear-gradient(135deg, #6c5ce7, #a855f7);
 }
 
 * {
@@ -28,14 +29,13 @@ body {
     min-height: 100vh;
 }
 
-/* Стили для форм */
+/* Формы */
 .form-container {
     background: var(--bg-card);
-    border-radius: 20px;
+    border-radius: 24px;
     padding: 32px;
-    margin: 0 auto;
     border: 1px solid var(--border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
 }
 
 .form-group {
@@ -45,8 +45,9 @@ body {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-secondary);
+    font-size: 14px;
 }
 
 .form-group input,
@@ -56,8 +57,8 @@ body {
     padding: 12px 14px;
     background: var(--bg-input);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 14px;
+    font-size: 14px;
     color: var(--text-primary);
     transition: all 0.2s;
 }
@@ -70,75 +71,69 @@ body {
     box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
 }
 
-button {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    border: none;
-    padding: 14px 24px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(108, 92, 231, 0.4);
+.form-group input[readonly] {
+    opacity: 0.7;
+    cursor: default;
 }
 
 /* Чекбоксы */
 .checkbox-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    padding: 10px;
+    gap: 10px;
+    padding: 12px;
     background: var(--bg-input);
-    border-radius: 12px;
+    border-radius: 14px;
 }
 
 .checkbox-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 6px 12px;
     background: var(--bg-card);
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
+    font-size: 13px;
 }
 
 .checkbox-item:hover {
     background: var(--primary);
+    color: white;
 }
 
 .checkbox-item input {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
     accent-color: var(--primary);
 }
 
-.checkbox-item label {
-    margin: 0;
-    cursor: pointer;
-    font-weight: normal;
+/* Статусы */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
 }
 
-/* Анимации */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.status-active {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
 }
 
-.fade-in {
-    animation: fadeIn 0.3s ease;
+.status-inactive {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
 }
 
 /* Скроллбар */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -147,9 +142,24 @@ button:hover {
 
 ::-webkit-scrollbar-thumb {
     background: var(--primary);
-    border-radius: 4px;
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--secondary);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
 }

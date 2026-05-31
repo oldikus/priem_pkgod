@@ -32,6 +32,7 @@ function loadStats() {
         <tr>
             <td>${emp.name}</td>
             <td>${emp.position || '-'}</td>
+            <td>${emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник')}</td>
             <td>${emp.receiptCount || 0}</td>
             <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
         </tr>
@@ -51,12 +52,12 @@ function loadEmployees() {
             <td>${emp.name}</td>
             <td>${emp.login}</td>
             <td>${emp.position || '-'}</td>
-            <td>${emp.role === 'admin' ? 'Админ' : (emp.role === 'both' ? 'Админ+Сотрудник' : 'Сотрудник')}</td>
-            <td>${emp.canViewStats ? '✅ Да' : '❌ Нет'}</td>
+            <td>${emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник')}</td>
+            <td>${emp.receiptCount || 0}</td>
             <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
-            <td>
-                <button class="action-btn" onclick="editEmployee('${emp.login}')">✏️</button>
-                <button class="action-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button>
+            <td class="action-buttons">
+                <button class="action-btn edit-btn" onclick="editEmployee('${emp.login}')">✏️</button>
+                <button class="action-btn delete-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button>
             </td>
         </tr>
     `).join('');
@@ -71,7 +72,6 @@ function openEmployeeModal() {
     document.getElementById('empPosition').value = '';
     document.getElementById('empPhone').value = '';
     document.getElementById('empRole').value = 'employee';
-    document.getElementById('empCanViewStats').value = 'false';
     document.getElementById('empStatus').value = 'true';
     document.getElementById('employeeModal').style.display = 'flex';
 }
@@ -89,7 +89,6 @@ function editEmployee(login) {
     document.getElementById('empPosition').value = emp.position || '';
     document.getElementById('empPhone').value = emp.phone || '';
     document.getElementById('empRole').value = emp.role || 'employee';
-    document.getElementById('empCanViewStats').value = emp.canViewStats ? 'true' : 'false';
     document.getElementById('empStatus').value = emp.isActive ? 'true' : 'false';
     document.getElementById('employeeModal').style.display = 'flex';
 }
@@ -102,7 +101,6 @@ function saveEmployee() {
     const position = document.getElementById('empPosition').value;
     const phone = document.getElementById('empPhone').value;
     const role = document.getElementById('empRole').value;
-    const canViewStats = document.getElementById('empCanViewStats').value === 'true';
     const isActive = document.getElementById('empStatus').value === 'true';
     
     if (!name || !login) {
@@ -112,7 +110,7 @@ function saveEmployee() {
     
     let result;
     if (editLogin) {
-        const updates = { name, position, phone, role, canViewStats, isActive };
+        const updates = { name, position, phone, role, isActive };
         if (password) updates.password = password;
         result = updateEmployee(editLogin, updates);
     } else {
@@ -120,7 +118,7 @@ function saveEmployee() {
             showToast('Введите пароль', 'error');
             return;
         }
-        result = addEmployee({ login, name, password, position, phone, role, canViewStats });
+        result = addEmployee({ login, name, password, position, phone, role });
     }
     
     if (result.success) {
@@ -150,8 +148,7 @@ function closeEmployeeModal() {
     document.getElementById('employeeModal').style.display = 'none';
 }
 
-// ========== УПРАВЛЕНИЕ СПЕЦИАЛЬНОСТЯМИ ==========
-
+// Управление специальностями
 function loadSpecialties() {
     const config = getConfig();
     const tbody = document.getElementById('specialtiesList');
@@ -162,9 +159,13 @@ function loadSpecialties() {
             <tr>
                 <td>${data.code}</td>
                 <td>${key}</td>
-                <td><input type="number" value="${data.order || 999}" style="width: 60px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 4px; color: white;" onchange="updateSpecialtyOrder('${key}', this.value)"></td>
+                <td><input type="number" value="${data.order || 999}" style="width: 60px;" onchange="updateSpecialtyOrder('${key}', this.value)"></td>
                 <td><span class="status-badge ${data.active !== false ? 'status-active' : 'status-inactive'}">${data.active !== false ? 'Активна' : 'Скрыта'}</span></td>
-                <td><button class="action-btn" onclick="toggleSpecialty('${key}')">${data.active !== false ? '🔒 Скрыть' : '🔓 Показать'}</button><button class="action-btn" onclick="editSpecialty('${key}')">✏️</button><button class="action-btn" onclick="deleteSpecialty('${key}')">🗑️</button></td>
+                <td>
+                    <button class="action-btn" onclick="toggleSpecialty('${key}')">${data.active !== false ? '🔒' : '🔓'}</button>
+                    <button class="action-btn edit-btn" onclick="editSpecialty('${key}')">✏️</button>
+                    <button class="action-btn delete-btn" onclick="deleteSpecialty('${key}')">🗑️</button>
+                </td>
             </tr>
         `).join('');
 }
@@ -243,8 +244,7 @@ function closeSpecialtyModal() {
     document.getElementById('specialtyModal').style.display = 'none';
 }
 
-// ========== УПРАВЛЕНИЕ ДОКУМЕНТАМИ ==========
-
+// Управление документами
 function loadDocuments() {
     const config = getConfig();
     const tbody = document.getElementById('documentsList');
@@ -252,7 +252,10 @@ function loadDocuments() {
     tbody.innerHTML = config.documentTypes.map((doc, index) => `
         <tr>
             <td>${doc}</td>
-            <td><button class="action-btn" onclick="editDocument(${index})">✏️</button><button class="action-btn" onclick="deleteDocument(${index})">🗑️</button></td>
+            <td>
+                <button class="action-btn edit-btn" onclick="editDocument(${index})">✏️</button>
+                <button class="action-btn delete-btn" onclick="deleteDocument(${index})">🗑️</button>
+            </td>
         </tr>
     `).join('');
 }
@@ -289,8 +292,7 @@ function deleteDocument(index) {
     }
 }
 
-// ========== НАСТРОЙКИ ==========
-
+// Настройки
 function loadSettings() {
     const config = getConfig();
     document.getElementById('maxPhotos').value = config.settings.maxPhotosCount || 4;
@@ -309,12 +311,18 @@ function saveSettings() {
     showToast('Настройки сохранены', 'success');
 }
 
-// ========== ВСПОМОГАТЕЛЬНЫЕ ==========
-
 function showToast(message, type) {
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.style.borderLeftColor = type === 'success' ? 'var(--success)' : 'var(--danger)';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.background = 'var(--bg-card)';
+    toast.style.borderLeft = `4px solid ${type === 'success' ? 'var(--success)' : 'var(--danger)'}`;
+    toast.style.padding = '12px 20px';
+    toast.style.borderRadius = '12px';
+    toast.style.zIndex = '1100';
+    toast.style.animation = 'slideIn 0.3s ease';
     toast.innerHTML = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);

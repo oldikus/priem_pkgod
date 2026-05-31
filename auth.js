@@ -1,4 +1,4 @@
-// ========== СИСТЕМА АВТОРИЗАЦИИ (LOCAL STORAGE) ==========
+// ========== СИСТЕМА АВТОРИЗАЦИИ ==========
 
 const STORAGE_KEYS = {
     USERS: 'receipt_system_users',
@@ -54,7 +54,7 @@ function initializeUsers() {
             login: 'tsygankova',
             password: hashPassword('123456'),
             name: 'Цыганкова Юлия Игоревна',
-            role: 'both',
+            role: 'manager',
             position: 'Заместитель ответственного секретаря',
             phone: '+7 (499) 156-40-03',
             createdAt: new Date().toISOString(),
@@ -68,7 +68,7 @@ function initializeUsers() {
             password: hashPassword('123456'),
             name: 'Воробьева Ирина Алексеевна',
             role: 'employee',
-            position: 'Специалист',
+            position: 'Специалист архива',
             phone: '+7 (499) 156-40-04',
             createdAt: new Date().toISOString(),
             isActive: true,
@@ -81,7 +81,7 @@ function initializeUsers() {
             password: hashPassword('123456'),
             name: 'Ханакова Анастасия Ивановна',
             role: 'employee',
-            position: 'Специалист',
+            position: 'Специалист архива',
             phone: '+7 (499) 156-40-05',
             createdAt: new Date().toISOString(),
             isActive: true,
@@ -118,7 +118,7 @@ function login(login, password) {
         role: user.role,
         position: user.position,
         phone: user.phone,
-        canViewStats: user.canViewStats || false,
+        canViewStats: user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager',
         loginTime: new Date().toISOString()
     };
     
@@ -154,7 +154,7 @@ function isAdmin() {
 
 function canViewStats() {
     const user = getCurrentUser();
-    return user && (user.canViewStats || user.role === 'admin');
+    return user && (user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager');
 }
 
 // ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ==========
@@ -166,7 +166,7 @@ function getAllUsers() {
 
 function getEmployees() {
     const users = getAllUsers();
-    return users.filter(u => u.role === 'employee' || u.role === 'both');
+    return users.filter(u => u.role !== 'admin');
 }
 
 function addEmployee(employeeData) {
@@ -187,7 +187,7 @@ function addEmployee(employeeData) {
         createdAt: new Date().toISOString(),
         isActive: true,
         receiptCount: 0,
-        canViewStats: employeeData.canViewStats || false
+        canViewStats: employeeData.role === 'manager' || employeeData.role === 'both'
     };
     
     users[employeeData.login] = newUser;
@@ -245,6 +245,10 @@ function getReceipts(filters = {}) {
     return receipts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
+function getAllReceipts() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+}
+
 function getEmployeeReceipts(employeeLogin) {
     return getReceipts({ employeeLogin });
 }
@@ -270,6 +274,7 @@ function getSystemStats() {
         login: emp.login,
         receiptCount: emp.receiptCount || 0,
         position: emp.position,
+        role: emp.role,
         isActive: emp.isActive
     }));
     
@@ -281,7 +286,7 @@ function getSystemStats() {
     });
     
     return {
-        totalEmployees: users.filter(u => u.role === 'employee' || u.role === 'both').length,
+        totalEmployees: users.filter(u => u.role !== 'admin').length,
         totalReceipts: receipts.length,
         todayReceipts: todayReceipts.length,
         activeUsers: users.filter(u => u.isActive).length,
@@ -293,4 +298,4 @@ function getSystemStats() {
 // ИНИЦИАЛИЗАЦИЯ
 initializeUsers();
 
-console.log('✅ auth.js загружен, система готова');
+console.log('✅ auth.js загружен');
