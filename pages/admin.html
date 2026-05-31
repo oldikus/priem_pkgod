@@ -7,7 +7,7 @@
 
 <div class="accordion">
     <div class="accordion-header" onclick="toggleAccordion(this)"><span>👥 Управление сотрудниками</span><span class="arrow">▼</span></div>
-    <div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openEmployeeModal()">+ Добавить сотрудника</button></div><div class="table-container"><table class="data-table"><thead><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Расписок</th><th>Статус</th><th>Действия</th><tr></thead><tbody id="adminEmployeesList"></tbody></table></div></div>
+    <div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openEmployeeModal()">+ Добавить сотрудника</button></div><div class="table-container"><table class="data-table"><thead><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Расписок</th><th>Статус</th><th>Действия</th><tr></thead><tbody id="adminEmployeesList"></tbody></tr></div></div>
 </div>
 
 <div class="accordion">
@@ -17,7 +17,7 @@
 
 <div class="accordion">
     <div class="accordion-header" onclick="toggleAccordion(this)"><span>📄 Типы документов</span><span class="arrow">▼</span></div>
-    <div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openDocumentModal()">+ Добавить документ</button></div><div class="table-container"><table class="data-table"><thead><tr><th>Документ</th><th>Действия</th><tr></thead><tbody id="adminDocumentsList"></tbody></table></div></div>
+    <div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openDocumentModal()">+ Добавить документ</button></div><div class="table-container"><table class="data-table"><thead><tr><th>Документ</th><th>Действия</th></td></thead><tbody id="adminDocumentsList"></tbody></table></div></div>
 </div>
 
 <div class="accordion">
@@ -30,35 +30,43 @@
     <div class="accordion-content"><div class="table-container"><table class="data-table"><tbody><tr><td style="width:200px">Максимум фотографий</td><td><input type="number" id="settingMaxPhotos" min="0" max="10" style="width:100px"></td><td><button class="action-btn" onclick="saveMaxPhotos()">Сохранить</button></td></tr>
     <tr><td style="width:200px">Название организации</td><td><input type="text" id="settingCompanyName" style="width:100%"></td><td><button class="action-btn" onclick="saveCompanyName()">Сохранить</button></td></tr>
     <tr><td style="width:200px">Телефон для справок</td><td><input type="text" id="settingCompanyPhone" style="width:100%"></td><td><button class="action-btn" onclick="saveCompanyPhone()">Сохранить</button></td></tr>
-    </tbody></tr></div></div>
+    </tbody></table></div></div>
 </div>
 
 <script>
+    // ========== АККОРДЕОНЫ ==========
     function toggleAccordion(el) { 
         el.classList.toggle('open'); 
         var content = el.nextElementSibling;
         if (content) content.classList.toggle('show');
     }
     
+    // ========== СТАТИСТИКА ==========
     function loadAdminStats() {
         var stats = getSystemStats();
         var grid = document.getElementById('adminStatsGrid');
         if (grid) {
             grid.innerHTML = 
-                '<div class="stat-card"><div class="stat-value">' + stats.totalEmployees + '</div><div class="stat-label">Сотрудников</div></div>' +
-                '<div class="stat-card"><div class="stat-value">' + stats.totalReceipts + '</div><div class="stat-label">Всего расписок</div></div>' +
-                '<div class="stat-card"><div class="stat-value">' + stats.todayReceipts + '</div><div class="stat-label">Сегодня</div></div>' +
-                '<div class="stat-card"><div class="stat-value">' + stats.activeUsers + '</div><div class="stat-label">Активных</div></div>';
+                '<div class="stat-card"><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+                '<div class="stat-card"><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+                '<div class="stat-card"><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+                '<div class="stat-card"><div class="stat-value">' + (stats.activeUsers || 0) + '</div><div class="stat-label">Активных</div></div>';
         }
     }
     
+    // ========== СОТРУДНИКИ ==========
     function loadAdminEmployees() {
         var employees = getEmployees();
         var html = '';
         for (var i = 0; i < employees.length; i++) {
             var emp = employees[i];
             var roleText = emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник');
-            html += '<tr><td>' + emp.name + '</td><td>' + emp.login + '</td><td>' + (emp.position || '-') + '</td><td>' + roleText + '</td><td>' + (emp.receiptCount || 0) + '</td>' +
+            html += '<tr>' +
+                '<td>' + emp.name + '</td>' +
+                '<td>' + emp.login + '</td>' +
+                '<td>' + (emp.position || '-') + '</td>' +
+                '<td>' + roleText + '</td>' +
+                '<td>' + (emp.receiptCount || 0) + '</td>' +
                 '<td><span class="status-badge ' + (emp.isActive ? 'status-active' : 'status-inactive') + '">' + (emp.isActive ? 'Активен' : 'Неактивен') + '</span></td>' +
                 '<td><button class="action-btn" onclick="editEmployee(\'' + emp.login + '\')">✏️</button><button class="action-btn" onclick="deleteEmployeeConfirm(\'' + emp.login + '\')">🗑️</button></td>' +
                 '</tr>';
@@ -67,6 +75,41 @@
         if (container) container.innerHTML = html;
     }
     
+    function editEmployee(login) {
+        var users = getAllUsers();
+        var emp = null;
+        for (var i = 0; i < users.length; i++) {
+            if (users[i].login === login) { emp = users[i]; break; }
+        }
+        if (!emp) return;
+        
+        if (window.openEmployeeModal) {
+            window.openEmployeeModal();
+            document.getElementById('editLogin').value = emp.login;
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empLogin').value = emp.login;
+            document.getElementById('empPassword').value = '';
+            document.getElementById('empPosition').value = emp.position || '';
+            document.getElementById('empPhone').value = emp.phone || '';
+            document.getElementById('empRole').value = emp.role || 'employee';
+            document.getElementById('empStatus').value = emp.isActive ? 'true' : 'false';
+        }
+    }
+    
+    function deleteEmployeeConfirm(login) {
+        if (confirm('Удалить сотрудника ' + login + '?')) {
+            var result = deleteEmployee(login);
+            if (result.success) {
+                if (window.showToast) window.showToast('Сотрудник удалён', 'success');
+                loadAdminEmployees();
+                loadAdminStats();
+            } else {
+                if (window.showToast) window.showToast(result.error, 'error');
+            }
+        }
+    }
+    
+    // ========== СПЕЦИАЛЬНОСТИ ==========
     function loadAdminSpecialties() {
         var config = getConfig();
         var entries = Object.entries(config.specialties);
@@ -75,28 +118,94 @@
         for (var i = 0; i < entries.length; i++) {
             var key = entries[i][0];
             var data = entries[i][1];
-            html += '<tr><td>' + data.code + '</td><td>' + key + '</td>' +
+            html += '<tr>' +
+                '<td>' + data.code + '</td>' +
+                '<td>' + key + '</td>' +
                 '<td><input type="number" value="' + (data.order || 999) + '" style="width:60px" onchange="updateSpecialtyOrder(\'' + key.replace(/'/g, "\\'") + '\', this.value)"></td>' +
                 '<td><span class="status-badge ' + (data.active !== false ? 'status-active' : 'status-inactive') + '">' + (data.active !== false ? 'Активна' : 'Скрыта') + '</span></td>' +
-                '<td><button class="action-btn" onclick="toggleSpecialtyAdmin(\'' + key.replace(/'/g, "\\'") + '\')">' + (data.active !== false ? '🔒' : '🔓') + '</button><button class="action-btn" onclick="editSpecialtyAdmin(\'' + key.replace(/'/g, "\\'") + '\')">✏️</button><button class="action-btn" onclick="deleteSpecialtyAdmin(\'' + key.replace(/'/g, "\\'") + '\')">🗑️</button></td>' +
+                '<td><button class="action-btn" onclick="toggleSpecialty(\'' + key.replace(/'/g, "\\'") + '\')">' + (data.active !== false ? '🔒' : '🔓') + '</button><button class="action-btn" onclick="editSpecialty(\'' + key.replace(/'/g, "\\'") + '\')">✏️</button><button class="action-btn" onclick="deleteSpecialty(\'' + key.replace(/'/g, "\\'") + '\')">🗑️</button></td>' +
                 '</tr>';
         }
         var container = document.getElementById('adminSpecialtiesList');
         if (container) container.innerHTML = html;
     }
     
+    function toggleSpecialty(key) {
+        var config = getConfig();
+        if (config.specialties[key]) {
+            config.specialties[key].active = !config.specialties[key].active;
+            saveConfig(config);
+            loadAdminSpecialties();
+            if (window.showToast) window.showToast('Статус обновлён', 'success');
+        }
+    }
+    
+    function updateSpecialtyOrder(key, order) {
+        var config = getConfig();
+        if (config.specialties[key]) {
+            config.specialties[key].order = parseInt(order);
+            saveConfig(config);
+            loadAdminSpecialties();
+            if (window.showToast) window.showToast('Порядок обновлён', 'success');
+        }
+    }
+    
+    function editSpecialty(key) {
+        var config = getConfig();
+        var data = config.specialties[key];
+        if (window.openSpecialtyModal) {
+            window.openSpecialtyModal();
+            document.getElementById('editSpecialtyKey').value = key;
+            document.getElementById('specialtyCode').value = data.code;
+            document.getElementById('specialtyName').value = key;
+            document.getElementById('specialtyOrder').value = data.order || 99;
+        }
+    }
+    
+    function deleteSpecialty(key) {
+        if (confirm('Удалить специальность?')) {
+            var config = getConfig();
+            delete config.specialties[key];
+            saveConfig(config);
+            loadAdminSpecialties();
+            if (window.showToast) window.showToast('Специальность удалена', 'success');
+        }
+    }
+    
+    // ========== ДОКУМЕНТЫ ==========
     function loadAdminDocuments() {
         var config = getConfig();
         var html = '';
         for (var i = 0; i < config.documentTypes.length; i++) {
             var doc = config.documentTypes[i];
-            html += '<tr><td>' + doc + '</td><td><button class="action-btn" onclick="editDocumentAdmin(' + i + ')">✏️</button><button class="action-btn" onclick="deleteDocumentAdmin(' + i + ')">🗑️</button></td>' +
-                '</tr>';
+            html += '<tr><td>' + doc + '</td><td><button class="action-btn" onclick="editDocument(' + i + ')">✏️</button><button class="action-btn" onclick="deleteDocument(' + i + ')">🗑️</button></td></tr>';
         }
         var container = document.getElementById('adminDocumentsList');
         if (container) container.innerHTML = html;
     }
     
+    function editDocument(idx) {
+        var config = getConfig();
+        var newName = prompt('Редактировать документ:', config.documentTypes[idx]);
+        if (newName && newName.trim()) {
+            config.documentTypes[idx] = newName.trim();
+            saveConfig(config);
+            loadAdminDocuments();
+            if (window.showToast) window.showToast('Документ обновлён', 'success');
+        }
+    }
+    
+    function deleteDocument(idx) {
+        if (confirm('Удалить документ?')) {
+            var config = getConfig();
+            config.documentTypes.splice(idx, 1);
+            saveConfig(config);
+            loadAdminDocuments();
+            if (window.showToast) window.showToast('Документ удалён', 'success');
+        }
+    }
+    
+    // ========== НУМЕРАЦИЯ ==========
     function loadCounters() {
         var counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
         var config = getConfig();
@@ -106,23 +215,16 @@
             var name = entries[i][0];
             var data = entries[i][1];
             var current = counters[data.code] || 0;
-            html += '</td><td>' + data.code + '</td><td>' + name.substring(0,40) + '...</td><td>' + current + '</td>' +
+            html += '<tr>' +
+                '<td>' + data.code + '</td>' +
+                '<td>' + name.substring(0, 40) + '...</td>' +
+                '<td>' + current + '</td>' +
                 '<td><input type="number" id="newCounter_' + data.code + '" value="' + current + '" style="width:80px"></td>' +
                 '<td><button class="action-btn" onclick="updateCounter(\'' + data.code + '\')">Установить</button><button class="action-btn" onclick="resetCounter(\'' + data.code + '\')">Сбросить</button></td>' +
                 '</tr>';
         }
         var container = document.getElementById('countersList');
         if (container) container.innerHTML = html;
-    }
-    
-    function loadAdminSettings() {
-        var config = getConfig();
-        var maxPhotos = document.getElementById('settingMaxPhotos');
-        var companyName = document.getElementById('settingCompanyName');
-        var companyPhone = document.getElementById('settingCompanyPhone');
-        if (maxPhotos) maxPhotos.value = config.settings.maxPhotosCount || 4;
-        if (companyName) companyName.value = config.settings.companyName || 'Приемная комиссия';
-        if (companyPhone) companyPhone.value = config.settings.companyPhone || '(499) 156-40-01';
     }
     
     function updateCounter(code) {
@@ -152,6 +254,39 @@
         }
     }
     
+    // ========== НАСТРОЙКИ ==========
+    function loadAdminSettings() {
+        var config = getConfig();
+        var maxPhotos = document.getElementById('settingMaxPhotos');
+        var companyName = document.getElementById('settingCompanyName');
+        var companyPhone = document.getElementById('settingCompanyPhone');
+        if (maxPhotos) maxPhotos.value = config.settings.maxPhotosCount || 4;
+        if (companyName) companyName.value = config.settings.companyName || 'Приемная комиссия';
+        if (companyPhone) companyPhone.value = config.settings.companyPhone || '(499) 156-40-01';
+    }
+    
+    function saveMaxPhotos() {
+        var config = getConfig();
+        config.settings.maxPhotosCount = parseInt(document.getElementById('settingMaxPhotos').value);
+        saveConfig(config);
+        if (window.showToast) window.showToast('Настройки сохранены', 'success');
+    }
+    
+    function saveCompanyName() {
+        var config = getConfig();
+        config.settings.companyName = document.getElementById('settingCompanyName').value;
+        saveConfig(config);
+        if (window.showToast) window.showToast('Название сохранено', 'success');
+    }
+    
+    function saveCompanyPhone() {
+        var config = getConfig();
+        config.settings.companyPhone = document.getElementById('settingCompanyPhone').value;
+        saveConfig(config);
+        if (window.showToast) window.showToast('Телефон сохранён', 'success');
+    }
+    
+    // ========== РЕЗЕРВНОЕ КОПИРОВАНИЕ ==========
     function backupData() {
         var backup = {
             users: JSON.parse(localStorage.getItem('receipt_system_users') || '{}'),
@@ -186,7 +321,9 @@
                     if (backup.config) saveConfig(backup.config);
                     if (window.showToast) window.showToast('Данные восстановлены', 'success');
                     setTimeout(function() { location.reload(); }, 1000);
-                } catch(err) { if (window.showToast) window.showToast('Ошибка при восстановлении', 'error'); }
+                } catch(err) { 
+                    if (window.showToast) window.showToast('Ошибка при восстановлении', 'error'); 
+                }
             };
             reader.readAsText(file);
         };
@@ -254,14 +391,7 @@
         input.click();
     }
     
-    window.updateCounter = updateCounter;
-    window.resetCounter = resetCounter;
-    window.resetAllCounters = resetAllCounters;
-    window.backupData = backupData;
-    window.restoreData = restoreData;
-    window.exportToExcel = exportToExcel;
-    window.importFromExcel = importFromExcel;
-    
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     loadAdminStats();
     loadAdminEmployees();
     loadAdminSpecialties();
