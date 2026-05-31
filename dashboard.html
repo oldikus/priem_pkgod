@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Приемная комиссия - ЕПК</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <style>
-        /* ========== БАЗОВЫЕ ПЕРЕМЕННЫЕ (СВЕТЛАЯ ТЕМА) ========== */
+        /* ========== БАЗОВЫЕ ПЕРЕМЕННЫЕ ========== */
         :root {
             --bg-primary: #f5f7fa;
             --bg-secondary: #ffffff;
@@ -16,7 +18,7 @@
             --text-secondary: #64748b;
             --border: #e2e8f0;
             --primary: #4f46e5;
-            --primary-dark: #4338ca;
+            --primary-hover: #4338ca;
             --secondary: #7c3aed;
             --success: #10b981;
             --danger: #ef4444;
@@ -25,7 +27,6 @@
             --shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* ========== ТЁМНАЯ ТЕМА ========== */
         body.dark {
             --bg-primary: #0a0e27;
             --bg-secondary: #0d1117;
@@ -34,736 +35,155 @@
             --text-primary: #ffffff;
             --text-secondary: #8b92b0;
             --border: #1e2342;
-            --shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
-        /* ========== С ОБВОДКОЙ ========== */
-        body.outlined .stat-card,
-        body.outlined .form-container,
-        body.outlined .stats-table-container,
-        body.outlined .table-container,
-        body.outlined .receipt-card {
-            box-shadow: none;
-            border-width: 2px;
-        }
+        body.outlined .stat-card, body.outlined .form-container, body.outlined .table-container, body.outlined .receipt-card { box-shadow: none; border-width: 2px; }
+        body.compact .main-content { padding: 16px 24px; }
+        body.compact .form-container { padding: 20px; }
+        body.compact .stat-card { padding: 16px; }
+        body.compact .stat-value { font-size: 28px; }
 
-        /* ========== КОМПАКТНЫЙ РЕЖИМ ========== */
-        body.compact .main-content {
-            padding: 16px 24px;
-        }
-        body.compact .form-container {
-            padding: 20px;
-        }
-        body.compact .form-group {
-            margin-bottom: 12px;
-        }
-        body.compact .stat-card {
-            padding: 16px;
-        }
-        body.compact .stat-value {
-            font-size: 28px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); transition: all 0.3s ease; }
 
         /* САЙДБАР */
-        .sidebar {
-            width: 280px;
-            background: var(--bg-card);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-        }
-
-        .logo-area {
-            padding: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .logo-area h1 {
-            font-size: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .logo-area p {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .nav-menu {
-            padding: 20px 16px;
-        }
-
-        .nav-group {
-            margin-bottom: 24px;
-        }
-
-        .nav-group-title {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            padding-left: 12px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            margin-bottom: 4px;
-            border-radius: 10px;
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .nav-item:hover {
-            background: rgba(79, 70, 229, 0.1);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-        }
-
-        .nav-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 16px 0;
-        }
+        .sidebar { width: 280px; background: var(--bg-card); border-right: 1px solid var(--border); position: fixed; height: 100vh; overflow-y: auto; }
+        .logo-area { padding: 24px; border-bottom: 1px solid var(--border); }
+        .logo-area h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-area p { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .nav-menu { padding: 20px 16px; }
+        .nav-group { margin-bottom: 24px; }
+        .nav-group-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; padding-left: 12px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 4px; border-radius: 10px; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .nav-item:hover { background: rgba(79, 70, 229, 0.1); color: var(--text-primary); }
+        .nav-item.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .nav-divider { height: 1px; background: var(--border); margin: 16px 0; }
 
         /* ОСНОВНОЙ КОНТЕНТ */
-        .main-content {
-            margin-left: 280px;
-            padding: 24px 32px;
-            transition: all 0.3s ease;
-        }
+        .main-content { margin-left: 280px; padding: 24px 32px; transition: all 0.3s ease; }
 
         /* ТОП БАР */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-        }
-
-        .greeting h2 {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .greeting p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .user-controls {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .greeting h2 { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .greeting p { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+        .user-controls { display: flex; align-items: center; gap: 20px; }
 
         /* КАСТОМАЙЗЕР ТЕМЫ */
-        .theme-customizer {
-            position: relative;
-        }
-
-        .theme-toggle-btn {
-            width: 40px;
-            height: 40px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.2s;
-        }
-
-        .theme-toggle-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .customizer-panel {
-            position: absolute;
-            top: 50px;
-            right: 0;
-            width: 280px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            z-index: 1000;
-            display: none;
-        }
-
-        .customizer-panel.show {
-            display: block;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .customizer-panel h4 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-
-        .customizer-section {
-            margin-bottom: 20px;
-        }
-
-        .customizer-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .color-options {
-            display: flex;
-            gap: 10px;
-        }
-
-        .color-option {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .color-option.active {
-            border-color: white;
-            box-shadow: 0 0 0 2px var(--primary);
-        }
-
+        .theme-customizer { position: relative; }
+        .theme-toggle-btn { width: 40px; height: 40px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; }
+        .theme-toggle-btn:hover { background: var(--primary); color: white; }
+        .customizer-panel { position: absolute; top: 50px; right: 0; width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; display: none; }
+        .customizer-panel.show { display: block; animation: fadeIn 0.2s ease; }
+        .customizer-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+        .customizer-section { margin-bottom: 20px; }
+        .customizer-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; display: block; }
+        .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
+        .color-option { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+        .color-option.active { border-color: white; box-shadow: 0 0 0 2px var(--primary); }
         .color-option[data-color="default"] { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
         .color-option[data-color="blue"] { background: linear-gradient(135deg, #2563eb, #06b6d4); }
         .color-option[data-color="green"] { background: linear-gradient(135deg, #059669, #10b981); }
         .color-option[data-color="orange"] { background: linear-gradient(135deg, #ea580c, #f97316); }
         .color-option[data-color="purple"] { background: linear-gradient(135deg, #9333ea, #d946ef); }
+        .color-option[data-color="pink"] { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+        .color-option[data-color="cyan"] { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+        .primary-color-picker { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .primary-color-picker input { width: 50px; height: 40px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); cursor: pointer; }
+        .theme-options, .style-options, .layout-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .theme-option, .style-option, .layout-option { padding: 6px 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
+        .theme-option.active, .style-option.active, .layout-option.active { background: var(--primary); color: white; }
 
-        .theme-options, .style-options, .layout-options {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .theme-option, .style-option, .layout-option {
-            padding: 6px 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-secondary);
-        }
-
-        .theme-option.active, .style-option.active, .layout-option.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .user-info {
-            text-align: right;
-        }
-
-        .user-name {
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .user-role {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .logout-btn {
-            padding: 8px 16px;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 10px;
-            color: #f87171;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .logout-btn:hover {
-            background: var(--danger);
-            color: white;
-        }
+        .user-info { text-align: right; }
+        .user-name { font-weight: 600; font-size: 14px; }
+        .user-role { font-size: 12px; color: var(--text-secondary); }
+        .logout-btn { padding: 8px 16px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #f87171; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .logout-btn:hover { background: var(--danger); color: white; }
 
         /* КАРТОЧКИ СТАТИСТИКИ */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 32px;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: all 0.2s; box-shadow: var(--shadow); }
+        .stat-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .stat-icon { font-size: 28px; margin-bottom: 12px; }
+        .stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); }
+        .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
 
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            transition: all 0.2s;
-            box-shadow: var(--shadow);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--primary);
-        }
-
-        .stat-icon {
-            font-size: 28px;
-            margin-bottom: 12px;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
+        /* АККОРДЕОНЫ */
+        .accordion { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 20px; overflow: hidden; }
+        .accordion-header { padding: 16px 20px; background: var(--bg-input); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; transition: all 0.2s; }
+        .accordion-header:hover { background: rgba(79,70,229,0.1); }
+        .accordion-header .arrow { transition: transform 0.3s; }
+        .accordion-header.open .arrow { transform: rotate(180deg); }
+        .accordion-content { display: none; padding: 0; }
+        .accordion-content.show { display: block; }
 
         /* ТАБЛИЦЫ */
-        .stats-table-container, .table-container {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            margin-top: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .stats-table-header, .table-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .stats-table-header h3, .table-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .add-btn {
-            padding: 8px 16px;
-            background: var(--primary);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .add-btn:hover {
-            background: var(--primary-dark);
-        }
-
-        .data-table, .stats-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th, .stats-table th {
-            text-align: left;
-            padding: 12px 20px;
-            background: rgba(0,0,0,0.05);
-            color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 12px;
-        }
-
-        .data-table td, .stats-table td {
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
-
-        .rank-badge {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            background: rgba(79, 70, 229, 0.15);
-            border-radius: 8px;
-            text-align: center;
-            line-height: 28px;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .rank-1 { background: rgba(255, 215, 0, 0.15); color: #ffd700; }
-        .rank-2 { background: rgba(192, 192, 192, 0.15); color: #c0c0c0; }
-        .rank-3 { background: rgba(205, 127, 50, 0.15); color: #cd7f32; }
-
-        .status-badge {
-            display: inline-flex;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        .status-active { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .status-inactive { background: rgba(239, 68, 68, 0.15); color: #f87171; }
-
-        .action-btn {
-            padding: 6px 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            margin: 0 4px;
-            transition: all 0.2s;
-            color: var(--text-secondary);
-        }
-
-        .action-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
+        .table-container { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 12px 16px; background: rgba(0,0,0,0.05); color: var(--text-secondary); font-weight: 500; font-size: 12px; }
+        .data-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .status-badge { display: inline-flex; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+        .status-active { background: rgba(16,185,129,0.15); color: #10b981; }
+        .status-inactive { background: rgba(239,68,68,0.15); color: #f87171; }
+        .rank-badge { display: inline-block; width: 28px; height: 28px; background: rgba(79,70,229,0.15); border-radius: 8px; text-align: center; line-height: 28px; font-weight: 600; font-size: 12px; }
+        .rank-1 { background: rgba(255,215,0,0.15); color: #ffd700; }
+        .rank-2 { background: rgba(192,192,192,0.15); color: #c0c0c0; }
+        .rank-3 { background: rgba(205,127,50,0.15); color: #cd7f32; }
+        .action-btn { padding: 4px 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 11px; margin: 0 2px; transition: all 0.2s; }
+        .action-btn:hover { background: var(--primary); color: white; }
+        .add-btn { padding: 6px 14px; background: var(--primary); border: none; border-radius: 8px; color: white; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .add-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
 
         /* ФОРМА */
-        .form-container {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: var(--shadow);
-        }
+        .form-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+        .form-container h2 { font-size: 18px; margin-bottom: 20px; font-weight: 600; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text-primary); transition: all 0.2s; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: var(--bg-input); border-radius: 12px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .checkbox-item:hover { background: var(--primary); }
+        .submit-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; border-radius: 10px; font-size: 14px; font-weight: 600; color: white; cursor: pointer; margin-top: 16px; transition: all 0.2s; }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(79,70,229,0.3); }
 
-        .form-container h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
+        /* РЕЙТИНГОВЫЕ СПИСКИ */
+        .rating-filters { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; }
+        .rating-filters .form-group { margin-bottom: 0; min-width: 200px; }
+        .score-highlight { font-size: 24px; font-weight: 700; color: var(--primary); }
+        .passing-score { background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; display: inline-block; }
 
-        .form-group {
-            margin-bottom: 16px;
-        }
+        /* ГРАФИКИ */
+        .chart-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        canvas { max-height: 300px; width: 100%; }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
+        .receipt-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .receipt-number { font-weight: 700; color: var(--primary); font-size: 14px; }
+        .receipt-student { font-size: 13px; margin-top: 4px; }
+        .receipt-date { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .btn-print { padding: 6px 14px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; color: #10b981; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .btn-print:hover { background: #10b981; color: white; }
+        .profile-field { margin-bottom: 16px; }
+        .profile-field input { width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text-primary); }
+        .empty-state { text-align: center; padding: 48px; color: var(--text-secondary); }
+        .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; display: none; font-size: 13px; }
+        .alert-success { background: rgba(16,185,129,0.15); color: #10b981; }
+        .alert-error { background: rgba(239,68,68,0.15); color: #f87171; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 14px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            color: var(--text-primary);
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 18px; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
 
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 12px;
-            background: var(--bg-input);
-            border-radius: 12px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .checkbox-item:hover {
-            background: var(--primary);
-        }
-
-        .checkbox-item input {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--primary);
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            margin-top: 16px;
-            transition: all 0.2s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
-        }
-
-        .receipt-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--shadow);
-        }
-
-        .receipt-card:hover {
-            border-color: var(--primary);
-        }
-
-        .receipt-number {
-            font-weight: 700;
-            color: var(--primary);
-            font-size: 14px;
-        }
-
-        .receipt-student {
-            font-size: 14px;
-            margin-top: 4px;
-        }
-
-        .receipt-date {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .btn-print {
-            padding: 6px 14px;
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 8px;
-            color: #10b981;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        .btn-print:hover {
-            background: #10b981;
-            color: white;
-        }
-
-        .profile-field {
-            margin-bottom: 16px;
-        }
-
-        .profile-field label {
-            display: block;
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .profile-field input {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px;
-            color: var(--text-secondary);
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            font-size: 13px;
-        }
-
-        .alert-success {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .alert-error {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid white;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* МОДАЛЬНЫЕ ОКНА */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            width: 90%;
-            max-width: 450px;
-        }
-
-        .modal-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 24px;
-        }
-
-        .modal-footer {
-            padding: 16px 24px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                z-index: 1000;
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); z-index: 1000; } .main-content { margin-left: 0; } .stats-grid { grid-template-columns: 1fr 1fr; } .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -775,28 +195,25 @@
         <div class="nav-menu">
             <div class="nav-group">
                 <div class="nav-group-title">ОСНОВНОЕ</div>
-                <div class="nav-item active" data-tab="create">
-                    <span>📝</span> Создать расписку
-                </div>
-                <div class="nav-item" data-tab="history">
-                    <span>📋</span> Мои расписки
-                </div>
-                <div class="nav-item" data-tab="profile">
-                    <span>👤</span> Профиль
-                </div>
+                <div class="nav-item active" data-tab="home"><span>🏠</span> Главная</div>
+                <div class="nav-item" data-tab="create"><span>📝</span> Создать расписку</div>
+                <div class="nav-item" data-tab="history"><span>📋</span> Мои расписки</div>
+                <div class="nav-item" data-tab="profile"><span>👤</span> Профиль</div>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">ПРИЕМНАЯ КАМПАНИЯ</div>
+                <div class="nav-item" data-tab="rating"><span>🏆</span> Рейтинговые списки</div>
+                <div class="nav-item" data-tab="export"><span>📤</span> Экспорт в ФИС ГИА</div>
             </div>
             <div class="nav-group" id="statsGroup" style="display: none;">
                 <div class="nav-group-title">АНАЛИТИКА</div>
-                <div class="nav-item" data-tab="stats">
-                    <span>📊</span> Статистика
-                </div>
+                <div class="nav-item" data-tab="stats"><span>📊</span> Статистика</div>
+                <div class="nav-item" data-tab="charts"><span>📈</span> Графики</div>
             </div>
             <div class="nav-divider" id="adminDivider" style="display: none;"></div>
             <div class="nav-group" id="adminGroup" style="display: none;">
                 <div class="nav-group-title">УПРАВЛЕНИЕ</div>
-                <div class="nav-item" data-tab="admin">
-                    <span>⚙️</span> Админ панель
-                </div>
+                <div class="nav-item" data-tab="admin"><span>⚙️</span> Админ панель</div>
             </div>
         </div>
     </div>
@@ -812,8 +229,7 @@
                     <div class="theme-toggle-btn" id="themeToggleBtn">🎨</div>
                     <div class="customizer-panel" id="customizerPanel">
                         <h4>Кастомайзер темы</h4>
-                        <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;">Вы можете персонализировать тему для своей работы</p>
-                        
+                        <p style="font-size: 11px; margin-bottom: 16px;">Персонализируйте интерфейс</p>
                         <div class="customizer-section">
                             <span class="customizer-label">Основной цвет</span>
                             <div class="color-options">
@@ -822,9 +238,14 @@
                                 <div class="color-option" data-color="green"></div>
                                 <div class="color-option" data-color="orange"></div>
                                 <div class="color-option" data-color="purple"></div>
+                                <div class="color-option" data-color="pink"></div>
+                                <div class="color-option" data-color="cyan"></div>
+                            </div>
+                            <div class="primary-color-picker">
+                                <span style="font-size: 12px;">Свой цвет:</span>
+                                <input type="color" id="customColorPicker" value="#4f46e5">
                             </div>
                         </div>
-                        
                         <div class="customizer-section">
                             <span class="customizer-label">Тема</span>
                             <div class="theme-options">
@@ -833,7 +254,6 @@
                                 <div class="theme-option" data-theme="system">Системная</div>
                             </div>
                         </div>
-                        
                         <div class="customizer-section">
                             <span class="customizer-label">Оформление</span>
                             <div class="style-options">
@@ -841,7 +261,6 @@
                                 <div class="style-option" data-style="outlined">С обводкой</div>
                             </div>
                         </div>
-                        
                         <div class="customizer-section">
                             <span class="customizer-label">Контент</span>
                             <div class="layout-options">
@@ -851,16 +270,32 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="user-info">
-                    <div class="user-name" id="userName"></div>
-                    <div class="user-role" id="userRole"></div>
-                </div>
-                <button class="logout-btn" onclick="logout()">Выйти</button>
+                <div class="user-info"><div class="user-name" id="userName"></div><div class="user-role" id="userRole"></div></div>
+                <button class="logout-btn" onclick="window.logout()">Выйти</button>
             </div>
         </div>
-        
-        <div id="createTab" class="tab-content active">
+
+        <!-- Главная страница -->
+        <div id="homeTab" class="tab-content active">
+            <div class="stats-grid" id="homeStatsGrid"></div>
+            <div class="form-container">
+                <h2>📢 Добро пожаловать в систему!</h2>
+                <p style="margin-bottom: 16px;">Здесь вы можете:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>✅ Создавать расписки о приёме документов</li>
+                    <li>✅ Просматривать историю своих расписок</li>
+                    <li>✅ Формировать рейтинговые списки абитуриентов</li>
+                    <li>✅ Экспортировать данные для загрузки в ФИС ГИА</li>
+                    <li>✅ Анализировать статистику приёма</li>
+                </ul>
+                <div style="margin-top: 24px; padding: 16px; background: rgba(79,70,229,0.1); border-radius: 12px;">
+                    <p style="font-size: 13px; color: var(--text-secondary);">📌 Текущий статус: <strong id="todayStatsInfo">Загрузка...</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Создание расписки -->
+        <div id="createTab" class="tab-content">
             <div class="form-container">
                 <h2>📝 Создание новой расписки</h2>
                 <div id="alert" class="alert"></div>
@@ -870,73 +305,103 @@
                     <div class="form-row"><div class="form-group"><label>Номер аттестата/диплома</label><input type="text" id="diplomaNumber" placeholder="№ документа"></div><div class="form-group"><label>Дата выдачи</label><input type="date" id="diplomaDate"></div></div>
                     <div class="form-group"><label>Кем выдан аттестат</label><input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение"></div>
                     <div class="form-group"><label>Принятые документы</label><div class="checkbox-group" id="documentsCheckboxes"></div></div>
-                    <div class="form-row"><div class="form-group"><label>Количество фотографий (0-4)</label><input type="number" id="photosCount" min="0" max="4" value="0"></div><div class="form-group"><label>Баллы ГИА</label><input type="text" id="score" placeholder="Баллы"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Количество фотографий (0-4)</label><input type="number" id="photosCount" min="0" max="4" value="0"></div><div class="form-group"><label>Баллы ГИА</label><input type="number" id="score" placeholder="Баллы"></div></div>
                     <div class="form-row"><div class="form-group"><label>Город получения аттестата</label><input type="text" id="city" placeholder="Город"></div><div class="form-group"><label>Сотрудник</label><input type="text" id="employeeField" readonly></div></div>
                     <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
                 </form>
             </div>
         </div>
-        
-        <div id="historyTab" class="tab-content">
-            <div class="form-container"><h2>📋 Мои расписки</h2><div id="receiptsList"></div></div>
+
+        <!-- История расписок -->
+        <div id="historyTab" class="tab-content"><div class="form-container"><h2>📋 Мои расписки</h2><div id="receiptsList"></div></div></div>
+
+        <!-- Профиль -->
+        <div id="profileTab" class="tab-content"><div class="form-container"><h2>👤 Мой профиль</h2><div id="profileInfo"></div></div></div>
+
+        <!-- Рейтинговые списки -->
+        <div id="ratingTab" class="tab-content">
+            <div class="form-container">
+                <h2>🏆 Рейтинговые списки абитуриентов</h2>
+                <div class="rating-filters">
+                    <div class="form-group"><label>Специальность</label><select id="ratingSpecialty"><option value="all">Все специальности</option></select></div>
+                    <div class="form-group"><label>Сортировка</label><select id="ratingSort"><option value="score">По баллам (убывание)</option><option value="name">По ФИО (возрастание)</option></select></div>
+                    <button class="add-btn" onclick="updateRatingList()">🔄 Обновить</button>
+                    <button class="add-btn" onclick="exportRatingToExcel()">📊 Экспорт в Excel</button>
+                </div>
+                <div id="ratingInfo" style="margin-bottom: 16px; padding: 12px; background: rgba(79,70,229,0.1); border-radius: 10px;">
+                    <span>📊 Всего абитуриентов: <strong id="totalApplicants">0</strong></span>
+                    <span style="margin-left: 20px;">🎯 Проходной балл: <strong id="passingScore" class="passing-score">—</strong></span>
+                </div>
+                <div class="table-container"><table class="data-table" id="ratingTable"><thead><tr><th>#</th><th>ФИО</th><th>Специальность</th><th>Баллы ГИА</th><th>Статус</th></tr></thead><tbody id="ratingTableBody"></tbody></table></div>
+            </div>
         </div>
-        
-        <div id="profileTab" class="tab-content">
-            <div class="form-container"><h2>👤 Мой профиль</h2><div id="profileInfo"></div></div>
+
+        <!-- Экспорт в ФИС ГИА -->
+        <div id="exportTab" class="tab-content">
+            <div class="form-container">
+                <h2>📤 Экспорт данных в ФИС ГИА</h2>
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="exportCount">0</div><div class="stat-label">Абитуриентов для экспорта</div></div>
+                    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="validCount">0</div><div class="stat-label">Валидных записей</div></div>
+                    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value" id="invalidCount">0</div><div class="stat-label">Требуют проверки</div></div>
+                </div>
+                <div class="form-row" style="margin-bottom: 20px;">
+                    <div class="form-group"><label>Формат выгрузки</label><select id="exportFormat"><option value="csv">CSV</option><option value="xml">XML</option><option value="json">JSON</option></select></div>
+                    <div class="form-group"><label>Период</label><select id="exportPeriod"><option value="all">Все данные</option><option value="today">За сегодня</option><option value="week">За неделю</option><option value="month">За месяц</option></select></div>
+                </div>
+                <button class="add-btn" onclick="validateAndExport()" style="width: 100%; margin-bottom: 10px;">🔍 Валидировать и подготовить к выгрузке</button>
+                <button class="submit-btn" onclick="exportToFIS()" id="exportBtn">📥 Экспортировать в ФИС ГИА</button>
+                <div id="validationResults" style="margin-top: 20px; max-height: 300px; overflow-y: auto;"></div>
+            </div>
         </div>
-        
+
+        <!-- Расширенная статистика -->
         <div id="statsTab" class="tab-content">
             <div class="stats-grid" id="statsGrid"></div>
-            <div class="stats-table-container">
-                <div class="stats-table-header"><h3>🏆 Рейтинг сотрудников</h3></div>
-                <table class="stats-table"><thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead><tbody id="employeeStatsBody"></tbody></table>
-            </div>
+            <div class="stats-table-container"><div class="stats-table-header"><h3>🏆 Рейтинг сотрудников</h3></div><table class="data-table"><thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead><tbody id="employeeStatsBody"></tbody></table></div>
         </div>
-        
+
+        <!-- Графики -->
+        <div id="chartsTab" class="tab-content">
+            <div class="chart-container"><canvas id="receiptsChart"></canvas></div>
+            <div class="chart-container"><canvas id="specialtyChart"></canvas></div>
+            <div class="chart-container"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <!-- Админ панель -->
         <div id="adminTab" class="tab-content">
             <div class="stats-grid" id="adminStatsGrid"></div>
-            <div class="table-container">
-                <div class="table-header"><h3>🔢 Управление нумерацией расписок</h3><button class="add-btn" onclick="resetAllCounters()">🔄 Сбросить ВСЕ счётчики</button></div>
-                <table class="data-table"><thead><tr><th>Код</th><th>Специальность</th><th>Текущий номер</th><th>Новое значение</th><th>Действие</th></tr></thead><tbody id="countersList"></tbody></table>
-            </div>
-            <div class="table-container">
-                <div class="table-header"><h3>👥 Управление сотрудниками</h3><button class="add-btn" onclick="openEmployeeModal()">+ Добавить сотрудника</button></div>
-                <table class="data-table"><thead><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Расписок</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="adminEmployeesList"></tbody></table>
-            </div>
+            <div class="accordion"><div class="accordion-header" onclick="toggleAccordion(this)"><span>🔢 Управление нумерацией расписок</span><span class="arrow">▼</span></div><div class="accordion-content"><div class="table-container"><table class="data-table"><thead><tr><th>Код</th><th>Специальность</th><th>Текущий номер</th><th>Новое значение</th><th>Действие</th></tr></thead><tbody id="countersList"></tbody></table></div></div></div>
+            <div class="accordion"><div class="accordion-header" onclick="toggleAccordion(this)"><span>👥 Управление сотрудниками</span><span class="arrow">▼</span></div><div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openEmployeeModal()">+ Добавить сотрудника</button></div><div class="table-container"><table class="data-table"><thead><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Расписок</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="adminEmployeesList"></tbody></table></div></div></div>
+            <div class="accordion"><div class="accordion-header" onclick="toggleAccordion(this)"><span>🎓 Управление специальностями</span><span class="arrow">▼</span></div><div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openSpecialtyModal()">+ Добавить специальность</button></div><div class="table-container"><table class="data-table"><thead><tr><th>Код</th><th>Название</th><th>Порядок</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="adminSpecialtiesList"></tbody></table></div></div></div>
+            <div class="accordion"><div class="accordion-header" onclick="toggleAccordion(this)"><span>📄 Типы документов</span><span class="arrow">▼</span></div><div class="accordion-content"><div style="padding: 16px; text-align: right;"><button class="add-btn" onclick="window.openDocumentModal()">+ Добавить документ</button></div><div class="table-container"><table class="data-table"><thead><tr><th>Документ</th><th>Действия</th></tr></thead><tbody id="adminDocumentsList"></tbody></table></div></div></div>
+            <div class="accordion"><div class="accordion-header" onclick="toggleAccordion(this)"><span>💾 Резервное копирование</span><span class="arrow">▼</span></div><div class="accordion-content"><div style="padding: 16px;"><button class="add-btn" onclick="backupData()">💾 Создать резервную копию</button><button class="add-btn" onclick="restoreData()" style="margin-left: 10px;">🔄 Восстановить из копии</button><button class="add-btn" onclick="exportToExcel()" style="margin-left: 10px;">📊 Экспорт в Excel</button><button class="add-btn" onclick="importFromExcel()" style="margin-left: 10px;">📂 Импорт из Excel</button></div><div id="backupInfo" style="padding: 16px; color: var(--text-secondary);"></div></div></div>
+            <div class="accordion"><div class="accordion-header" onclick="toggleAccordion(this)"><span>⚙️ Настройки системы</span><span class="arrow">▼</span></div><div class="accordion-content"><div class="table-container"><table class="data-table"><tbody><tr><td style="width:200px">Максимум фотографий</td><td><input type="number" id="settingMaxPhotos" min="0" max="10" style="width:100px"></td><td><button class="action-btn" onclick="saveMaxPhotos()">Сохранить</button></td></tr><tr><td>Название организации</td><td><input type="text" id="settingCompanyName" style="width:100%"></td><td><button class="action-btn" onclick="saveCompanyName()">Сохранить</button></td></tr><tr><td>Телефон для справок</td><td><input type="text" id="settingCompanyPhone" style="width:100%"></td><td><button class="action-btn" onclick="saveCompanyPhone()">Сохранить</button></td></tr></tbody></table></div></div></div>
         </div>
     </div>
-    
-    <div id="employeeModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h3 id="employeeModalTitle">Добавить сотрудника</h3><button class="modal-close" onclick="closeEmployeeModal()">&times;</button></div>
-            <div class="modal-body">
-                <input type="hidden" id="editLogin">
-                <div class="form-group"><label>ФИО *</label><input type="text" id="empName" placeholder="Иванов Иван Иванович"></div>
-                <div class="form-group"><label>Логин *</label><input type="text" id="empLogin" placeholder="login"></div>
-                <div class="form-group"><label>Пароль *</label><input type="password" id="empPassword" placeholder="••••••••"></div>
-                <div class="form-group"><label>Должность</label><input type="text" id="empPosition" placeholder="Специалист"></div>
-                <div class="form-group"><label>Телефон</label><input type="text" id="empPhone" placeholder="+7 (XXX) XXX-XX-XX"></div>
-                <div class="form-group"><label>Роль</label><select id="empRole"><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="both">Админ+Сотрудник</option></select></div>
-                <div class="form-group"><label>Статус</label><select id="empStatus"><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
-            </div>
-            <div class="modal-footer"><button class="action-btn" onclick="closeEmployeeModal()">Отмена</button><button class="add-btn" onclick="saveEmployee()">Сохранить</button></div>
-        </div>
-    </div>
-    
+
+    <!-- Модальные окна -->
+    <div id="employeeModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="employeeModalTitle">Добавить сотрудника</h3><button class="modal-close" onclick="window.closeEmployeeModal()">&times;</button></div><div class="modal-body"><input type="hidden" id="editLogin"><div class="form-group"><label>ФИО *</label><input type="text" id="empName"></div><div class="form-group"><label>Логин *</label><input type="text" id="empLogin"></div><div class="form-group"><label>Пароль *</label><input type="password" id="empPassword"></div><div class="form-group"><label>Должность</label><input type="text" id="empPosition"></div><div class="form-group"><label>Телефон</label><input type="text" id="empPhone"></div><div class="form-group"><label>Роль</label><select id="empRole"><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="both">Админ+Сотрудник</option></select></div><div class="form-group"><label>Статус</label><select id="empStatus"><option value="true">Активен</option><option value="false">Неактивен</option></select></div></div><div class="modal-footer"><button class="action-btn" onclick="window.closeEmployeeModal()">Отмена</button><button class="add-btn" onclick="window.saveEmployee()">Сохранить</button></div></div></div>
+
+    <div id="specialtyModal" class="modal"><div class="modal-content"><div class="modal-header"><h3 id="specialtyModalTitle">Добавить специальность</h3><button class="modal-close" onclick="window.closeSpecialtyModal()">&times;</button></div><div class="modal-body"><input type="hidden" id="editSpecialtyKey"><div class="form-group"><label>Код *</label><input type="text" id="specialtyCode" placeholder="ЛА"></div><div class="form-group"><label>Полное название *</label><input type="text" id="specialtyName" placeholder="24.02.01 Производство..."></div><div class="form-group"><label>Порядок</label><input type="number" id="specialtyOrder" value="99"></div></div><div class="modal-footer"><button class="action-btn" onclick="window.closeSpecialtyModal()">Отмена</button><button class="add-btn" onclick="window.saveSpecialty()">Сохранить</button></div></div></div>
+
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
+        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+        var currentUser = null;
+        var receiptsChart = null, specialtyChart = null, trendChart = null;
+        
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
-        (function() {
-            const currentUser = checkAuth();
+        function init() {
+            currentUser = checkAuth();
             if (!currentUser) { window.location.href = 'login.html'; return; }
             
-            // Отображение информации
-            const firstName = currentUser.name.split(' ')[0];
+            var firstName = currentUser.name.split(' ')[1] || currentUser.name.split(' ')[0];
             document.getElementById('userNameShort').innerHTML = firstName;
             document.getElementById('userName').innerHTML = currentUser.name;
             
-            let roleText = '';
+            var roleText = '';
             if (currentUser.role === 'admin') roleText = 'Главный администратор';
             else if (currentUser.role === 'both') roleText = 'Администратор + Сотрудник';
             else if (currentUser.role === 'manager') roleText = 'Руководитель';
@@ -951,351 +416,811 @@
                 document.getElementById('adminDivider').style.display = 'block';
             }
             
-            // ========== КАСТОМАЙЗЕР ТЕМЫ ==========
-            function toggleCustomizer() {
-                var panel = document.getElementById('customizerPanel');
-                panel.classList.toggle('show');
-            }
-            
-            function setTheme(theme) {
-                localStorage.setItem('app_theme', theme);
-                if (theme === 'dark') {
-                    document.body.classList.add('dark');
-                } else if (theme === 'light') {
-                    document.body.classList.remove('dark');
-                } else if (theme === 'system') {
-                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        document.body.classList.add('dark');
-                    } else {
-                        document.body.classList.remove('dark');
-                    }
-                }
-                document.querySelectorAll('.theme-option').forEach(function(opt) { opt.classList.remove('active'); });
-                var activeOpt = document.querySelector('.theme-option[data-theme="' + theme + '"]');
-                if (activeOpt) activeOpt.classList.add('active');
-            }
-            
-            function setStyle(style) {
-                localStorage.setItem('app_style', style);
-                if (style === 'outlined') {
-                    document.body.classList.add('outlined');
-                } else {
-                    document.body.classList.remove('outlined');
-                }
-                document.querySelectorAll('.style-option').forEach(function(opt) { opt.classList.remove('active'); });
-                var activeOpt = document.querySelector('.style-option[data-style="' + style + '"]');
-                if (activeOpt) activeOpt.classList.add('active');
-            }
-            
-            function setLayout(layout) {
-                localStorage.setItem('app_layout', layout);
-                if (layout === 'compact') {
-                    document.body.classList.add('compact');
-                } else {
-                    document.body.classList.remove('compact');
-                }
-                document.querySelectorAll('.layout-option').forEach(function(opt) { opt.classList.remove('active'); });
-                var activeOpt = document.querySelector('.layout-option[data-layout="' + layout + '"]');
-                if (activeOpt) activeOpt.classList.add('active');
-            }
-            
-            function setThemeColor(color) {
-                var colors = {
-                    default: { primary: '#4f46e5', secondary: '#7c3aed' },
-                    blue: { primary: '#2563eb', secondary: '#06b6d4' },
-                    green: { primary: '#059669', secondary: '#10b981' },
-                    orange: { primary: '#ea580c', secondary: '#f97316' },
-                    purple: { primary: '#9333ea', secondary: '#d946ef' }
-                };
-                var c = colors[color];
-                document.documentElement.style.setProperty('--primary', c.primary);
-                document.documentElement.style.setProperty('--secondary', c.secondary);
-                localStorage.setItem('app_color', color);
-                document.querySelectorAll('.color-option').forEach(function(opt) { opt.classList.remove('active'); });
-                var activeOpt = document.querySelector('.color-option[data-color="' + color + '"]');
-                if (activeOpt) activeOpt.classList.add('active');
-            }
-            
-            function loadThemeSettings() {
-                var savedTheme = localStorage.getItem('app_theme') || 'light';
-                var savedStyle = localStorage.getItem('app_style') || 'standard';
-                var savedLayout = localStorage.getItem('app_layout') || 'standard';
-                var savedColor = localStorage.getItem('app_color') || 'default';
-                setTheme(savedTheme);
-                setStyle(savedStyle);
-                setLayout(savedLayout);
-                setThemeColor(savedColor);
-            }
-            
-            document.getElementById('themeToggleBtn').onclick = toggleCustomizer;
-            document.querySelectorAll('.theme-option').forEach(function(opt) {
-                opt.onclick = function() { setTheme(this.getAttribute('data-theme')); };
-            });
-            document.querySelectorAll('.style-option').forEach(function(opt) {
-                opt.onclick = function() { setStyle(this.getAttribute('data-style')); };
-            });
-            document.querySelectorAll('.layout-option').forEach(function(opt) {
-                opt.onclick = function() { setLayout(this.getAttribute('data-layout')); };
-            });
-            document.querySelectorAll('.color-option').forEach(function(opt) {
-                opt.onclick = function() { setThemeColor(this.getAttribute('data-color')); };
-            });
-            
-            document.addEventListener('click', function(e) {
-                var panel = document.getElementById('customizerPanel');
-                var btn = document.getElementById('themeToggleBtn');
-                if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
-                    panel.classList.remove('show');
-                }
-            });
-            
-            loadThemeSettings();
-            
-            // ========== ОСТАЛЬНЫЕ ФУНКЦИИ ==========
-            function loadSpecialties() {
-                var config = getConfig();
-                var select = document.getElementById('specialty');
-                select.innerHTML = '<option value="">Выберите специальность</option>';
-                for (var key in config.specialties) {
-                    var data = config.specialties[key];
-                    if (data.active) {
-                        var opt = document.createElement('option');
-                        opt.value = key;
-                        opt.textContent = data.code + ' - ' + data.name;
-                        select.appendChild(opt);
-                    }
-                }
-            }
-            
-            function loadDocumentCheckboxes() {
-                var config = getConfig();
-                var container = document.getElementById('documentsCheckboxes');
-                var html = '';
-                for (var i = 0; i < config.documentTypes.length; i++) {
-                    var doc = config.documentTypes[i];
-                    html += '<label class="checkbox-item"><input type="checkbox" value="' + doc.replace(/'/g, "\\'") + '"><span>' + doc + '</span></label>';
-                }
-                container.innerHTML = html;
-            }
-            
-            document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
-            
-            function showAlert(msg, type) {
-                var el = document.getElementById('alert');
-                el.textContent = msg;
-                el.className = 'alert alert-' + type;
-                el.style.display = 'block';
-                setTimeout(function() { el.style.display = 'none'; }, 4000);
-            }
-            
-            window.printReceipt = function(receipt) {
-                var now = new Date();
-                var w = window.open('', '_blank');
-                w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписка №' + receipt.receiptNumber + '</title><style>body{font-family:"Times New Roman",serif;padding:40px;max-width:800px;margin:0 auto;background:white;color:black;}.header{text-align:center;margin-bottom:30px;}h3{font-size:18px;font-weight:bold;margin:20px 0;}.content{line-height:1.6;}.signature{margin-top:50px;}button{padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}@media print{.no-print{display:none;}}</style></head><body><div class="no-print" style="text-align:center;margin-bottom:20px;"><button onclick="window.print()">🖨️ Печать</button><button onclick="window.close()">✖️ Закрыть</button></div><div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div><div class="content"><p>Настоящая расписка выдана абитуриенту <strong>' + receipt.fullName + '</strong> о том, что от него приняты следующие документы:</p><ul>' + (receipt.documents || '').split('\n').filter(function(d){ return d.trim(); }).map(function(d){ return '<li>' + d.trim() + '</li>'; }).join('') + '</ul><p><strong>Специальность:</strong> ' + receipt.specialty + '</p><p><strong>Номер расписки:</strong> ' + receipt.receiptNumber + '</p><p><strong>Дата выдачи:</strong> ' + now.toLocaleDateString('ru-RU') + '</p><div class="signature"><p>____________________</p><p><strong>' + receipt.employee + '</strong></p><p>' + receipt.employeePosition + '</p></div></div><script>setTimeout(function(){window.print();},500);<\/script></body></html>');
-                w.document.close();
-            };
-            
-            function loadReceiptsHistory() {
-                var list = getEmployeeReceipts(currentUser.login);
-                var container = document.getElementById('receiptsList');
-                if (!list.length) {
-                    container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>';
-                    return;
-                }
-                var html = '';
-                for (var i = 0; i < list.length; i++) {
-                    var r = list[i];
-                    html += '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="window.printReceipt(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
-                }
-                container.innerHTML = html;
-            }
-            
-            function loadProfile() {
-                var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
-                var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
-                html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
-                html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';
-                html += '<div class="profile-field"><label>Телефон</label><input type="text" value="' + (currentUser.phone || 'Не указан') + '" readonly></div>';
-                html += '<div class="profile-field"><label>Роль</label><input type="text" value="' + roleTxt + '" readonly></div>';
-                document.getElementById('profileInfo').innerHTML = html;
-            }
-            
-            function loadStats() {
-                var stats = getSystemStats();
-                document.getElementById('statsGrid').innerHTML = 
-                    '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
-                    '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
-                    '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
-                    '<div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">' + (stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0) + '%</div><div class="stat-label">Активность сегодня</div></div>';
-                var sorted = (stats.employeeStats || []).slice();
-                sorted.sort(function(a, b) { return (b.receiptCount || 0) - (a.receiptCount || 0); });
-                var html = '';
-                for (var i = 0; i < sorted.length; i++) {
-                    var e = sorted[i];
-                    var rankClass = '';
-                    if (i === 0) rankClass = ' rank-1';
-                    else if (i === 1) rankClass = ' rank-2';
-                    else if (i === 2) rankClass = ' rank-3';
-                    html += '<tr><td><span class="rank-badge' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
-                }
-                document.getElementById('employeeStatsBody').innerHTML = html;
-            }
-            
-            document.getElementById('receiptForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                var btn = document.getElementById('submitBtn');
-                var original = btn.innerHTML;
-                btn.innerHTML = '<span class="spinner"></span> Создание...';
-                btn.disabled = true;
-                
-                var docs = [];
-                var checkboxes = document.querySelectorAll('#documentsCheckboxes input:checked');
-                for (var i = 0; i < checkboxes.length; i++) {
-                    docs.push(checkboxes[i].value);
-                }
-                
-                var data = {
-                    fullName: document.getElementById('fullName').value,
-                    specialty: document.getElementById('specialty').value,
-                    diplomaNumber: document.getElementById('diplomaNumber').value,
-                    diplomaDate: document.getElementById('diplomaDate').value,
-                    diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
-                    documents: docs.join('\n'),
-                    photosCount: document.getElementById('photosCount').value,
-                    score: document.getElementById('score').value,
-                    city: document.getElementById('city').value,
-                    employee: currentUser.name,
-                    employeeLogin: currentUser.login,
-                    employeePosition: currentUser.position
-                };
-                if (!data.fullName || !data.specialty) {
-                    showAlert('Заполните обязательные поля', 'error');
-                    btn.innerHTML = original;
-                    btn.disabled = false;
-                    return;
-                }
-                var config = getConfig();
-                var code = config.specialties[data.specialty] ? config.specialties[data.specialty].code : 'ОБЩ';
-                var counter = getReceiptCounter(code);
-                var number = code + '-' + counter;
-                var receipt = {
-                    fullName: data.fullName,
-                    specialty: data.specialty,
-                    diplomaNumber: data.diplomaNumber,
-                    diplomaDate: data.diplomaDate,
-                    diplomaIssuedBy: data.diplomaIssuedBy,
-                    documents: data.documents,
-                    photosCount: data.photosCount,
-                    score: data.score,
-                    city: data.city,
-                    employee: data.employee,
-                    employeeLogin: data.employeeLogin,
-                    employeePosition: data.employeePosition,
-                    receiptNumber: number,
-                    specialtyCode: code,
-                    createdAt: new Date().toISOString()
-                };
-                saveReceipt(receipt);
-                window.printReceipt(receipt);
-                showAlert('✅ Расписка №' + number + ' создана!', 'success');
-                document.getElementById('receiptForm').reset();
-                document.getElementById('photosCount').value = '0';
-                var allCheckboxes = document.querySelectorAll('#documentsCheckboxes input');
-                for (var i = 0; i < allCheckboxes.length; i++) { allCheckboxes[i].checked = false; }
-                if (document.getElementById('historyTab').classList.contains('active')) loadReceiptsHistory();
-                btn.innerHTML = original;
-                btn.disabled = false;
-            });
-            
-            function switchTab(tabId) {
-                var tabs = document.querySelectorAll('.tab-content');
-                for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
-                document.getElementById(tabId + 'Tab').classList.add('active');
-                if (tabId === 'history') loadReceiptsHistory();
-                if (tabId === 'profile') loadProfile();
-                if (tabId === 'stats') loadStats();
-            }
-            
-            var navItems = document.querySelectorAll('.nav-item[data-tab]');
-            for (var i = 0; i < navItems.length; i++) {
-                navItems[i].addEventListener('click', (function(item) {
-                    return function() {
-                        var id = item.getAttribute('data-tab');
-                        switchTab(id);
-                        var allNav = document.querySelectorAll('.nav-item');
-                        for (var j = 0; j < allNav.length; j++) { allNav[j].classList.remove('active'); }
-                        item.classList.add('active');
-                    };
-                })(navItems[i]));
-            }
-            
-            // Админ функции
-            window.openEmployeeModal = function() {
-                document.getElementById('employeeModalTitle').innerHTML = 'Добавить сотрудника';
-                document.getElementById('editLogin').value = '';
-                document.getElementById('empName').value = '';
-                document.getElementById('empLogin').value = '';
-                document.getElementById('empPassword').value = '';
-                document.getElementById('empPosition').value = '';
-                document.getElementById('empPhone').value = '';
-                document.getElementById('empRole').value = 'employee';
-                document.getElementById('empStatus').value = 'true';
-                document.getElementById('employeeModal').style.display = 'flex';
-            };
-            
-            window.saveEmployee = function() {
-                var editLogin = document.getElementById('editLogin').value;
-                var login = document.getElementById('empLogin').value;
-                var name = document.getElementById('empName').value;
-                var password = document.getElementById('empPassword').value;
-                var position = document.getElementById('empPosition').value;
-                var phone = document.getElementById('empPhone').value;
-                var role = document.getElementById('empRole').value;
-                var isActive = document.getElementById('empStatus').value === 'true';
-                if (!name || !login) { showToast('Заполните обязательные поля', 'error'); return; }
-                var result;
-                if (editLogin) {
-                    var updates = { name: name, position: position, phone: phone, role: role, isActive: isActive };
-                    if (password) updates.password = password;
-                    result = updateEmployee(editLogin, updates);
-                } else {
-                    if (!password) { showToast('Введите пароль', 'error'); return; }
-                    result = addEmployee({ login: login, name: name, password: password, position: position, phone: phone, role: role });
-                }
-                if (result.success) {
-                    showToast(editLogin ? 'Сотрудник обновлён' : 'Сотрудник добавлен', 'success');
-                    closeEmployeeModal();
-                } else { showToast(result.error, 'error'); }
-            };
-            
-            window.closeEmployeeModal = function() { document.getElementById('employeeModal').style.display = 'none'; };
-            window.resetAllCounters = function() {
-                if (confirm('Сбросить ВСЕ счётчики расписок в 0?')) {
-                    localStorage.setItem('receipt_system_counters', JSON.stringify({}));
-                    showToast('Все счётчики сброшены', 'success');
-                }
-            };
-            
-            function showToast(msg, type) {
-                var toast = document.createElement('div');
-                toast.style.position = 'fixed';
-                toast.style.bottom = '20px';
-                toast.style.right = '20px';
-                toast.style.background = 'var(--bg-card)';
-                toast.style.borderLeft = '4px solid ' + (type === 'success' ? 'var(--success)' : 'var(--danger)');
-                toast.style.padding = '12px 20px';
-                toast.style.borderRadius = '10px';
-                toast.style.zIndex = '1100';
-                toast.style.color = 'var(--text-primary)';
-                toast.innerHTML = msg;
-                document.body.appendChild(toast);
-                setTimeout(function() { toast.remove(); }, 3000);
-            }
-            
             loadSpecialties();
             loadDocumentCheckboxes();
             loadReceiptsHistory();
-        })();
+            loadHomeStats();
+            updateRatingList();
+            loadThemeSettings();
+            setupEventListeners();
+            if (currentUser.role === 'admin' || currentUser.role === 'both') {
+                loadAdminPanel();
+            }
+            initCharts();
+        }
+        
+        // ========== ГЛАВНАЯ СТРАНИЦА ==========
+        function loadHomeStats() {
+            var stats = getSystemStats();
+            document.getElementById('homeStatsGrid').innerHTML = `
+                <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">${stats.totalReceipts || 0}</div><div class="stat-label">Всего расписок</div></div>
+                <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">${stats.todayReceipts || 0}</div><div class="stat-label">Сегодня</div></div>
+                <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">${stats.totalEmployees || 0}</div><div class="stat-label">Сотрудников</div></div>
+                <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value">${Object.keys(stats.specialtyStats || {}).length}</div><div class="stat-label">Специальностей</div></div>
+            `;
+            document.getElementById('todayStatsInfo').innerHTML = `Сегодня оформлено ${stats.todayReceipts || 0} расписок. Всего в системе ${stats.totalReceipts || 0}`;
+        }
+        
+        // ========== РЕЙТИНГОВЫЕ СПИСКИ ==========
+        function updateRatingList() {
+            var receipts = getAllReceipts();
+            var specialty = document.getElementById('ratingSpecialty').value;
+            var sortBy = document.getElementById('ratingSort').value;
+            
+            var filtered = specialty === 'all' ? receipts : receipts.filter(r => r.specialty === specialty);
+            var withScores = filtered.filter(r => r.score && parseInt(r.score) > 0);
+            
+            if (sortBy === 'score') {
+                withScores.sort((a,b) => parseInt(b.score) - parseInt(a.score));
+            } else {
+                withScores.sort((a,b) => a.fullName.localeCompare(b.fullName));
+            }
+            
+            document.getElementById('totalApplicants').innerHTML = withScores.length;
+            var scores = withScores.map(r => parseInt(r.score)).filter(s => !isNaN(s));
+            if (scores.length > 0) {
+                var top10Percent = Math.ceil(scores.length * 0.1);
+                var passing = scores[top10Percent - 1] || scores[scores.length - 1];
+                document.getElementById('passingScore').innerHTML = passing;
+            }
+            
+            var html = '';
+            for (var i = 0; i < withScores.length; i++) {
+                var r = withScores[i];
+                var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+                html += `<tr><td><span class="rank-badge ${rankClass}">${i+1}</span></td><td>${r.fullName}</td><td>${r.specialty}</td><td style="font-weight:700;color:var(--primary)">${r.score}</td><td><span class="status-badge status-active">Подано</span></td></tr>`;
+            }
+            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных</td></tr>';
+            document.getElementById('ratingTableBody').innerHTML = html;
+        }
+        
+        function exportRatingToExcel() {
+            var receipts = getAllReceipts();
+            var data = receipts.filter(r => r.score && parseInt(r.score) > 0).map((r, idx) => ({
+                '№': idx + 1,
+                'ФИО': r.fullName,
+                'Специальность': r.specialty,
+                'Баллы ГИА': r.score,
+                'Дата подачи': new Date(r.createdAt).toLocaleDateString('ru-RU')
+            }));
+            var ws = XLSX.utils.json_to_sheet(data);
+            var wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Рейтинговый список');
+            XLSX.writeFile(wb, `Рейтинговый_список_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('Экспорт выполнен', 'success');
+        }
+        
+        // ========== ЭКСПОРТ В ФИС ГИА ==========
+        function validateAndExport() {
+            var receipts = getAllReceipts();
+            var period = document.getElementById('exportPeriod').value;
+            var now = new Date();
+            var filtered = receipts.filter(r => {
+                var date = new Date(r.createdAt);
+                if (period === 'today') return date.toDateString() === now.toDateString();
+                if (period === 'week') return (now - date) <= 7 * 24 * 3600000;
+                if (period === 'month') return (now - date) <= 30 * 24 * 3600000;
+                return true;
+            });
+            
+            var valid = filtered.filter(r => r.fullName && r.specialty && r.score && parseInt(r.score) > 0);
+            var invalid = filtered.filter(r => !r.fullName || !r.specialty || !r.score);
+            
+            document.getElementById('exportCount').innerHTML = filtered.length;
+            document.getElementById('validCount').innerHTML = valid.length;
+            document.getElementById('invalidCount').innerHTML = invalid.length;
+            
+            var resultsHtml = '<div style="max-height:200px; overflow-y:auto;">';
+            if (invalid.length > 0) {
+                resultsHtml += '<p style="color: var(--warning);">⚠️ Требуют проверки:</p><ul>';
+                invalid.forEach(r => { resultsHtml += `<li>${r.fullName || 'Без ФИО'} - ${r.specialty || 'нет специальности'} - баллы: ${r.score || 'не указаны'}</li>`; });
+                resultsHtml += '</ul>';
+            } else {
+                resultsHtml += '<p style="color: var(--success);">✅ Все данные валидны, можно выполнять выгрузку</p>';
+            }
+            resultsHtml += '</div>';
+            document.getElementById('validationResults').innerHTML = resultsHtml;
+            window.exportData = { valid, format: document.getElementById('exportFormat').value };
+        }
+        
+        function exportToFIS() {
+            if (!window.exportData || window.exportData.valid.length === 0) {
+                showToast('Сначала выполните валидацию данных', 'error');
+                return;
+            }
+            var data = window.exportData.valid;
+            var format = window.exportData.format;
+            var content = '';
+            
+            if (format === 'csv') {
+                var headers = ['ФИО', 'Специальность', 'Баллы ГИА', 'Номер аттестата', 'Дата выдачи', 'Дата подачи'];
+                var rows = data.map(r => [r.fullName, r.specialty, r.score, r.diplomaNumber || '', r.diplomaDate || '', new Date(r.createdAt).toLocaleDateString('ru-RU')]);
+                content = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
+                var blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `export_fis_gia_${new Date().toISOString().slice(0,10)}.csv`;
+                link.click();
+            } else if (format === 'xml') {
+                content = '<?xml version="1.0" encoding="UTF-8"?>\n<export>\n';
+                data.forEach(r => {
+                    content += `  <applicant>\n    <fullName>${escapeXml(r.fullName)}</fullName>\n    <specialty>${escapeXml(r.specialty)}</specialty>\n    <score>${r.score}</score>\n    <diplomaNumber>${escapeXml(r.diplomaNumber || '')}</diplomaNumber>\n    <createdAt>${new Date(r.createdAt).toISOString()}</createdAt>\n  </applicant>\n`;
+                });
+                content += '</export>';
+                var blob = new Blob([content], { type: 'application/xml' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `export_fis_gia_${new Date().toISOString().slice(0,10)}.xml`;
+                link.click();
+            } else {
+                var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `export_fis_gia_${new Date().toISOString().slice(0,10)}.json`;
+                link.click();
+            }
+            showToast('Экспорт выполнен успешно', 'success');
+        }
+        
+        function escapeXml(str) { return str.replace(/[<>&]/g, function(m) { return m === '<' ? '&lt;' : m === '>' ? '&gt;' : '&amp;'; }); }
+        
+        // ========== ГРАФИКИ ==========
+        function initCharts() {
+            var receipts = getAllReceipts();
+            var last7Days = [];
+            var dailyCounts = [];
+            for (var i = 6; i >= 0; i--) { var d = new Date(); d.setDate(d.getDate() - i); last7Days.push(d.toLocaleDateString('ru-RU')); dailyCounts.push(0); }
+            receipts.forEach(r => { var d = new Date(r.createdAt).toLocaleDateString('ru-RU'); var idx = last7Days.indexOf(d); if (idx !== -1) dailyCounts[idx]++; });
+            
+            var specialtyStats = getSystemStats().specialtyStats || {};
+            var specialtyLabels = Object.keys(specialtyStats);
+            var specialtyCounts = Object.values(specialtyStats);
+            
+            if (receiptsChart) receiptsChart.destroy();
+            if (specialtyChart) specialtyChart.destroy();
+            if (trendChart) trendChart.destroy();
+            
+            var ctx1 = document.getElementById('receiptsChart').getContext('2d');
+            receiptsChart = new Chart(ctx1, { type: 'line', data: { labels: last7Days, datasets: [{ label: 'Количество расписок', data: dailyCounts, borderColor: 'var(--primary)', backgroundColor: 'rgba(79,70,229,0.1)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: true } });
+            
+            var ctx2 = document.getElementById('specialtyChart').getContext('2d');
+            specialtyChart = new Chart(ctx2, { type: 'doughnut', data: { labels: specialtyLabels, datasets: [{ data: specialtyCounts, backgroundColor: ['#4f46e5', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'] }] }, options: { responsive: true } });
+            
+            var monthlyStats = {};
+            receipts.forEach(r => { var m = new Date(r.createdAt).toLocaleString('ru-RU', { month: 'short' }); monthlyStats[m] = (monthlyStats[m] || 0) + 1; });
+            var ctx3 = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx3, { type: 'bar', data: { labels: Object.keys(monthlyStats), datasets: [{ label: 'Заявлений по месяцам', data: Object.values(monthlyStats), backgroundColor: 'var(--primary)', borderRadius: 8 }] }, options: { responsive: true } });
+        }
+        
+        // ========== РЕЗЕРВНОЕ КОПИРОВАНИЕ ==========
+        function backupData() {
+            var backup = {
+                users: JSON.parse(localStorage.getItem('receipt_system_users') || '{}'),
+                receipts: JSON.parse(localStorage.getItem('receipt_system_receipts') || '[]'),
+                counters: JSON.parse(localStorage.getItem('receipt_system_counters') || '{}'),
+                config: getConfig(),
+                date: new Date().toISOString()
+            };
+            var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `backup_${new Date().toISOString().slice(0,19)}.json`;
+            link.click();
+            document.getElementById('backupInfo').innerHTML = `<p>✅ Резервная копия создана ${new Date().toLocaleString()}</p>`;
+            showToast('Резервная копия создана', 'success');
+        }
+        
+        function restoreData() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        var backup = JSON.parse(ev.target.result);
+                        if (backup.users) localStorage.setItem('receipt_system_users', JSON.stringify(backup.users));
+                        if (backup.receipts) localStorage.setItem('receipt_system_receipts', JSON.stringify(backup.receipts));
+                        if (backup.counters) localStorage.setItem('receipt_system_counters', JSON.stringify(backup.counters));
+                        if (backup.config) saveConfig(backup.config);
+                        showToast('Данные восстановлены', 'success');
+                        location.reload();
+                    } catch(err) { showToast('Ошибка при восстановлении', 'error'); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        function exportToExcel() {
+            var receipts = getAllReceipts();
+            var data = receipts.map(r => ({ 'ФИО': r.fullName, 'Специальность': r.specialty, 'Баллы ГИА': r.score, 'Номер аттестата': r.diplomaNumber, 'Дата выдачи': r.diplomaDate, 'Сотрудник': r.employee, 'Дата создания': new Date(r.createdAt).toLocaleString() }));
+            var ws = XLSX.utils.json_to_sheet(data);
+            var wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Расписки');
+            XLSX.writeFile(wb, `export_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('Экспорт выполнен', 'success');
+        }
+        
+        function importFromExcel() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx, .xls, .csv';
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    var data = new Uint8Array(ev.target.result);
+                    var workbook = XLSX.read(data, { type: 'array' });
+                    var sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    var rows = XLSX.utils.sheet_to_json(sheet);
+                    var receipts = getAllReceipts();
+                    rows.forEach(row => {
+                        if (row['ФИО'] && row['Специальность']) {
+                            receipts.push({
+                                id: 'receipt_' + Date.now() + Math.random(),
+                                fullName: row['ФИО'],
+                                specialty: row['Специальность'],
+                                score: row['Баллы ГИА'] || '',
+                                diplomaNumber: row['Номер аттестата'] || '',
+                                diplomaDate: row['Дата выдачи'] || '',
+                                employee: currentUser.name,
+                                employeeLogin: currentUser.login,
+                                employeePosition: currentUser.position,
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                    });
+                    localStorage.setItem('receipt_system_receipts', JSON.stringify(receipts));
+                    showToast('Данные импортированы', 'success');
+                    location.reload();
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            input.click();
+        }
+        
+        // ========== КАСТОМАЙЗЕР ТЕМЫ (расширенный) ==========
+        function toggleCustomizer() { document.getElementById('customizerPanel').classList.toggle('show'); }
+        function setTheme(theme) {
+            localStorage.setItem('app_theme', theme);
+            if (theme === 'dark') document.body.classList.add('dark');
+            else if (theme === 'light') document.body.classList.remove('dark');
+            else if (theme === 'system') {
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.body.classList.add('dark');
+                else document.body.classList.remove('dark');
+            }
+            document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+            var active = document.querySelector('.theme-option[data-theme="' + theme + '"]');
+            if (active) active.classList.add('active');
+        }
+        function setStyle(style) {
+            localStorage.setItem('app_style', style);
+            if (style === 'outlined') document.body.classList.add('outlined');
+            else document.body.classList.remove('outlined');
+            document.querySelectorAll('.style-option').forEach(o => o.classList.remove('active'));
+            var active = document.querySelector('.style-option[data-style="' + style + '"]');
+            if (active) active.classList.add('active');
+        }
+        function setLayout(layout) {
+            localStorage.setItem('app_layout', layout);
+            if (layout === 'compact') document.body.classList.add('compact');
+            else document.body.classList.remove('compact');
+            document.querySelectorAll('.layout-option').forEach(o => o.classList.remove('active'));
+            var active = document.querySelector('.layout-option[data-layout="' + layout + '"]');
+            if (active) active.classList.add('active');
+        }
+        function setThemeColor(color) {
+            var colors = { default: '#4f46e5', blue: '#2563eb', green: '#059669', orange: '#ea580c', purple: '#9333ea', pink: '#ec4899', cyan: '#06b6d4' };
+            var primaryColor = colors[color] || color;
+            document.documentElement.style.setProperty('--primary', primaryColor);
+            document.documentElement.style.setProperty('--primary-hover', primaryColor + 'cc');
+            localStorage.setItem('app_color', color);
+            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+            var active = document.querySelector('.color-option[data-color="' + color + '"]');
+            if (active) active.classList.add('active');
+        }
+        function loadThemeSettings() {
+            var savedTheme = localStorage.getItem('app_theme') || 'light';
+            var savedStyle = localStorage.getItem('app_style') || 'standard';
+            var savedLayout = localStorage.getItem('app_layout') || 'standard';
+            var savedColor = localStorage.getItem('app_color') || 'default';
+            setTheme(savedTheme);
+            setStyle(savedStyle);
+            setLayout(savedLayout);
+            setThemeColor(savedColor);
+            document.getElementById('customColorPicker').value = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4f46e5';
+        }
+        
+        // ========== АДМИН ПАНЕЛЬ ==========
+        function toggleAccordion(el) { el.classList.toggle('open'); el.nextElementSibling.classList.toggle('show'); }
+        
+        function loadAdminPanel() {
+            loadAdminStats();
+            loadAdminEmployees();
+            loadAdminSpecialties();
+            loadAdminDocuments();
+            loadCounters();
+            loadAdminSettings();
+            document.getElementById('backupInfo').innerHTML = `<p>📁 Последнее резервное копирование: ${localStorage.getItem('last_backup') || 'не выполнялось'}</p>`;
+        }
+        
+        function loadAdminStats() {
+            var stats = getSystemStats();
+            document.getElementById('adminStatsGrid').innerHTML = `
+                <div class="stat-card"><div class="stat-value">${stats.totalEmployees}</div><div class="stat-label">Сотрудников</div></div>
+                <div class="stat-card"><div class="stat-value">${stats.totalReceipts}</div><div class="stat-label">Всего расписок</div></div>
+                <div class="stat-card"><div class="stat-value">${stats.todayReceipts}</div><div class="stat-label">Сегодня</div></div>
+                <div class="stat-card"><div class="stat-value">${stats.activeUsers}</div><div class="stat-label">Активных</div></div>
+            `;
+        }
+        
+        function loadAdminEmployees() {
+            var employees = getEmployees();
+            document.getElementById('adminEmployeesList').innerHTML = employees.map(function(emp) {
+                return '<tr><td>' + emp.name + '</td><td>' + emp.login + '</td><td>' + (emp.position || '-') + '</td><td>' + (emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник')) + '</td><td>' + (emp.receiptCount || 0) + '</td><td><span class="status-badge ' + (emp.isActive ? 'status-active' : 'status-inactive') + '">' + (emp.isActive ? 'Активен' : 'Неактивен') + '</span></td><td><button class="action-btn" onclick="editEmployee(\'' + emp.login + '\')">✏️</button><button class="action-btn" onclick="deleteEmployeeConfirm(\'' + emp.login + '\')">🗑️</button></td></tr>';
+            }).join('');
+        }
+        
+        function loadAdminSpecialties() {
+            var config = getConfig();
+            document.getElementById('adminSpecialtiesList').innerHTML = Object.entries(config.specialties).sort((a,b) => (a[1].order||999) - (b[1].order||999)).map(function([key,data]) {
+                return '<tr><td>' + data.code + '</td><td>' + key + '</td><td><input type="number" value="' + (data.order||999) + '" style="width:60px" onchange="updateSpecialtyOrder(\'' + key.replace(/'/g, "\\'") + '\', this.value)"></td><td><span class="status-badge ' + (data.active!==false ? 'status-active' : 'status-inactive') + '">' + (data.active!==false ? 'Активна' : 'Скрыта') + '</span></td><td><button class="action-btn" onclick="toggleSpecialtyAdmin(\'' + key.replace(/'/g, "\\'") + '\')">' + (data.active!==false ? '🔒' : '🔓') + '</button><button class="action-btn" onclick="editSpecialtyAdmin(\'' + key.replace(/'/g, "\\'") + '\')">✏️</button><button class="action-btn" onclick="deleteSpecialtyAdmin(\'' + key.replace(/'/g, "\\'") + '\')">🗑️</button></td></tr>';
+            }).join('');
+        }
+        
+        function loadAdminDocuments() {
+            var config = getConfig();
+            document.getElementById('adminDocumentsList').innerHTML = config.documentTypes.map(function(doc, idx) {
+                return '<tr><td>' + doc + '</td><td><button class="action-btn" onclick="editDocumentAdmin(' + idx + ')">✏️</button><button class="action-btn" onclick="deleteDocumentAdmin(' + idx + ')">🗑️</button></td></tr>';
+            }).join('');
+        }
+        
+        function loadCounters() {
+            var counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
+            var config = getConfig();
+            document.getElementById('countersList').innerHTML = Object.entries(config.specialties).map(function([name,data]) {
+                var current = counters[data.code] || 0;
+                return '<tr><td>' + data.code + '</td><td>' + name.substring(0,40) + '...</td><td>' + current + '</td><td><input type="number" id="newCounter_' + data.code + '" value="' + current + '" style="width:80px"></td><td><button class="action-btn" onclick="updateCounter(\'' + data.code + '\')">Установить</button><button class="action-btn" onclick="resetCounter(\'' + data.code + '\')">Сбросить</button></td></tr>';
+            }).join('');
+        }
+        
+        function loadAdminSettings() {
+            var config = getConfig();
+            document.getElementById('settingMaxPhotos').value = config.settings.maxPhotosCount || 4;
+            document.getElementById('settingCompanyName').value = config.settings.companyName || 'Приемная комиссия';
+            document.getElementById('settingCompanyPhone').value = config.settings.companyPhone || '(499) 156-40-01';
+        }
+        
+        // ========== ОСТАЛЬНЫЕ ФУНКЦИИ ==========
+        function loadSpecialties() {
+            var config = getConfig();
+            var select = document.getElementById('specialty');
+            var ratingSelect = document.getElementById('ratingSpecialty');
+            select.innerHTML = '<option value="">Выберите специальность</option>';
+            ratingSelect.innerHTML = '<option value="all">Все специальности</option>';
+            for (var key in config.specialties) {
+                var data = config.specialties[key];
+                if (data.active) {
+                    var opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = data.code + ' - ' + data.name;
+                    select.appendChild(opt);
+                    var opt2 = document.createElement('option');
+                    opt2.value = key;
+                    opt2.textContent = data.code + ' - ' + data.name;
+                    ratingSelect.appendChild(opt2);
+                }
+            }
+        }
+        
+        function loadDocumentCheckboxes() {
+            var config = getConfig();
+            var container = document.getElementById('documentsCheckboxes');
+            var html = '';
+            for (var i = 0; i < config.documentTypes.length; i++) {
+                var doc = config.documentTypes[i];
+                html += '<label class="checkbox-item"><input type="checkbox" value="' + doc.replace(/'/g, "\\'") + '"><span>' + doc + '</span></label>';
+            }
+            container.innerHTML = html;
+        }
+        
+        document.getElementById('employeeField').value = (currentUser ? currentUser.name + ' (' + currentUser.position + ')' : '');
+        
+        function showAlert(msg, type) {
+            var el = document.getElementById('alert');
+            if (!el) return;
+            el.textContent = msg;
+            el.className = 'alert alert-' + type;
+            el.style.display = 'block';
+            setTimeout(function() { if (el) el.style.display = 'none'; }, 4000);
+        }
+        
+        window.showToast = function(msg, type) {
+            var toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.background = 'var(--bg-card)';
+            toast.style.borderLeft = '4px solid ' + (type === 'success' ? 'var(--success)' : 'var(--danger)');
+            toast.style.padding = '12px 20px';
+            toast.style.borderRadius = '10px';
+            toast.style.zIndex = '1100';
+            toast.style.color = 'var(--text-primary)';
+            toast.innerHTML = msg;
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.remove(); }, 3000);
+        };
+        
+        window.printReceipt = function(receipt) {
+            var now = new Date();
+            var w = window.open('', '_blank');
+            var docHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписка №' + receipt.receiptNumber + '</title><style>body{font-family:"Times New Roman",serif;padding:40px;max-width:800px;margin:0 auto;background:white;color:black;}.header{text-align:center;margin-bottom:30px;}h3{font-size:18px;font-weight:bold;margin:20px 0;}.content{line-height:1.6;}.signature{margin-top:50px;}button{padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}@media print{.no-print{display:none;}}</style></head><body><div class="no-print" style="text-align:center;margin-bottom:20px;"><button onclick="window.print()">🖨️ Печать</button><button onclick="window.close()">✖️ Закрыть</button></div><div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div><div class="content"><p>Настоящая расписка выдана абитуриенту <strong>' + receipt.fullName + '</strong> о том, что от него приняты следующие документы:</p><ul>';
+            var docs = (receipt.documents || '').split('\n');
+            for (var i = 0; i < docs.length; i++) { if (docs[i].trim()) docHtml += '<li>' + docs[i].trim() + '</li>'; }
+            docHtml += '</ul><p><strong>Специальность:</strong> ' + receipt.specialty + '</p><p><strong>Номер расписки:</strong> ' + receipt.receiptNumber + '</p><p><strong>Дата выдачи:</strong> ' + now.toLocaleDateString('ru-RU') + '</p><div class="signature"><p>____________________</p><p><strong>' + receipt.employee + '</strong></p><p>' + receipt.employeePosition + '</p></div></div><script>setTimeout(function(){window.print();},500);<\/script></body></html>';
+            w.document.write(docHtml);
+            w.document.close();
+        };
+        
+        function loadReceiptsHistory() {
+            var list = getEmployeeReceipts(currentUser.login);
+            var container = document.getElementById('receiptsList');
+            if (!list.length) { container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>'; return; }
+            var html = '';
+            for (var i = 0; i < list.length; i++) {
+                var r = list[i];
+                html += '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="window.printReceipt(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
+            }
+            container.innerHTML = html;
+        }
+        
+        function loadProfile() {
+            var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
+            var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
+            html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
+            html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';
+            html += '<div class="profile-field"><label>Телефон</label><input type="text" value="' + (currentUser.phone || 'Не указан') + '" readonly></div>';
+            html += '<div class="profile-field"><label>Роль</label><input type="text" value="' + roleTxt + '" readonly></div>';
+            document.getElementById('profileInfo').innerHTML = html;
+        }
+        
+        function loadStats() {
+            var stats = getSystemStats();
+            document.getElementById('statsGrid').innerHTML = 
+                '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+                '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+                '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+                '<div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">' + (stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0) + '%</div><div class="stat-label">Активность сегодня</div></div>';
+            var sorted = (stats.employeeStats || []).slice();
+            sorted.sort(function(a, b) { return (b.receiptCount || 0) - (a.receiptCount || 0); });
+            var html = '';
+            for (var i = 0; i < sorted.length; i++) {
+                var e = sorted[i];
+                var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+                html += '<tr><td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '<td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
+            }
+            document.getElementById('employeeStatsBody').innerHTML = html;
+        }
+        
+        document.getElementById('receiptForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = document.getElementById('submitBtn');
+            var original = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner"></span> Создание...';
+            btn.disabled = true;
+            
+            var docs = [];
+            var checkboxes = document.querySelectorAll('#documentsCheckboxes input:checked');
+            for (var i = 0; i < checkboxes.length; i++) { docs.push(checkboxes[i].value); }
+            
+            var data = {
+                fullName: document.getElementById('fullName').value,
+                specialty: document.getElementById('specialty').value,
+                diplomaNumber: document.getElementById('diplomaNumber').value,
+                diplomaDate: document.getElementById('diplomaDate').value,
+                diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
+                documents: docs.join('\n'),
+                photosCount: document.getElementById('photosCount').value,
+                score: document.getElementById('score').value,
+                city: document.getElementById('city').value,
+                employee: currentUser.name,
+                employeeLogin: currentUser.login,
+                employeePosition: currentUser.position
+            };
+            if (!data.fullName || !data.specialty) {
+                showAlert('Заполните обязательные поля', 'error');
+                btn.innerHTML = original;
+                btn.disabled = false;
+                return;
+            }
+            var config = getConfig();
+            var code = config.specialties[data.specialty] ? config.specialties[data.specialty].code : 'ОБЩ';
+            var counter = getReceiptCounter(code);
+            var number = code + '-' + counter;
+            var receipt = {
+                fullName: data.fullName, specialty: data.specialty, diplomaNumber: data.diplomaNumber,
+                diplomaDate: data.diplomaDate, diplomaIssuedBy: data.diplomaIssuedBy, documents: data.documents,
+                photosCount: data.photosCount, score: data.score, city: data.city, employee: data.employee,
+                employeeLogin: data.employeeLogin, employeePosition: data.employeePosition,
+                receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString()
+            };
+            saveReceipt(receipt);
+            window.printReceipt(receipt);
+            showAlert('✅ Расписка №' + number + ' создана!', 'success');
+            document.getElementById('receiptForm').reset();
+            document.getElementById('photosCount').value = '0';
+            var allCheckboxes = document.querySelectorAll('#documentsCheckboxes input');
+            for (var i = 0; i < allCheckboxes.length; i++) { allCheckboxes[i].checked = false; }
+            if (document.getElementById('historyTab').classList.contains('active')) loadReceiptsHistory();
+            loadHomeStats();
+            updateRatingList();
+            initCharts();
+            btn.innerHTML = original;
+            btn.disabled = false;
+        });
+        
+        function switchTab(tabId) {
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+            document.getElementById(tabId + 'Tab').classList.add('active');
+            if (tabId === 'history') loadReceiptsHistory();
+            if (tabId === 'profile') loadProfile();
+            if (tabId === 'stats') loadStats();
+            if (tabId === 'charts') initCharts();
+            if (tabId === 'home') loadHomeStats();
+            if (tabId === 'rating') updateRatingList();
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('receiptForm').addEventListener('submit', function(e) { e.preventDefault(); });
+            document.getElementById('themeToggleBtn').onclick = toggleCustomizer;
+            document.getElementById('customColorPicker').onchange = function() { setThemeColor(this.value); };
+            document.querySelectorAll('.color-option').forEach(function(opt) { opt.onclick = function() { setThemeColor(this.getAttribute('data-color')); }; });
+            document.querySelectorAll('.theme-option').forEach(function(opt) { opt.onclick = function() { setTheme(this.getAttribute('data-theme')); }; });
+            document.querySelectorAll('.style-option').forEach(function(opt) { opt.onclick = function() { setStyle(this.getAttribute('data-style')); }; });
+            document.querySelectorAll('.layout-option').forEach(function(opt) { opt.onclick = function() { setLayout(this.getAttribute('data-layout')); }; });
+            document.querySelectorAll('.nav-item[data-tab]').forEach(function(item) {
+                item.onclick = function() {
+                    var id = this.getAttribute('data-tab');
+                    switchTab(id);
+                    document.querySelectorAll('.nav-item').forEach(function(nav) { nav.classList.remove('active'); });
+                    this.classList.add('active');
+                };
+            });
+            document.addEventListener('click', function(e) {
+                var panel = document.getElementById('customizerPanel');
+                var btn = document.getElementById('themeToggleBtn');
+                if (panel && !panel.contains(e.target) && !btn.contains(e.target)) { panel.classList.remove('show'); }
+            });
+        }
+        
+        // ========== АДМИН ФУНКЦИИ ==========
+        window.openEmployeeModal = function() {
+            document.getElementById('employeeModalTitle').innerHTML = 'Добавить сотрудника';
+            document.getElementById('editLogin').value = '';
+            document.getElementById('empName').value = '';
+            document.getElementById('empLogin').value = '';
+            document.getElementById('empPassword').value = '';
+            document.getElementById('empPosition').value = '';
+            document.getElementById('empPhone').value = '';
+            document.getElementById('empRole').value = 'employee';
+            document.getElementById('empStatus').value = 'true';
+            document.getElementById('employeeModal').style.display = 'flex';
+        };
+        
+        window.editEmployee = function(login) {
+            var users = getAllUsers();
+            var emp = users.find(u => u.login === login);
+            if (!emp) return;
+            document.getElementById('employeeModalTitle').innerHTML = 'Редактировать сотрудника';
+            document.getElementById('editLogin').value = emp.login;
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empLogin').value = emp.login;
+            document.getElementById('empPassword').value = '';
+            document.getElementById('empPosition').value = emp.position || '';
+            document.getElementById('empPhone').value = emp.phone || '';
+            document.getElementById('empRole').value = emp.role || 'employee';
+            document.getElementById('empStatus').value = emp.isActive ? 'true' : 'false';
+            document.getElementById('employeeModal').style.display = 'flex';
+        };
+        
+        window.saveEmployee = function() {
+            var editLogin = document.getElementById('editLogin').value;
+            var login = document.getElementById('empLogin').value;
+            var name = document.getElementById('empName').value;
+            var password = document.getElementById('empPassword').value;
+            var position = document.getElementById('empPosition').value;
+            var phone = document.getElementById('empPhone').value;
+            var role = document.getElementById('empRole').value;
+            var isActive = document.getElementById('empStatus').value === 'true';
+            if (!name || !login) { showToast('Заполните обязательные поля', 'error'); return; }
+            var result;
+            if (editLogin) {
+                var updates = { name: name, position: position, phone: phone, role: role, isActive: isActive };
+                if (password) updates.password = password;
+                result = updateEmployee(editLogin, updates);
+            } else {
+                if (!password) { showToast('Введите пароль', 'error'); return; }
+                result = addEmployee({ login: login, name: name, password: password, position: position, phone: phone, role: role });
+            }
+            if (result.success) {
+                showToast(editLogin ? 'Сотрудник обновлён' : 'Сотрудник добавлен', 'success');
+                window.closeEmployeeModal();
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminEmployees();
+            } else { showToast(result.error, 'error'); }
+        };
+        
+        window.closeEmployeeModal = function() { document.getElementById('employeeModal').style.display = 'none'; };
+        window.closeSpecialtyModal = function() { document.getElementById('specialtyModal').style.display = 'none'; };
+        
+        window.openSpecialtyModal = function() {
+            document.getElementById('specialtyModalTitle').innerHTML = 'Добавить специальность';
+            document.getElementById('editSpecialtyKey').value = '';
+            document.getElementById('specialtyCode').value = '';
+            document.getElementById('specialtyName').value = '';
+            document.getElementById('specialtyOrder').value = '99';
+            document.getElementById('specialtyModal').style.display = 'flex';
+        };
+        
+        window.editSpecialtyAdmin = function(key) {
+            var config = getConfig();
+            var data = config.specialties[key];
+            document.getElementById('specialtyModalTitle').innerHTML = 'Редактировать специальность';
+            document.getElementById('editSpecialtyKey').value = key;
+            document.getElementById('specialtyCode').value = data.code;
+            document.getElementById('specialtyName').value = key;
+            document.getElementById('specialtyOrder').value = data.order || 99;
+            document.getElementById('specialtyModal').style.display = 'flex';
+        };
+        
+        window.saveSpecialty = function() {
+            var oldKey = document.getElementById('editSpecialtyKey').value;
+            var code = document.getElementById('specialtyCode').value;
+            var name = document.getElementById('specialtyName').value;
+            var order = parseInt(document.getElementById('specialtyOrder').value);
+            if (!code || !name) { showToast('Заполните все поля', 'error'); return; }
+            var config = getConfig();
+            if (oldKey && oldKey !== name) delete config.specialties[oldKey];
+            config.specialties[name] = { code: code, name: name.split(' ').slice(1).join(' ') || name, active: true, order: order };
+            saveConfig(config);
+            window.closeSpecialtyModal();
+            if (document.getElementById('adminTab').classList.contains('active')) loadAdminSpecialties();
+            showToast('Специальность сохранена', 'success');
+        };
+        
+        window.deleteSpecialtyAdmin = function(key) {
+            if (confirm('Удалить специальность?')) {
+                var config = getConfig();
+                delete config.specialties[key];
+                saveConfig(config);
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminSpecialties();
+                showToast('Специальность удалена', 'success');
+            }
+        };
+        
+        window.toggleSpecialtyAdmin = function(key) {
+            var config = getConfig();
+            if (config.specialties[key]) {
+                config.specialties[key].active = !config.specialties[key].active;
+                saveConfig(config);
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminSpecialties();
+                showToast('Статус обновлён', 'success');
+            }
+        };
+        
+        window.updateSpecialtyOrder = function(key, order) {
+            var config = getConfig();
+            if (config.specialties[key]) {
+                config.specialties[key].order = parseInt(order);
+                saveConfig(config);
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminSpecialties();
+                showToast('Порядок обновлён', 'success');
+            }
+        };
+        
+        window.updateCounter = function(code) {
+            var newVal = parseInt(document.getElementById('newCounter_' + code).value) || 0;
+            var counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
+            counters[code] = newVal;
+            localStorage.setItem('receipt_system_counters', JSON.stringify(counters));
+            showToast('Счётчик ' + code + ' установлен на ' + newVal, 'success');
+            if (document.getElementById('adminTab').classList.contains('active')) loadCounters();
+        };
+        
+        window.resetCounter = function(code) {
+            if (confirm('Сбросить счётчик ' + code + ' в 0?')) {
+                var counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
+                counters[code] = 0;
+                localStorage.setItem('receipt_system_counters', JSON.stringify(counters));
+                showToast('Счётчик ' + code + ' сброшен', 'success');
+                if (document.getElementById('adminTab').classList.contains('active')) loadCounters();
+            }
+        };
+        
+        window.resetAllCounters = function() {
+            if (confirm('Сбросить ВСЕ счётчики расписок в 0?')) {
+                localStorage.setItem('receipt_system_counters', JSON.stringify({}));
+                showToast('Все счётчики сброшены', 'success');
+                if (document.getElementById('adminTab').classList.contains('active')) loadCounters();
+            }
+        };
+        
+        window.openDocumentModal = function() {
+            var newDoc = prompt('Введите название документа:');
+            if (newDoc) {
+                var config = getConfig();
+                config.documentTypes.push(newDoc);
+                saveConfig(config);
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminDocuments();
+                showToast('Документ добавлен', 'success');
+            }
+        };
+        
+        window.editDocumentAdmin = function(index) {
+            var config = getConfig();
+            var newName = prompt('Редактировать документ:', config.documentTypes[index]);
+            if (newName) {
+                config.documentTypes[index] = newName;
+                saveConfig(config);
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminDocuments();
+                showToast('Документ обновлён', 'success');
+            }
+        };
+        
+        window.deleteDocumentAdmin = function(index) {
+            if (confirm('Удалить документ?')) {
+                var config = getConfig();
+                config.documentTypes.splice(index, 1);
+                saveConfig(config);
+                if (document.getElementById('adminTab').classList.contains('active')) loadAdminDocuments();
+                showToast('Документ удалён', 'success');
+            }
+        };
+        
+        window.saveMaxPhotos = function() {
+            var config = getConfig();
+            config.settings.maxPhotosCount = parseInt(document.getElementById('settingMaxPhotos').value);
+            saveConfig(config);
+            showToast('Настройки сохранены', 'success');
+        };
+        
+        window.saveCompanyName = function() {
+            var config = getConfig();
+            config.settings.companyName = document.getElementById('settingCompanyName').value;
+            saveConfig(config);
+            showToast('Название сохранено', 'success');
+        };
+        
+        window.saveCompanyPhone = function() {
+            var config = getConfig();
+            config.settings.companyPhone = document.getElementById('settingCompanyPhone').value;
+            saveConfig(config);
+            showToast('Телефон сохранён', 'success');
+        };
+        
+        window.deleteEmployeeConfirm = function(login) {
+            if (confirm('Удалить сотрудника ' + login + '?')) {
+                var result = deleteEmployee(login);
+                if (result.success) {
+                    showToast('Сотрудник удалён', 'success');
+                    if (document.getElementById('adminTab').classList.contains('active')) loadAdminEmployees();
+                } else { showToast(result.error, 'error'); }
+            }
+        };
+        
+        window.backupData = backupData;
+        window.restoreData = restoreData;
+        window.exportToExcel = exportToExcel;
+        window.importFromExcel = importFromExcel;
+        window.exportRatingToExcel = exportRatingToExcel;
+        window.validateAndExport = validateAndExport;
+        window.exportToFIS = exportToFIS;
+        window.updateRatingList = updateRatingList;
+        
+        // ЗАПУСК
+        init();
     </script>
 </body>
 </html>
