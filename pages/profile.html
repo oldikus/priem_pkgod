@@ -513,7 +513,7 @@
             roleTxt = 'Администратор';
             roleClass = 'admin';
         } else if (currentUser.role === 'both') {
-            roleTxt = 'Администратор + Сотрудник';
+            roleTxt = 'Администратор системы';
             roleClass = 'both';
         } else if (currentUser.role === 'manager') {
             roleTxt = 'Руководитель';
@@ -563,7 +563,7 @@
         document.getElementById('profileLogin').innerHTML = '🔑 ' + currentUser.login;
         
         document.getElementById('profilePhone').textContent = currentUser.phone || 'Не указан';
-        document.getElementById('profileEmail').textContent = currentUser.email || (currentUser.login + '@example.com');
+        document.getElementById('profileEmail').textContent = currentUser.email || (currentUser.login + '@pkgod.ru');
         document.getElementById('profileLoginValue').textContent = currentUser.login;
         document.getElementById('profilePositionValue').textContent = currentUser.position || 'Не указана';
         document.getElementById('profileRoleValue').innerHTML = '<span class="role-badge-modern">' + roleTxt + '</span>';
@@ -573,7 +573,7 @@
         document.getElementById('profileTotalReceipts').textContent = totalReceipts;
         
         // Дата регистрации/активности (пример)
-        var activeDays = 'с ' + (currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('ru-RU') : '2025');
+        var activeDays = 'с ' + (currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('ru-RU') : '2026');
         document.getElementById('profileActiveDays').textContent = activeDays;
         
         // Прогресс активности
