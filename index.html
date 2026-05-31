@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Приемная комиссия</title>
+    <script>
+        // Проверяем авторизацию и перенаправляем
+        const user = localStorage.getItem('receipt_system_current_user');
+        if (user) {
+            const userData = JSON.parse(user);
+            if (userData.role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+        } else {
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body>
+    <p>Перенаправление...</p>
+</body>
+</html>

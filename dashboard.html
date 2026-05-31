@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - Приемная комиссия</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard {
+            min-height: 100vh;
+            background: #f9fafb;
+        }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: white;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 30px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .employee-info {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 24px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            color: #6b7280;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .receipts-list {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+        }
+        
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .receipt-number {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .btn-print {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .employee-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e5e7eb;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 1000;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>📄 Приемная комиссия</h2>
+                <div class="employee-info" id="employeeInfo"></div>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-item active" onclick="showTab('create')">
+                    <span>📝</span> Создать расписку
+                </div>
+                <div class="nav-item" onclick="showTab('history')">
+                    <span>📋</span> Мои расписки
+                </div>
+                <div class="nav-item" onclick="showTab('profile')">
+                    <span>👤</span> Мой профиль
+                </div>
+                <div class="nav-item" onclick="logout()">
+                    <span>🚪</span> Выйти
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Вкладка создания расписки -->
+            <div id="createTab" class="tab-content">
+                <div class="form-container">
+                    <h2 style="margin-bottom: 24px;">Создание новой расписки</h2>
+                    <form id="receiptForm">
+                        <div class="form-group">
+                            <label>ФИО абитуриента *</label>
+                            <input type="text" id="fullName" required placeholder="Иванов Иван Иванович">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Специальность *</label>
+                            <select id="specialty" required>
+                                <option value="">Выберите специальность</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Номер аттестата/диплома</label>
+                                <input type="text" id="diplomaNumber" placeholder="№ документа">
+                            </div>
+                            <div class="form-group">
+                                <label>Дата выдачи</label>
+                                <input type="date" id="diplomaDate">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Кем выдан аттестат</label>
+                            <input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Принятые документы</label>
+                            <textarea id="documents" rows="4" placeholder="Заявление&#10;Аттестат/диплом (оригинал)&#10;Фотокарточки (4 шт)"></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Количество фотографий (0-4)</label>
+                                <input type="number" id="photosCount" min="0" max="4" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Баллы ГИА</label>
+                                <input type="text" id="score" placeholder="Баллы">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Город получения аттестата</label>
+                                <input type="text" id="city" placeholder="Город">
+                            </div>
+                            <div class="form-group">
+                                <label>Сотрудник</label>
+                                <input type="text" id="employeeField" readonly style="background: #f3f4f6;">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">📄 Создать расписку</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Вкладка истории расписок -->
+            <div id="historyTab" class="tab-content" style="display: none;">
+                <div class="receipts-list">
+                    <h2 style="margin-bottom: 20px;">📋 Мои расписки</h2>
+                    <div id="receiptsList"></div>
+                </div>
+            </div>
+            
+            <!-- Вкладка профиля -->
+            <div id="profileTab" class="tab-content" style="display: none;">
+                <div class="form-container">
+                    <h2 style="margin-bottom: 24px;">👤 Мой профиль</h2>
+                    <div id="profileInfo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        // Проверка авторизации
+        const currentUser = checkAuth();
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+        
+        // Если админ - перенаправляем в админку
+        if (currentUser.role === 'admin') {
+            window.location.href = 'admin.html';
+        }
+        
+        // Отображение информации о сотруднике
+        document.getElementById('employeeInfo').innerHTML = `
+            <strong>${currentUser.name}</strong><br>
+            ${currentUser.position}<br>
+            ${currentUser.email}
+        `;
+        
+        // Загрузка специальностей из конфига
+        function loadSpecialties() {
+            const config = getConfig();
+            const select = document.getElementById('specialty');
+            
+            Object.entries(config.specialties)
+                .filter(([_, data]) => data.active)
+                .sort((a, b) => a[1].order - b[1].order)
+                .forEach(([key, data]) => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `${data.code} - ${data.name}`;
+                    select.appendChild(option);
+                });
+        }
+        
+        // Подстановка данных сотрудника
+        document.getElementById('employeeField').value = `${currentUser.name} (${currentUser.position})`;
+        
+        // Обработка отправки формы
+        document.getElementById('receiptForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                fullName: document.getElementById('fullName').value,
+                specialty: document.getElementById('specialty').value,
+                diplomaNumber: document.getElementById('diplomaNumber').value,
+                diplomaDate: document.getElementById('diplomaDate').value,
+                diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
+                documents: document.getElementById('documents').value,
+                photosCount: document.getElementById('photosCount').value,
+                score: document.getElementById('score').value,
+                city: document.getElementById('city').value,
+                employee: currentUser.name,
+                employeeEmail: currentUser.email,
+                employeePosition: currentUser.position
+            };
+            
+            // Получаем код специальности
+            const config = getConfig();
+            const specialtyCode = config.specialties[formData.specialty]?.code || 'ОБЩ';
+            
+            // Генерируем номер расписки
+            const counter = getReceiptCounter(specialtyCode);
+            const receiptNumber = `${specialtyCode}-${counter}`;
+            
+            // Сохраняем расписку
+            const receiptData = {
+                ...formData,
+                receiptNumber,
+                specialtyCode,
+                createdAt: new Date().toISOString()
+            };
+            
+            saveReceipt(receiptData);
+            
+            // Здесь будет вызов Google Apps Script для создания PDF
+            // Временно показываем уведомление
+            alert(`✅ Расписка №${receiptNumber} успешно создана!`);
+            
+            // Очищаем форму
+            e.target.reset();
+            document.getElementById('photosCount').value = '0';
+            
+            // Обновляем историю
+            if (document.getElementById('historyTab').style.display !== 'none') {
+                loadReceiptsHistory();
+            }
+        });
+        
+        // Загрузка истории расписок
+        function loadReceiptsHistory() {
+            const receipts = getEmployeeReceipts(currentUser.email);
+            const container = document.getElementById('receiptsList');
+            
+            if (receipts.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280;">У вас пока нет созданных расписок</p>';
+                return;
+            }
+            
+            container.innerHTML = receipts.map(receipt => `
+                <div class="receipt-item">
+                    <div>
+                        <div class="receipt-number">${receipt.receiptNumber}</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                            ${receipt.fullName} | ${new Date(receipt.createdAt).toLocaleDateString('ru-RU')}
+                        </div>
+                    </div>
+                    <button class="btn-print" onclick="printReceipt('${receipt.receiptNumber}')">🖨️ Печать</button>
+                </div>
+            `).join('');
+        }
+        
+        // Загрузка профиля
+        function loadProfile() {
+            const container = document.getElementById('profileInfo');
+            const stats = getSystemStats();
+            const myStats = stats.employeeStats.find(s => s.email === currentUser.email);
+            
+            container.innerHTML = `
+                <div class="form-group">
+                    <label>ФИО</label>
+                    <input type="text" value="${currentUser.name}" readonly style="background: #f3f4f6;">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="text" value="${currentUser.email}" readonly style="background: #f3f4f6;">
+                </div>
+                <div class="form-group">
+                    <label>Должность</label>
+                    <input type="text" value="${currentUser.position}" readonly style="background: #f3f4f6;">
+                </div>
+                <div class="form-group">
+                    <label>Телефон</label>
+                    <input type="text" value="${currentUser.phone || 'Не указан'}" readonly style="background: #f3f4f6;">
+                </div>
+                <div class="form-group">
+                    <label>Создано расписок</label>
+                    <input type="text" value="${myStats?.receiptCount || 0}" readonly style="background: #f3f4f6;">
+                </div>
+                <div class="form-group">
+                    <label>Дата регистрации</label>
+                    <input type="text" value="${new Date().toLocaleDateString('ru-RU')}" readonly style="background: #f3f4f6;">
+                </div>
+            `;
+        }
+        
+        function printReceipt(receiptNumber) {
+            alert(`Печать расписки ${receiptNumber}\n\nФункция печати будет подключена после интеграции с Google Docs`);
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById(`${tab}Tab`).style.display = 'block';
+            
+            if (tab === 'history') {
+                loadReceiptsHistory();
+            } else if (tab === 'profile') {
+                loadProfile();
+            }
+            
+            // Обновляем активный пункт меню
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+        }
+        
+        // Инициализация
+        loadSpecialties();
+        loadReceiptsHistory();
+    </script>
+</body>
+</html>
