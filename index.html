@@ -139,7 +139,7 @@
     <script>
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         var currentUserData = null;
-        var globalCharts = { receiptsChart: null, specialtyChart: null, trendChart: null };
+        var receiptsChart = null, specialtyChart = null, trendChart = null;
         
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
         function init() {
@@ -187,7 +187,6 @@
                 .then(function(html) {
                     if (container) {
                         container.innerHTML = html;
-                        // Выполняем скрипты из загруженной страницы
                         var scripts = container.querySelectorAll('script');
                         for (var i = 0; i < scripts.length; i++) {
                             var oldScript = scripts[i];
@@ -210,6 +209,17 @@
                 if (item.getAttribute('data-page') === pageName) { item.classList.add('active'); } 
                 else { item.classList.remove('active'); }
             }
+            
+            // Вызываем функцию инициализации для загруженной страницы
+            setTimeout(function() {
+                if (pageName === 'home' && typeof window.loadHomeStats === 'function') window.loadHomeStats();
+                if (pageName === 'stats' && typeof window.loadStatsPage === 'function') window.loadStatsPage();
+                if (pageName === 'history' && typeof window.loadHistoryPage === 'function') window.loadHistoryPage();
+                if (pageName === 'profile' && typeof window.loadProfilePage === 'function') window.loadProfilePage();
+                if (pageName === 'charts' && typeof window.loadChartsPage === 'function') window.loadChartsPage();
+                if (pageName === 'rating' && typeof window.updateRatingList === 'function') window.updateRatingList();
+                if (pageName === 'admin' && typeof window.loadAdminPanel === 'function') window.loadAdminPanel();
+            }, 50);
         }
         
         // ========== ОБРАБОТЧИКИ ==========
@@ -316,6 +326,7 @@
         
         // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ДОСТУПА ИЗ СТРАНИЦ ==========
         window.getCurrentUser = function() { return currentUserData; };
+        
         window.showToast = function(msg, type) {
             var toast = document.createElement('div');
             toast.style.position = 'fixed';
@@ -331,6 +342,7 @@
             document.body.appendChild(toast);
             setTimeout(function() { toast.remove(); }, 3000);
         };
+        
         window.printReceipt = function(receipt) {
             var now = new Date();
             var w = window.open('', '_blank');
@@ -341,6 +353,7 @@
             w.document.write(docHtml);
             w.document.close();
         };
+        
         window.updateRatingList = function() {
             var receipts = getAllReceipts();
             var specialty = document.getElementById('ratingSpecialty') ? document.getElementById('ratingSpecialty').value : 'all';
@@ -374,11 +387,150 @@
             for (var i = 0; i < withScores.length; i++) {
                 var r = withScores[i];
                 var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-                html += '<tr><td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td>' + r.fullName + '</td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '</td><td><span class="status-badge status-active">Подано</span></td></tr>';
+                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + r.fullName + '</strong></td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '</td><td><span class="status-badge status-active">Подано</span></td></tr>';
             }
-            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных<\/td></tr>';
+            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных</td></tr>';
             var tableBody = document.getElementById('ratingTableBody');
             if (tableBody) tableBody.innerHTML = html;
+        };
+        
+        // ========== ФУНКЦИИ ДЛЯ ЗАГРУЗКИ СТРАНИЦ ==========
+        window.loadHomeStats = function() {
+            var stats = getSystemStats();
+            var grid = document.getElementById('homeStatsGrid');
+            if (grid) {
+                grid.innerHTML = 
+                    '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value">' + Object.keys(stats.specialtyStats || {}).length + '</div><div class="stat-label">Специальностей</div></div>';
+            }
+            var todayInfo = document.getElementById('todayStatsInfo');
+            if (todayInfo) todayInfo.innerHTML = 'Сегодня оформлено ' + (stats.todayReceipts || 0) + ' расписок. Всего в системе ' + (stats.totalReceipts || 0);
+        };
+        
+        window.loadStatsPage = function() {
+            var stats = getSystemStats();
+            var statsGrid = document.getElementById('statsGrid');
+            if (statsGrid) {
+                statsGrid.innerHTML = 
+                    '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">' + (stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0) + '%</div><div class="stat-label">Активность сегодня</div></div>';
+            }
+            
+            var sorted = (stats.employeeStats || []).slice();
+            sorted.sort(function(a, b) { return (b.receiptCount || 0) - (a.receiptCount || 0); });
+            var html = '';
+            for (var i = 0; i < sorted.length; i++) {
+                var e = sorted[i];
+                var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
+            }
+            var empBody = document.getElementById('employeeStatsBody');
+            if (empBody) empBody.innerHTML = html;
+        };
+        
+        window.loadHistoryPage = function() {
+            var currentUser = window.getCurrentUser();
+            if (!currentUser) return;
+            var list = getEmployeeReceipts(currentUser.login);
+            var container = document.getElementById('receiptsList');
+            if (!container) return;
+            if (!list.length) { 
+                container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>'; 
+                return; 
+            }
+            var html = '';
+            for (var i = 0; i < list.length; i++) {
+                var r = list[i];
+                html += '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="window.printReceipt(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
+            }
+            container.innerHTML = html;
+        };
+        
+        window.loadProfilePage = function() {
+            var currentUser = window.getCurrentUser();
+            if (!currentUser) return;
+            var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
+            var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
+            html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
+            html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';
+            html += '<div class="profile-field"><label>Телефон</label><input type="text" value="' + (currentUser.phone || 'Не указан') + '" readonly></div>';
+            html += '<div class="profile-field"><label>Роль</label><input type="text" value="' + roleTxt + '" readonly></div>';
+            var container = document.getElementById('profileInfo');
+            if (container) container.innerHTML = html;
+        };
+        
+        window.loadChartsPage = function() {
+            var receipts = getAllReceipts();
+            var last7Days = [];
+            var dailyCounts = [];
+            for (var i = 6; i >= 0; i--) { 
+                var d = new Date(); 
+                d.setDate(d.getDate() - i); 
+                last7Days.push(d.toLocaleDateString('ru-RU')); 
+                dailyCounts.push(0); 
+            }
+            for (var i = 0; i < receipts.length; i++) {
+                var r = receipts[i];
+                var d = new Date(r.createdAt).toLocaleDateString('ru-RU');
+                var idx = last7Days.indexOf(d);
+                if (idx !== -1) dailyCounts[idx]++;
+            }
+            
+            var specialtyStats = getSystemStats().specialtyStats || {};
+            var specialtyLabels = Object.keys(specialtyStats);
+            var specialtyCounts = Object.values(specialtyStats);
+            
+            var ctx1 = document.getElementById('receiptsChart');
+            if (ctx1) {
+                if (receiptsChart) receiptsChart.destroy();
+                receiptsChart = new Chart(ctx1.getContext('2d'), { 
+                    type: 'line', 
+                    data: { labels: last7Days, datasets: [{ label: 'Количество расписок', data: dailyCounts, borderColor: 'var(--primary)', backgroundColor: 'rgba(79,70,229,0.1)', fill: true, tension: 0.3 }] }, 
+                    options: { responsive: true, maintainAspectRatio: true } 
+                });
+            }
+            
+            var ctx2 = document.getElementById('specialtyChart');
+            if (ctx2) {
+                if (specialtyChart) specialtyChart.destroy();
+                specialtyChart = new Chart(ctx2.getContext('2d'), { 
+                    type: 'doughnut', 
+                    data: { labels: specialtyLabels, datasets: [{ data: specialtyCounts, backgroundColor: ['#4f46e5', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'] }] }, 
+                    options: { responsive: true } 
+                });
+            }
+            
+            var ctx3 = document.getElementById('trendChart');
+            if (ctx3) {
+                if (trendChart) trendChart.destroy();
+                var monthlyStats = {};
+                for (var i = 0; i < receipts.length; i++) {
+                    var r = receipts[i];
+                    var m = new Date(r.createdAt).toLocaleString('ru-RU', { month: 'short' });
+                    monthlyStats[m] = (monthlyStats[m] || 0) + 1;
+                }
+                trendChart = new Chart(ctx3.getContext('2d'), { 
+                    type: 'bar', 
+                    data: { labels: Object.keys(monthlyStats), datasets: [{ label: 'Заявлений по месяцам', data: Object.values(monthlyStats), backgroundColor: 'var(--primary)', borderRadius: 8 }] }, 
+                    options: { responsive: true } 
+                });
+            }
+        };
+        
+        window.loadAdminPanel = function() {
+            // Функции для админки определены в admin.js
+            setTimeout(function() {
+                if (typeof loadAdminStats === 'function') loadAdminStats();
+                if (typeof loadAdminEmployees === 'function') loadAdminEmployees();
+                if (typeof loadAdminSpecialties === 'function') loadAdminSpecialties();
+                if (typeof loadAdminDocuments === 'function') loadAdminDocuments();
+                if (typeof loadCounters === 'function') loadCounters();
+                if (typeof loadAdminSettings === 'function') loadAdminSettings();
+            }, 100);
         };
         
         init();
