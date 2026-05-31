@@ -1,11 +1,9 @@
-// auth.js (Firebase версия)
-import { db, auth, collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, signInWithEmailAndPassword } from './firebase-config.js';
-
+// auth.js (Supabase версия)
 const STORAGE_KEYS = {
     CURRENT_USER: 'receipt_system_current_user'
 };
 
-// ========== ХЕШИРОВАНИЕ ПАРОЛЯ ==========
+// Хеширование пароля
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -13,36 +11,48 @@ async function hashPassword(password) {
     return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ========== АВТОРИЗАЦИЯ ==========
+// Вход через Supabase
 async function login(login, password) {
     try {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('login', '==', login));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            return { success: false, error: 'Пользователь не найден' };
-        }
-        
-        const userDoc = querySnapshot.docs[0];
-        const user = userDoc.data();
+        // Сначала хешируем пароль (как в БД)
         const hashedPassword = await hashPassword(password);
         
-        if (user.password !== hashedPassword) {
-            return { success: false, error: 'Неверный пароль' };
+        // Ищем пользователя
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('login', login)
+            .eq('password', hashedPassword);
+        
+        if (error) throw error;
+        
+        if (!users || users.length === 0) {
+            // Пробуем с plain паролем (для существующих данных)
+            const { data: plainUsers } = await supabase
+                .from('users')
+                .select('*')
+                .eq('login', login)
+                .eq('password', password);
+            
+            if (!plainUsers || plainUsers.length === 0) {
+                return { success: false, error: 'Неверный логин или пароль' };
+            }
+            users = plainUsers;
         }
         
-        if (!user.isActive) {
+        const user = users[0];
+        
+        if (!user.is_active) {
             return { success: false, error: 'Аккаунт деактивирован' };
         }
         
         const session = {
-            userId: userDoc.id,
+            userId: user.id,
             login: user.login,
             name: user.name,
             role: user.role,
             position: user.position,
-            canViewStats: user.canViewStats,
+            canViewStats: user.can_view_stats,
             loginTime: new Date().toISOString()
         };
         
@@ -73,100 +83,109 @@ function getCurrentUser() {
     return user ? JSON.parse(user) : null;
 }
 
-// ========== УПРАВЛЕНИЕ РАСПИСКАМИ ==========
+// ========== РАБОТА С ДАННЫМИ ==========
+
 async function getAllReceipts() {
-    const receiptsRef = collection(db, 'receipts');
-    const q = query(receiptsRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await supabase
+        .from('receipts')
+        .select('*')
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error('Ошибка получения расписок:', error);
+        return [];
+    }
+    return data || [];
 }
 
 async function saveReceipt(receiptData) {
-    const receiptsRef = collection(db, 'receipts');
-    const docRef = await addDoc(receiptsRef, {
-        ...receiptData,
-        createdAt: new Date().toISOString()
-    });
-    return { id: docRef.id, ...receiptData };
+    const { data, error } = await supabase
+        .from('receipts')
+        .insert([receiptData])
+        .select();
+    
+    if (error) throw error;
+    return data[0];
 }
 
 async function getEmployeeReceipts(employeeLogin) {
-    const receiptsRef = collection(db, 'receipts');
-    const q = query(receiptsRef, where('employeeLogin', '==', employeeLogin), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await supabase
+        .from('receipts')
+        .select('*')
+        .eq('employee_login', employeeLogin)
+        .order('created_at', { ascending: false });
+    
+    if (error) return [];
+    return data || [];
 }
 
-// ========== УПРАВЛЕНИЕ СОТРУДНИКАМИ ==========
 async function getEmployees() {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('role', 'in', ['employee', 'both', 'manager']));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .neq('role', 'admin');
+    
+    if (error) return [];
+    return data || [];
 }
 
 async function getAllUsers() {
-    const usersRef = collection(db, 'users');
-    const querySnapshot = await getDocs(usersRef);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await supabase
+        .from('users')
+        .select('*');
+    
+    if (error) return [];
+    return data || [];
 }
 
 async function addEmployee(employeeData) {
     const hashedPassword = await hashPassword(employeeData.password);
-    const usersRef = collection(db, 'users');
     
-    const docRef = await addDoc(usersRef, {
-        login: employeeData.login,
-        password: hashedPassword,
-        name: employeeData.name,
-        role: employeeData.role || 'employee',
-        position: employeeData.position,
-        phone: employeeData.phone,
-        isActive: true,
-        canViewStats: employeeData.role === 'manager' || employeeData.role === 'both',
-        receiptCount: 0,
-        createdAt: new Date().toISOString()
-    });
+    const { data, error } = await supabase
+        .from('users')
+        .insert([{
+            login: employeeData.login,
+            password: hashedPassword,
+            name: employeeData.name,
+            role: employeeData.role || 'employee',
+            position: employeeData.position,
+            phone: employeeData.phone,
+            is_active: true,
+            can_view_stats: employeeData.role === 'manager' || employeeData.role === 'both'
+        }])
+        .select();
     
-    return { success: true, user: { id: docRef.id, ...employeeData } };
+    if (error) return { success: false, error: error.message };
+    return { success: true, user: data[0] };
 }
 
 async function updateEmployee(login, updates) {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('login', '==', login));
-    const querySnapshot = await getDocs(q);
+    const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('login', login);
     
-    if (querySnapshot.empty) {
-        return { success: false, error: 'Пользователь не найден' };
-    }
-    
-    const userDoc = querySnapshot.docs[0];
-    await updateDoc(doc(db, 'users', userDoc.id), updates);
+    if (error) return { success: false, error: error.message };
     return { success: true };
 }
 
 async function deleteEmployee(login) {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('login', '==', login));
-    const querySnapshot = await getDocs(q);
+    const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('login', login);
     
-    if (querySnapshot.empty) {
-        return { success: false, error: 'Пользователь не найден' };
-    }
-    
-    const userDoc = querySnapshot.docs[0];
-    await deleteDoc(doc(db, 'users', userDoc.id));
+    if (error) return { success: false, error: error.message };
     return { success: true };
 }
 
-// ========== СТАТИСТИКА ==========
 async function getSystemStats() {
     const users = await getAllUsers();
     const receipts = await getAllReceipts();
     
     const today = new Date().toDateString();
     const todayReceipts = receipts.filter(r => {
-        const date = new Date(r.createdAt);
+        const date = new Date(r.created_at);
         return date.toDateString() === today;
     });
     
@@ -175,78 +194,93 @@ async function getSystemStats() {
         .map(u => ({
             name: u.name,
             login: u.login,
-            receiptCount: u.receiptCount || 0,
+            receiptCount: u.receipt_count || 0,
             position: u.position,
-            isActive: u.isActive
+            isActive: u.is_active
         }));
     
     const specialtyStats = {};
     receipts.forEach(r => {
-        const code = r.specialtyCode;
-        if (!specialtyStats[code]) specialtyStats[code] = 0;
-        specialtyStats[code]++;
+        const spec = r.specialty;
+        if (!specialtyStats[spec]) specialtyStats[spec] = 0;
+        specialtyStats[spec]++;
     });
     
     return {
         totalEmployees: users.filter(u => u.role !== 'admin').length,
         totalReceipts: receipts.length,
         todayReceipts: todayReceipts.length,
-        activeUsers: users.filter(u => u.isActive).length,
+        activeUsers: users.filter(u => u.is_active).length,
         employeeStats,
         specialtyStats
     };
 }
 
-// ========== СЧЁТЧИКИ ==========
+async function getConfig() {
+    const { data, error } = await supabase
+        .from('settings')
+        .select('*');
+    
+    if (error) return {};
+    
+    const config = {
+        documentTypes: [],
+        specialties: {},
+        settings: {
+            maxPhotosCount: 4,
+            companyName: 'Приемная комиссия',
+            companyPhone: '(499) 156-40-01'
+        }
+    };
+    
+    // Загружаем специальности
+    const { data: specialties } = await supabase
+        .from('specialties')
+        .select('*')
+        .eq('active', true)
+        .order('display_order');
+    
+    if (specialties) {
+        specialties.forEach(s => {
+            config.specialties[s.name] = {
+                code: s.code,
+                name: s.name,
+                active: s.active,
+                order: s.display_order
+            };
+        });
+    }
+    
+    // Загружаем типы документов
+    const { data: docs } = await supabase
+        .from('document_types')
+        .select('name')
+        .eq('active', true);
+    
+    if (docs) {
+        config.documentTypes = docs.map(d => d.name);
+    }
+    
+    // Загружаем настройки
+    if (data) {
+        data.forEach(setting => {
+            if (setting.key === 'max_photos_count') config.settings.maxPhotosCount = parseInt(setting.value);
+            if (setting.key === 'company_name') config.settings.companyName = setting.value;
+            if (setting.key === 'company_phone') config.settings.companyPhone = setting.value;
+        });
+    }
+    
+    return config;
+}
+
 function getReceiptCounter(specialtyCode) {
-    // В Firebase лучше хранить счётчики в отдельной коллекции
-    // Пока используем localStorage для совместимости
+    // Получаем счётчик из localStorage (можно перенести в БД)
     const counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
     const current = counters[specialtyCode] || 0;
     counters[specialtyCode] = current + 1;
     localStorage.setItem('receipt_system_counters', JSON.stringify(counters));
     return current + 1;
 }
-
-// ========== НАСТРОЙКИ ==========
-async function getConfig() {
-    const settingsRef = collection(db, 'settings');
-    const querySnapshot = await getDocs(settingsRef);
-    const settings = {};
-    querySnapshot.docs.forEach(doc => {
-        settings[doc.id] = doc.data().value;
-    });
-    return settings;
-}
-
-// ========== ИНИЦИАЛИЗАЦИЯ НАЧАЛЬНЫХ ДАННЫХ ==========
-async function initializeFirebaseData() {
-    const usersRef = collection(db, 'users');
-    const querySnapshot = await getDocs(usersRef);
-    
-    if (querySnapshot.empty) {
-        console.log('📦 Создаём начальные данные...');
-        
-        const adminPassword = await hashPassword('admin123');
-        await addDoc(usersRef, {
-            login: 'admin',
-            password: adminPassword,
-            name: 'Главный Администратор',
-            role: 'admin',
-            position: 'Главный администратор',
-            phone: '+7 (499) 156-40-01',
-            isActive: true,
-            canViewStats: true,
-            receiptCount: 0,
-            createdAt: new Date().toISOString()
-        });
-        
-        console.log('✅ Начальные данные созданы');
-    }
-}
-
-// Запуск инициализации
-initializeFirebaseData();
 
 // Экспорт глобальных функций
 window.login = login;
@@ -262,6 +296,7 @@ window.addEmployee = addEmployee;
 window.updateEmployee = updateEmployee;
 window.deleteEmployee = deleteEmployee;
 window.getSystemStats = getSystemStats;
+window.getConfig = getConfig;
 window.getReceiptCounter = getReceiptCounter;
 
-console.log('✅ auth.js (Firebase version) загружен');
+console.log('✅ auth.js (Supabase version) загружен');
