@@ -1,0 +1,77 @@
+<div class="form-container">
+    <h2>🏆 Рейтинговые списки абитуриентов</h2>
+    <div class="rating-filters">
+        <div class="form-group"><label>Специальность</label><select id="ratingSpecialty"><option value="all">Все специальности</option></select></div>
+        <div class="form-group"><label>Сортировка</label><select id="ratingSort"><option value="score">По баллам (убывание)</option><option value="name">По ФИО (возрастание)</option></select></div>
+        <button class="add-btn" onclick="updateRatingList()">🔄 Обновить</button>
+        <button class="add-btn" onclick="exportRatingToExcel()">📊 Экспорт в Excel</button>
+    </div>
+    <div id="ratingInfo" style="margin-bottom: 16px; padding: 12px; background: rgba(79,70,229,0.1); border-radius: 10px;">
+        <span>📊 Всего абитуриентов: <strong id="totalApplicants">0</strong></span>
+        <span style="margin-left: 20px;">🎯 Проходной балл: <strong id="passingScore" class="passing-score">—</strong></span>
+    </div>
+    <div class="table-container"><table class="data-table" id="ratingTable"><thead><tr><th>#</th><th>ФИО</th><th>Специальность</th><th>Баллы ГИА</th><th>Статус</th></tr></thead><tbody id="ratingTableBody"></tbody></table></div>
+</div>
+<script>
+    function updateRatingList() {
+        var receipts = getAllReceipts();
+        var specialty = document.getElementById('ratingSpecialty').value;
+        var sortBy = document.getElementById('ratingSort').value;
+        
+        var filtered = specialty === 'all' ? receipts : receipts.filter(function(r) { return r.specialty === specialty; });
+        var withScores = filtered.filter(function(r) { return r.score && parseInt(r.score) > 0; });
+        
+        if (sortBy === 'score') {
+            withScores.sort(function(a,b) { return parseInt(b.score) - parseInt(a.score); });
+        } else {
+            withScores.sort(function(a,b) { return a.fullName.localeCompare(b.fullName); });
+        }
+        
+        document.getElementById('totalApplicants').innerHTML = withScores.length;
+        var scores = withScores.map(function(r) { return parseInt(r.score); }).filter(function(s) { return !isNaN(s); });
+        if (scores.length > 0) {
+            var top10Percent = Math.ceil(scores.length * 0.1);
+            var passing = scores[top10Percent - 1] || scores[scores.length - 1];
+            document.getElementById('passingScore').innerHTML = passing;
+        }
+        
+        var html = '';
+        for (var i = 0; i < withScores.length; i++) {
+            var r = withScores[i];
+            var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+            html += '<tr><td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td>' + r.fullName + '</td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '</td><td><span class="status-badge status-active">Подано</span></td></tr>';
+        }
+        if (withScores.length === 0) html = '<td><td colspan="5" class="empty-state">Нет данных</td></tr>';
+        document.getElementById('ratingTableBody').innerHTML = html;
+    }
+    
+    function exportRatingToExcel() {
+        var receipts = getAllReceipts();
+        var data = receipts.filter(function(r) { return r.score && parseInt(r.score) > 0; }).map(function(r, idx) {
+            return { '№': idx + 1, 'ФИО': r.fullName, 'Специальность': r.specialty, 'Баллы ГИА': r.score, 'Дата подачи': new Date(r.createdAt).toLocaleDateString('ru-RU') };
+        });
+        var ws = XLSX.utils.json_to_sheet(data);
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Рейтинговый список');
+        XLSX.writeFile(wb, 'Рейтинговый_список_' + new Date().toISOString().slice(0,10) + '.xlsx');
+        if (window.showToast) window.showToast('Экспорт выполнен', 'success');
+    }
+    
+    function loadRatingSpecialties() {
+        var config = getConfig();
+        var select = document.getElementById('ratingSpecialty');
+        select.innerHTML = '<option value="all">Все специальности</option>';
+        for (var key in config.specialties) {
+            var data = config.specialties[key];
+            if (data.active) {
+                var opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = data.code + ' - ' + data.name;
+                select.appendChild(opt);
+            }
+        }
+    }
+    
+    loadRatingSpecialties();
+    updateRatingList();
+</script>

@@ -1,0 +1,24 @@
+<div class="form-container">
+    <h2>📋 Мои расписки</h2>
+    <div id="receiptsList"></div>
+</div>
+<script>
+    var currentUser = window.getCurrentUser ? window.getCurrentUser() : getCurrentUser();
+    
+    function loadReceiptsHistory() {
+        if (!currentUser) return;
+        var list = getEmployeeReceipts(currentUser.login);
+        var container = document.getElementById('receiptsList');
+        if (!list.length) { 
+            container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>'; 
+            return; 
+        }
+        var html = '';
+        for (var i = 0; i < list.length; i++) {
+            var r = list[i];
+            html += '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="window.printReceipt(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
+        }
+        container.innerHTML = html;
+    }
+    loadReceiptsHistory();
+</script>

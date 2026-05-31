@@ -1,0 +1,60 @@
+<div class="chart-container"><canvas id="receiptsChart"></canvas></div>
+<div class="chart-container"><canvas id="specialtyChart"></canvas></div>
+<div class="chart-container"><canvas id="trendChart"></canvas></div>
+<script>
+    var receiptsChart = null, specialtyChart = null, trendChart = null;
+    
+    function initCharts() {
+        var receipts = getAllReceipts();
+        var last7Days = [];
+        var dailyCounts = [];
+        for (var i = 6; i >= 0; i--) { 
+            var d = new Date(); 
+            d.setDate(d.getDate() - i); 
+            last7Days.push(d.toLocaleDateString('ru-RU')); 
+            dailyCounts.push(0); 
+        }
+        for (var i = 0; i < receipts.length; i++) {
+            var r = receipts[i];
+            var d = new Date(r.createdAt).toLocaleDateString('ru-RU');
+            var idx = last7Days.indexOf(d);
+            if (idx !== -1) dailyCounts[idx]++;
+        }
+        
+        var specialtyStats = getSystemStats().specialtyStats || {};
+        var specialtyLabels = Object.keys(specialtyStats);
+        var specialtyCounts = Object.values(specialtyStats);
+        
+        if (receiptsChart) receiptsChart.destroy();
+        if (specialtyChart) specialtyChart.destroy();
+        if (trendChart) trendChart.destroy();
+        
+        var ctx1 = document.getElementById('receiptsChart').getContext('2d');
+        receiptsChart = new Chart(ctx1, { 
+            type: 'line', 
+            data: { labels: last7Days, datasets: [{ label: 'Количество расписок', data: dailyCounts, borderColor: 'var(--primary)', backgroundColor: 'rgba(79,70,229,0.1)', fill: true, tension: 0.3 }] }, 
+            options: { responsive: true, maintainAspectRatio: true } 
+        });
+        
+        var ctx2 = document.getElementById('specialtyChart').getContext('2d');
+        specialtyChart = new Chart(ctx2, { 
+            type: 'doughnut', 
+            data: { labels: specialtyLabels, datasets: [{ data: specialtyCounts, backgroundColor: ['#4f46e5', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'] }] }, 
+            options: { responsive: true } 
+        });
+        
+        var monthlyStats = {};
+        for (var i = 0; i < receipts.length; i++) {
+            var r = receipts[i];
+            var m = new Date(r.createdAt).toLocaleString('ru-RU', { month: 'short' });
+            monthlyStats[m] = (monthlyStats[m] || 0) + 1;
+        }
+        var ctx3 = document.getElementById('trendChart').getContext('2d');
+        trendChart = new Chart(ctx3, { 
+            type: 'bar', 
+            data: { labels: Object.keys(monthlyStats), datasets: [{ label: 'Заявлений по месяцам', data: Object.values(monthlyStats), backgroundColor: 'var(--primary)', borderRadius: 8 }] }, 
+            options: { responsive: true } 
+        });
+    }
+    initCharts();
+</script>

@@ -1,0 +1,29 @@
+<div class="stats-grid" id="statsGrid"></div>
+<div class="table-container">
+    <div class="table-header"><h3>🏆 Рейтинг сотрудников</h3></div>
+    <table class="data-table">
+        <thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead>
+        <tbody id="employeeStatsBody"></tbody>
+    </table>
+</div>
+<script>
+    function loadStats() {
+        var stats = getSystemStats();
+        document.getElementById('statsGrid').innerHTML = 
+            '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+            '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+            '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+            '<div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">' + (stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0) + '%</div><div class="stat-label">Активность сегодня</div></div>';
+        
+        var sorted = (stats.employeeStats || []).slice();
+        sorted.sort(function(a, b) { return (b.receiptCount || 0) - (a.receiptCount || 0); });
+        var html = '';
+        for (var i = 0; i < sorted.length; i++) {
+            var e = sorted[i];
+            var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+            html += '<tr><td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
+        }
+        document.getElementById('employeeStatsBody').innerHTML = html;
+    }
+    loadStats();
+</script>

@@ -1,0 +1,112 @@
+<div class="form-container">
+    <h2>📝 Создание новой расписки</h2>
+    <div id="alert" class="alert"></div>
+    <form id="receiptForm">
+        <div class="form-group"><label>ФИО абитуриента *</label><input type="text" id="fullName" required placeholder="Иванов Иван Иванович"></div>
+        <div class="form-group"><label>Специальность *</label><select id="specialty" required><option value="">Выберите специальность</option></select></div>
+        <div class="form-row"><div class="form-group"><label>Номер аттестата/диплома</label><input type="text" id="diplomaNumber" placeholder="№ документа"></div><div class="form-group"><label>Дата выдачи</label><input type="date" id="diplomaDate"></div></div>
+        <div class="form-group"><label>Кем выдан аттестат</label><input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение"></div>
+        <div class="form-group"><label>Принятые документы</label><div class="checkbox-group" id="documentsCheckboxes"></div></div>
+        <div class="form-row"><div class="form-group"><label>Количество фотографий (0-4)</label><input type="number" id="photosCount" min="0" max="4" value="0"></div><div class="form-group"><label>Баллы ГИА</label><input type="number" id="score" placeholder="Баллы"></div></div>
+        <div class="form-row"><div class="form-group"><label>Город получения аттестата</label><input type="text" id="city" placeholder="Город"></div><div class="form-group"><label>Сотрудник</label><input type="text" id="employeeField" readonly></div></div>
+        <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
+    </form>
+</div>
+<script>
+    var currentUser = window.getCurrentUser ? window.getCurrentUser() : getCurrentUser();
+    
+    function loadSpecialties() {
+        var config = getConfig();
+        var select = document.getElementById('specialty');
+        select.innerHTML = '<option value="">Выберите специальность</option>';
+        for (var key in config.specialties) {
+            var data = config.specialties[key];
+            if (data.active) {
+                var opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = data.code + ' - ' + data.name;
+                select.appendChild(opt);
+            }
+        }
+    }
+    
+    function loadDocumentCheckboxes() {
+        var config = getConfig();
+        var container = document.getElementById('documentsCheckboxes');
+        var html = '';
+        for (var i = 0; i < config.documentTypes.length; i++) {
+            var doc = config.documentTypes[i];
+            html += '<label class="checkbox-item"><input type="checkbox" value="' + doc.replace(/'/g, "\\'") + '"><span>' + doc + '</span></label>';
+        }
+        container.innerHTML = html;
+    }
+    
+    if (currentUser) {
+        document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
+    }
+    
+    function showAlert(msg, type) {
+        var el = document.getElementById('alert');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'alert alert-' + type;
+        el.style.display = 'block';
+        setTimeout(function() { if (el) el.style.display = 'none'; }, 4000);
+    }
+    
+    document.getElementById('receiptForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('submitBtn');
+        var original = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Создание...';
+        btn.disabled = true;
+        
+        var docs = [];
+        var checkboxes = document.querySelectorAll('#documentsCheckboxes input:checked');
+        for (var i = 0; i < checkboxes.length; i++) { docs.push(checkboxes[i].value); }
+        
+        var data = {
+            fullName: document.getElementById('fullName').value,
+            specialty: document.getElementById('specialty').value,
+            diplomaNumber: document.getElementById('diplomaNumber').value,
+            diplomaDate: document.getElementById('diplomaDate').value,
+            diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
+            documents: docs.join('\n'),
+            photosCount: document.getElementById('photosCount').value,
+            score: document.getElementById('score').value,
+            city: document.getElementById('city').value,
+            employee: currentUser ? currentUser.name : '',
+            employeeLogin: currentUser ? currentUser.login : '',
+            employeePosition: currentUser ? currentUser.position : ''
+        };
+        if (!data.fullName || !data.specialty) {
+            showAlert('Заполните обязательные поля', 'error');
+            btn.innerHTML = original;
+            btn.disabled = false;
+            return;
+        }
+        var config = getConfig();
+        var code = config.specialties[data.specialty] ? config.specialties[data.specialty].code : 'ОБЩ';
+        var counter = getReceiptCounter(code);
+        var number = code + '-' + counter;
+        var receipt = {
+            fullName: data.fullName, specialty: data.specialty, diplomaNumber: data.diplomaNumber,
+            diplomaDate: data.diplomaDate, diplomaIssuedBy: data.diplomaIssuedBy, documents: data.documents,
+            photosCount: data.photosCount, score: data.score, city: data.city, employee: data.employee,
+            employeeLogin: data.employeeLogin, employeePosition: data.employeePosition,
+            receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString()
+        };
+        saveReceipt(receipt);
+        if (window.printReceipt) window.printReceipt(receipt);
+        showAlert('✅ Расписка №' + number + ' создана!', 'success');
+        document.getElementById('receiptForm').reset();
+        document.getElementById('photosCount').value = '0';
+        var allCheckboxes = document.querySelectorAll('#documentsCheckboxes input');
+        for (var i = 0; i < allCheckboxes.length; i++) { allCheckboxes[i].checked = false; }
+        btn.innerHTML = original;
+        btn.disabled = false;
+    });
+    
+    loadSpecialties();
+    loadDocumentCheckboxes();
+</script>
