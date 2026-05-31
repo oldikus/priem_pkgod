@@ -1,5 +1,5 @@
 // ⚠️ ВАЖНО: ЗАМЕНИТЕ НА URL ВАШЕГО GOOGLE APPS SCRIPT ВЕБ-ПРИЛОЖЕНИЯ
-const API_URL = 'https://script.google.com/macros/s/ВАШ_ID_ВЕБ_ПРИЛОЖЕНИЯ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzQs5DtZDu8_O4pL7r49GuR0lDKd5Kgd4-fZGsH2eunZ7WAzH-HoMB8GHV0QQgxDaoH/exec';
 
 // Обработчик отправки формы
 document.getElementById('receiptForm').addEventListener('submit', async (e) => {
