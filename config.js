@@ -1,5 +1,8 @@
 // ========== КОНФИГУРАЦИЯ СИСТЕМЫ ==========
 
+// API адрес для Netlify Functions
+const API_BASE_URL = '/.netlify/functions';
+
 let SYSTEM_CONFIG = {
     // Специальности
     specialties: {
@@ -102,14 +105,17 @@ let SYSTEM_CONFIG = {
     }
   };
   
-  // Функции для работы с конфигурацией
+  // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С ЛОКАЛЬНЫМ ХРАНИЛИЩЕМ ==========
+  
   function getConfig() {
     const saved = localStorage.getItem('system_config');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         SYSTEM_CONFIG = { ...SYSTEM_CONFIG, ...parsed };
-      } catch(e) {}
+      } catch(e) {
+        console.warn('Ошибка парсинга сохранённой конфигурации');
+      }
     }
     return SYSTEM_CONFIG;
   }
@@ -117,7 +123,110 @@ let SYSTEM_CONFIG = {
   function saveConfig(config) {
     SYSTEM_CONFIG = config;
     localStorage.setItem('system_config', JSON.stringify(config));
+    // Асинхронно синхронизируем с сервером (не ждём результата)
+    syncConfigToServer(config).catch(e => console.warn('Ошибка синхронизации:', e));
   }
+  
+  // ========== СИНХРОНИЗАЦИЯ С СЕРВЕРОМ (SUPABASE) ==========
+  
+  async function syncConfigToServer(config) {
+    try {
+      // Синхронизация настроек
+      await fetch(`${API_BASE_URL}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'sync', 
+          settings: config.settings 
+        })
+      });
+      
+      // Синхронизация специальностей
+      await fetch(`${API_BASE_URL}/specialties`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'sync', 
+          specialties: config.specialties 
+        })
+      });
+      
+      // Синхронизация типов документов
+      await fetch(`${API_BASE_URL}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'sync', 
+          documents: config.documentTypes 
+        })
+      });
+      
+      console.log('✅ Конфигурация синхронизирована с сервером');
+    } catch (error) {
+      console.warn('⚠️ Не удалось синхронизировать с сервером:', error);
+    }
+  }
+  
+  // ========== ЗАГРУЗКА КОНФИГУРАЦИИ С СЕРВЕРА ==========
+  
+  async function loadConfigFromServer() {
+    try {
+      // Загрузка настроек
+      const settingsRes = await fetch(`${API_BASE_URL}/settings`);
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json();
+        if (settingsData.success && settingsData.settings) {
+          SYSTEM_CONFIG.settings = { 
+            ...SYSTEM_CONFIG.settings, 
+            maxPhotosCount: settingsData.settings.max_photos || 4,
+            companyName: settingsData.settings.company_name || SYSTEM_CONFIG.settings.companyName,
+            companyPhone: settingsData.settings.company_phone || SYSTEM_CONFIG.settings.companyPhone
+          };
+        }
+      }
+      
+      // Загрузка специальностей
+      const specialtiesRes = await fetch(`${API_BASE_URL}/specialties`);
+      if (specialtiesRes.ok) {
+        const specialtiesData = await specialtiesRes.json();
+        if (specialtiesData.success && specialtiesData.specialties) {
+          const specialtiesObj = {};
+          specialtiesData.specialties.forEach(s => {
+            const fullName = s.full_name || s.name;
+            specialtiesObj[fullName] = {
+              code: s.code,
+              name: s.name,
+              active: s.active !== false,
+              order: s.display_order || 999
+            };
+          });
+          // Сохраняем только если есть данные
+          if (Object.keys(specialtiesObj).length > 0) {
+            SYSTEM_CONFIG.specialties = specialtiesObj;
+          }
+        }
+      }
+      
+      // Загрузка типов документов
+      const docsRes = await fetch(`${API_BASE_URL}/documents`);
+      if (docsRes.ok) {
+        const docsData = await docsRes.json();
+        if (docsData.success && docsData.documents && docsData.documents.length > 0) {
+          SYSTEM_CONFIG.documentTypes = docsData.documents.map(d => d.name);
+        }
+      }
+      
+      // Сохраняем в localStorage
+      localStorage.setItem('system_config', JSON.stringify(SYSTEM_CONFIG));
+      console.log('✅ Конфигурация загружена с сервера');
+      return SYSTEM_CONFIG;
+    } catch (error) {
+      console.warn('⚠️ Не удалось загрузить конфигурацию с сервера, используем локальную:', error);
+      return SYSTEM_CONFIG;
+    }
+  }
+  
+  // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
   
   function getActiveSpecialties() {
     const config = getConfig();
@@ -135,3 +244,23 @@ let SYSTEM_CONFIG = {
   function getDocumentTypes() {
     return getConfig().documentTypes;
   }
+  
+  // ========== АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРИ СТАРТЕ ==========
+  
+  // Загружаем конфигурацию с сервера при загрузке страницы (асинхронно, не блокируем UI)
+  if (typeof window !== 'undefined') {
+    // Не ждём, загружаем в фоне
+    loadConfigFromServer().catch(e => console.warn('Ошибка загрузки конфигурации:', e));
+  }
+  
+  // Делаем функции глобальными для использования в HTML
+  if (typeof window !== 'undefined') {
+    window.getConfig = getConfig;
+    window.saveConfig = saveConfig;
+    window.getActiveSpecialties = getActiveSpecialties;
+    window.getSpecialtyCode = getSpecialtyCode;
+    window.getDocumentTypes = getDocumentTypes;
+    window.loadConfigFromServer = loadConfigFromServer;
+  }
+  
+  console.log('✅ config.js загружен');

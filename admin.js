@@ -1,5 +1,7 @@
 // ========== АДМИН ПАНЕЛЬ ==========
 
+const API_BASE_URL = '/.netlify/functions';
+
 const currentUser = checkAuth();
 if (!currentUser || !(currentUser.role === 'admin' || currentUser.role === 'both')) {
     window.location.href = 'login.html';
@@ -11,7 +13,7 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById(`${tab}Tab`).classList.add('active');
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event && event.target) event.target.classList.add('active');
     
     if (tab === 'stats') loadStats();
     if (tab === 'employees') loadEmployees();
@@ -21,39 +23,77 @@ function switchTab(tab) {
 }
 
 // ========== СТАТИСТИКА ==========
-function loadStats() {
-    const stats = getSystemStats();
-    
-    document.getElementById('statsContainer').innerHTML = `
-        <div class="stat-card"><div class="stat-label">👥 Сотрудников</div><div class="stat-value">${stats.totalEmployees}</div></div>
-        <div class="stat-card"><div class="stat-label">📄 Всего расписок</div><div class="stat-value">${stats.totalReceipts}</div></div>
-        <div class="stat-card"><div class="stat-label">📅 Сегодня</div><div class="stat-value">${stats.todayReceipts}</div></div>
-        <div class="stat-card"><div class="stat-label">🟢 Активных</div><div class="stat-value">${stats.activeUsers}</div></div>
-    `;
-    
-    document.getElementById('employeeStatsBody').innerHTML = stats.employeeStats.map(emp => `
-        <tr><td>${emp.name}</td><td>${emp.position}</td><td>${emp.receiptCount}</td><td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td></tr>
-    `).join('');
-    
-    document.getElementById('specialtyStatsBody').innerHTML = Object.entries(stats.specialtyStats).map(([code, count]) => `
-        <tr><td>${code}</td><td>-</td><td>${count}</td></tr>
-    `).join('');
+async function loadStats() {
+    try {
+        document.getElementById('statsContainer').innerHTML = '<div class="stat-card"><div class="stat-value">Загрузка...</div></div>';
+        
+        const response = await fetch(`${API_BASE_URL}/stats`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const stats = result.stats;
+            
+            document.getElementById('statsContainer').innerHTML = `
+                <div class="stat-card"><div class="stat-label">👥 Сотрудников</div><div class="stat-value">${stats.totalEmployees || 0}</div></div>
+                <div class="stat-card"><div class="stat-label">📄 Всего расписок</div><div class="stat-value">${stats.totalReceipts || 0}</div></div>
+                <div class="stat-card"><div class="stat-label">📅 Сегодня</div><div class="stat-value">${stats.todayReceipts || 0}</div></div>
+                <div class="stat-card"><div class="stat-label">🟢 Активных</div><div class="stat-value">${stats.activeUsers || 0}</div></div>
+            `;
+            
+            if (stats.employeeStats && stats.employeeStats.length) {
+                document.getElementById('employeeStatsBody').innerHTML = stats.employeeStats.map(emp => `
+                    <tr>
+                        <td>${emp.name}</td>
+                        <td>${emp.position || '-'}</td>
+                        <td>${emp.receiptCount || 0}</td>
+                        <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
+                    </tr>
+                `).join('');
+            }
+            
+            if (stats.specialtyStats) {
+                document.getElementById('specialtyStatsBody').innerHTML = Object.entries(stats.specialtyStats).map(([code, count]) => `
+                    <tr><td>${code}</td><td>-</td><td>${count}</td></tr>
+                `).join('');
+            }
+        } else {
+            showToast('Ошибка загрузки статистики', 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка соединения с сервером', 'error');
+    }
 }
 
 // ========== УПРАВЛЕНИЕ СОТРУДНИКАМИ ==========
-function loadEmployees() {
-    const employees = getEmployees();
-    const tbody = document.getElementById('employeesList');
-    
-    tbody.innerHTML = employees.map(emp => `
-        <tr>
-            <td>${emp.name}</td><td>${emp.login}</td><td>${emp.position || '-'}</td>
-            <td>${emp.role === 'admin' ? 'Админ' : (emp.role === 'both' ? 'Админ+Сотрудник' : 'Сотрудник')}</td>
-            <td>${emp.canViewStats ? '✅ Да' : '❌ Нет'}</td>
-            <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
-            <td><button class="action-btn" onclick="editEmployee('${emp.login}')">✏️</button><button class="action-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button></td>
-        </tr>
-    `).join('');
+async function loadEmployees() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/employees`);
+        const result = await response.json();
+        
+        if (result.success && result.employees) {
+            const employees = result.employees;
+            const tbody = document.getElementById('employeesList');
+            
+            tbody.innerHTML = employees.map(emp => `
+                <tr>
+                    <td>${emp.name}</td>
+                    <td>${emp.login}</td>
+                    <td>${emp.position || '-'}</td>
+                    <td>${emp.role === 'admin' ? 'Админ' : (emp.role === 'both' ? 'Админ+Сотрудник' : 'Сотрудник')}</td>
+                    <td>${emp.can_view_stats ? '✅ Да' : '❌ Нет'}</td>
+                    <td><span class="status-badge ${emp.is_active ? 'status-active' : 'status-inactive'}">${emp.is_active ? 'Активен' : 'Неактивен'}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="editEmployee('${emp.login}')">✏️</button>
+                        <button class="action-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            showToast('Ошибка загрузки сотрудников', 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка соединения с сервером', 'error');
+    }
 }
 
 function openEmployeeModal() {
@@ -70,25 +110,31 @@ function openEmployeeModal() {
     document.getElementById('employeeModal').style.display = 'flex';
 }
 
-function editEmployee(login) {
-    const users = getAllUsers();
-    const emp = users.find(u => u.login === login);
-    if (!emp) return;
-    
-    document.getElementById('employeeModalTitle').textContent = 'Редактировать сотрудника';
-    document.getElementById('editLogin').value = login;
-    document.getElementById('empName').value = emp.name;
-    document.getElementById('empLogin').value = emp.login;
-    document.getElementById('empPassword').value = '';
-    document.getElementById('empPosition').value = emp.position || '';
-    document.getElementById('empPhone').value = emp.phone || '';
-    document.getElementById('empRole').value = emp.role || 'employee';
-    document.getElementById('empCanViewStats').value = emp.canViewStats ? 'true' : 'false';
-    document.getElementById('empStatus').value = emp.isActive ? 'true' : 'false';
-    document.getElementById('employeeModal').style.display = 'flex';
+async function editEmployee(login) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/employees?login=${login}`);
+        const result = await response.json();
+        
+        if (result.success && result.employee) {
+            const emp = result.employee;
+            document.getElementById('employeeModalTitle').textContent = 'Редактировать сотрудника';
+            document.getElementById('editLogin').value = emp.login;
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empLogin').value = emp.login;
+            document.getElementById('empPassword').value = '';
+            document.getElementById('empPosition').value = emp.position || '';
+            document.getElementById('empPhone').value = emp.phone || '';
+            document.getElementById('empRole').value = emp.role || 'employee';
+            document.getElementById('empCanViewStats').value = emp.can_view_stats ? 'true' : 'false';
+            document.getElementById('empStatus').value = emp.is_active ? 'true' : 'false';
+            document.getElementById('employeeModal').style.display = 'flex';
+        }
+    } catch (error) {
+        showToast('Ошибка загрузки данных сотрудника', 'error');
+    }
 }
 
-function saveEmployee() {
+async function saveEmployee() {
     const editLogin = document.getElementById('editLogin').value;
     const login = document.getElementById('empLogin').value;
     const name = document.getElementById('empName').value;
@@ -104,44 +150,61 @@ function saveEmployee() {
         return;
     }
     
-    if (editLogin) {
-        const updates = { name, position, phone, role, canViewStats, isActive };
-        if (password) updates.password = password;
-        const result = updateEmployee(editLogin, updates);
+    try {
+        let response;
+        if (editLogin) {
+            response = await fetch(`${API_BASE_URL}/employees`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    login: editLogin, 
+                    updates: { name, position, phone, role, can_view_stats: canViewStats, is_active: isActive, password: password || undefined }
+                })
+            });
+        } else {
+            if (!password) {
+                showToast('Введите пароль', 'error');
+                return;
+            }
+            response = await fetch(`${API_BASE_URL}/employees`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login, name, password, position, phone, role, canViewStats })
+            });
+        }
+        
+        const result = await response.json();
         if (result.success) {
-            showToast('Сотрудник обновлён', 'success');
+            showToast(editLogin ? 'Сотрудник обновлён' : 'Сотрудник добавлен', 'success');
             closeEmployeeModal();
             loadEmployees();
             loadStats();
         } else {
             showToast(result.error, 'error');
         }
-    } else {
-        if (!password) {
-            showToast('Введите пароль', 'error');
-            return;
-        }
-        const result = addEmployee({ login, name, password, position, phone, role, canViewStats });
-        if (result.success) {
-            showToast('Сотрудник добавлен', 'success');
-            closeEmployeeModal();
-            loadEmployees();
-            loadStats();
-        } else {
-            showToast(result.error, 'error');
-        }
+    } catch (error) {
+        showToast('Ошибка сохранения', 'error');
     }
 }
 
-function deleteEmployeeConfirm(login) {
+async function deleteEmployeeConfirm(login) {
     if (confirm(`Удалить сотрудника ${login}?`)) {
-        const result = deleteEmployee(login);
-        if (result.success) {
-            showToast('Сотрудник удалён', 'success');
-            loadEmployees();
-            loadStats();
-        } else {
-            showToast(result.error, 'error');
+        try {
+            const response = await fetch(`${API_BASE_URL}/employees`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ login })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Сотрудник удалён', 'success');
+                loadEmployees();
+                loadStats();
+            } else {
+                showToast(result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Ошибка удаления', 'error');
         }
     }
 }
@@ -151,39 +214,76 @@ function closeEmployeeModal() {
 }
 
 // ========== УПРАВЛЕНИЕ СПЕЦИАЛЬНОСТЯМИ ==========
-function loadSpecialties() {
-    const config = getConfig();
-    const tbody = document.getElementById('specialtiesList');
-    
-    tbody.innerHTML = Object.entries(config.specialties)
-        .sort((a, b) => (a[1].order || 999) - (b[1].order || 999))
-        .map(([key, data]) => `
-            <tr>
-                <td>${data.code}</td><td>${key}</td>
-                <td><input type="number" value="${data.order || 999}" style="width: 60px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 4px; color: white;" onchange="updateSpecialtyOrder('${key}', this.value)"></td>
-                <td><span class="status-badge ${data.active !== false ? 'status-active' : 'status-inactive'}">${data.active !== false ? 'Активна' : 'Скрыта'}</span></td>
-                <td><button class="action-btn" onclick="toggleSpecialty('${key}')">${data.active !== false ? '🔒 Скрыть' : '🔓 Показать'}</button><button class="action-btn" onclick="editSpecialty('${key}')">✏️</button><button class="action-btn" onclick="deleteSpecialty('${key}')">🗑️</button></td>
-            </tr>
-        `).join('');
-}
-
-function toggleSpecialty(key) {
-    const config = getConfig();
-    if (config.specialties[key]) {
-        config.specialties[key].active = config.specialties[key].active === false ? true : false;
-        saveConfig(config);
-        loadSpecialties();
-        showToast('Статус обновлён', 'success');
+async function loadSpecialties() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/specialties`);
+        const result = await response.json();
+        
+        if (result.success && result.specialties) {
+            const specialties = result.specialties;
+            const tbody = document.getElementById('specialtiesList');
+            
+            tbody.innerHTML = specialties.map(spec => `
+                <tr>
+                    <td>${spec.code}</td>
+                    <td>${spec.full_name || spec.name}</td>
+                    <td>
+                        <input type="number" value="${spec.display_order || 999}" style="width: 60px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 4px; color: white;" 
+                               onchange="updateSpecialtyOrder('${spec.code}', this.value)">
+                    </td>
+                    <td><span class="status-badge ${spec.active ? 'status-active' : 'status-inactive'}">${spec.active ? 'Активна' : 'Скрыта'}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="toggleSpecialty('${spec.code}')">${spec.active ? '🔒 Скрыть' : '🔓 Показать'}</button>
+                        <button class="action-btn" onclick="editSpecialty('${spec.code}')">✏️</button>
+                        <button class="action-btn" onclick="deleteSpecialty('${spec.code}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        showToast('Ошибка загрузки специальностей', 'error');
     }
 }
 
-function updateSpecialtyOrder(key, order) {
-    const config = getConfig();
-    if (config.specialties[key]) {
-        config.specialties[key].order = parseInt(order);
-        saveConfig(config);
-        loadSpecialties();
-        showToast('Порядок обновлён', 'success');
+async function toggleSpecialty(code) {
+    try {
+        // Получаем текущий статус
+        const getResponse = await fetch(`${API_BASE_URL}/specialties?code=${code}`);
+        const getResult = await getResponse.json();
+        
+        if (getResult.success && getResult.specialty) {
+            const newActive = !getResult.specialty.active;
+            
+            const response = await fetch(`${API_BASE_URL}/specialties`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, updates: { active: newActive } })
+            });
+            const result = await response.json();
+            if (result.success) {
+                loadSpecialties();
+                showToast(newActive ? 'Специальность активирована' : 'Специальность скрыта', 'success');
+            }
+        }
+    } catch (error) {
+        showToast('Ошибка обновления', 'error');
+    }
+}
+
+async function updateSpecialtyOrder(code, order) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/specialties`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, updates: { display_order: parseInt(order) } })
+        });
+        const result = await response.json();
+        if (result.success) {
+            loadSpecialties();
+            showToast('Порядок обновлён', 'success');
+        }
+    } catch (error) {
+        showToast('Ошибка обновления', 'error');
     }
 }
 
@@ -196,19 +296,26 @@ function openSpecialtyModal() {
     document.getElementById('specialtyModal').style.display = 'flex';
 }
 
-function editSpecialty(key) {
-    const config = getConfig();
-    const data = config.specialties[key];
-    document.getElementById('specialtyModalTitle').textContent = 'Редактировать специальность';
-    document.getElementById('editSpecialtyKey').value = key;
-    document.getElementById('specialtyCode').value = data.code;
-    document.getElementById('specialtyName').value = key;
-    document.getElementById('specialtyOrder').value = data.order || 99;
-    document.getElementById('specialtyModal').style.display = 'flex';
+async function editSpecialty(code) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/specialties?code=${code}`);
+        const result = await response.json();
+        if (result.success && result.specialty) {
+            const spec = result.specialty;
+            document.getElementById('specialtyModalTitle').textContent = 'Редактировать специальность';
+            document.getElementById('editSpecialtyKey').value = spec.code;
+            document.getElementById('specialtyCode').value = spec.code;
+            document.getElementById('specialtyName').value = spec.full_name || spec.name;
+            document.getElementById('specialtyOrder').value = spec.display_order || 99;
+            document.getElementById('specialtyModal').style.display = 'flex';
+        }
+    } catch (error) {
+        showToast('Ошибка загрузки', 'error');
+    }
 }
 
-function saveSpecialty() {
-    const oldKey = document.getElementById('editSpecialtyKey').value;
+async function saveSpecialty() {
+    const oldCode = document.getElementById('editSpecialtyKey').value;
     const code = document.getElementById('specialtyCode').value;
     const name = document.getElementById('specialtyName').value;
     const order = parseInt(document.getElementById('specialtyOrder').value);
@@ -218,22 +325,63 @@ function saveSpecialty() {
         return;
     }
     
-    const config = getConfig();
-    if (oldKey && oldKey !== name) delete config.specialties[oldKey];
-    config.specialties[name] = { code, name: name.split(' ').slice(1).join(' ') || name, active: true, order };
-    saveConfig(config);
-    closeSpecialtyModal();
-    loadSpecialties();
-    showToast('Специальность сохранена', 'success');
+    try {
+        let response;
+        
+        if (oldCode) {
+            // Редактирование
+            response = await fetch(`${API_BASE_URL}/specialties`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    code: oldCode, 
+                    updates: { 
+                        code: code,
+                        full_name: name, 
+                        display_order: order 
+                    } 
+                })
+            });
+        } else {
+            // Создание
+            response = await fetch(`${API_BASE_URL}/specialties`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, name, display_order: order })
+            });
+        }
+        
+        const result = await response.json();
+        if (result.success) {
+            showToast(oldCode ? 'Специальность обновлена' : 'Специальность добавлена', 'success');
+            closeSpecialtyModal();
+            loadSpecialties();
+        } else {
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка сохранения', 'error');
+    }
 }
 
-function deleteSpecialty(key) {
+async function deleteSpecialty(code) {
     if (confirm('Удалить специальность?')) {
-        const config = getConfig();
-        delete config.specialties[key];
-        saveConfig(config);
-        loadSpecialties();
-        showToast('Специальность удалена', 'success');
+        try {
+            const response = await fetch(`${API_BASE_URL}/specialties`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Специальность удалена', 'success');
+                loadSpecialties();
+            } else {
+                showToast(result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Ошибка удаления', 'error');
+        }
     }
 }
 
@@ -242,67 +390,131 @@ function closeSpecialtyModal() {
 }
 
 // ========== УПРАВЛЕНИЕ ДОКУМЕНТАМИ ==========
-function loadDocuments() {
-    const config = getConfig();
-    const tbody = document.getElementById('documentsList');
-    
-    tbody.innerHTML = config.documentTypes.map((doc, index) => `
-        <tr>
-            <td>${doc}</td>
-            <td><button class="action-btn" onclick="editDocument(${index})">✏️</button><button class="action-btn" onclick="deleteDocument(${index})">🗑️</button></td>
-        </tr>
-    `).join('');
+async function loadDocuments() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/documents`);
+        const result = await response.json();
+        
+        if (result.success && result.documents) {
+            const tbody = document.getElementById('documentsList');
+            tbody.innerHTML = result.documents.map((doc, index) => `
+                <tr>
+                    <td>${doc.name}</td>
+                    <td>
+                        <button class="action-btn" onclick="editDocument('${doc.name}')">✏️</button>
+                        <button class="action-btn" onclick="deleteDocument('${doc.name}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        showToast('Ошибка загрузки документов', 'error');
+    }
 }
 
-function openDocumentModal() {
+async function openDocumentModal() {
     const newDoc = prompt('Введите название документа:');
     if (newDoc) {
-        const config = getConfig();
-        config.documentTypes.push(newDoc);
-        saveConfig(config);
-        loadDocuments();
-        showToast('Документ добавлен', 'success');
+        try {
+            const response = await fetch(`${API_BASE_URL}/documents`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newDoc })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Документ добавлен', 'success');
+                loadDocuments();
+            } else {
+                showToast(result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Ошибка добавления', 'error');
+        }
     }
 }
 
-function editDocument(index) {
-    const config = getConfig();
-    const newName = prompt('Редактировать документ:', config.documentTypes[index]);
-    if (newName) {
-        config.documentTypes[index] = newName;
-        saveConfig(config);
-        loadDocuments();
-        showToast('Документ обновлён', 'success');
+async function editDocument(name) {
+    const newName = prompt('Редактировать документ:', name);
+    if (newName && newName !== name) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/documents`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ oldName: name, newName })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Документ обновлён', 'success');
+                loadDocuments();
+            } else {
+                showToast(result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Ошибка обновления', 'error');
+        }
     }
 }
 
-function deleteDocument(index) {
-    if (confirm('Удалить документ?')) {
-        const config = getConfig();
-        config.documentTypes.splice(index, 1);
-        saveConfig(config);
-        loadDocuments();
-        showToast('Документ удалён', 'success');
+async function deleteDocument(name) {
+    if (confirm(`Удалить документ "${name}"?`)) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/documents`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Документ удалён', 'success');
+                loadDocuments();
+            } else {
+                showToast(result.error, 'error');
+            }
+        } catch (error) {
+            showToast('Ошибка удаления', 'error');
+        }
     }
 }
 
 // ========== НАСТРОЙКИ ==========
-function loadSettings() {
-    const config = getConfig();
-    document.getElementById('maxPhotos').value = config.settings.maxPhotosCount || 4;
-    document.getElementById('companyName').value = config.settings.companyName || 'Приемная комиссия';
-    document.getElementById('companyPhone').value = config.settings.companyPhone || '(499) 156-40-01';
+async function loadSettings() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/settings`);
+        const result = await response.json();
+        if (result.success && result.settings) {
+            const settings = result.settings;
+            document.getElementById('maxPhotos').value = settings.max_photos || 4;
+            document.getElementById('companyName').value = settings.company_name || 'Приемная комиссия';
+            document.getElementById('companyPhone').value = settings.company_phone || '(499) 156-40-01';
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+    }
 }
 
-function saveSettings() {
-    const config = getConfig();
-    config.settings = {
-        maxPhotosCount: parseInt(document.getElementById('maxPhotos').value),
-        companyName: document.getElementById('companyName').value,
-        companyPhone: document.getElementById('companyPhone').value
+async function saveSettings() {
+    const settings = {
+        max_photos: parseInt(document.getElementById('maxPhotos').value),
+        company_name: document.getElementById('companyName').value,
+        company_phone: document.getElementById('companyPhone').value
     };
-    saveConfig(config);
-    showToast('Настройки сохранены', 'success');
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        const result = await response.json();
+        if (result.success) {
+            showToast('Настройки сохранены', 'success');
+        } else {
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        showToast('Ошибка сохранения', 'error');
+    }
 }
 
 // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
