@@ -218,21 +218,33 @@
                 <p><strong>👑 Администратор:</strong> admin / admin123 <span class="role-badge">полный доступ</span></p>
                 <p><strong>👔 Ответственный секретарь:</strong> osokin / 123456 <span class="role-badge">статистика + расписки</span></p>
                 <p><strong>👔 Зам. секретаря:</strong> tsygankova / 123456 <span class="role-badge">статистика + расписки</span></p>
-                <p><strong>📄 Специалист архива:</strong> vorobyeva / 123456 <span class="role-badge">только расписки</span></p>
-                <p><strong>📄 Специалист архива:</strong> khanakova / 123456 <span class="role-badge">только расписки</span></p>
+                <p><strong>📄 Специалист</strong> vorobyeva / 123456 <span class="role-badge">только расписки</span></p>
+                <p><strong>📄 Специалист</strong> khanakova / 123456 <span class="role-badge">только расписки</span></p>
             </div>
         </div>
     </div>
     
     <script src="auth.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        // Функция показа уведомлений
+        function showAlert(message, type) {
+            var alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert alert-' + type;
+            alertDiv.style.display = 'block';
+            setTimeout(function() {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Обработчик отправки формы
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const loginVal = document.getElementById('login').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const originalText = loginBtn.innerHTML;
+            var loginVal = document.getElementById('login').value.trim().toLowerCase();
+            var password = document.getElementById('password').value;
+            var loginBtn = document.getElementById('loginBtn');
+            var originalText = loginBtn.innerHTML;
             
             if (!loginVal || !password) {
                 showAlert('Заполните все поля', 'error');
@@ -242,12 +254,13 @@
             loginBtn.innerHTML = '<span class="spinner"></span> Вход...';
             loginBtn.disabled = true;
             
-            const result = login(loginVal, password);
+            var result = login(loginVal, password);
             
             if (result.success) {
-                showAlert(`Добро пожаловать, ${result.user.name}!`, 'success');
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                showAlert('Добро пожаловать, ' + result.user.name + '!', 'success');
+                setTimeout(function() {
+                    // Перенаправляем на главный каркас (index.html)
+                    window.location.href = 'index.html';
                 }, 500);
             } else {
                 showAlert(result.error, 'error');
@@ -256,21 +269,15 @@
             }
         });
         
-        function showAlert(message, type) {
-            const alertDiv = document.getElementById('alert');
-            alertDiv.textContent = message;
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.style.display = 'block';
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 3000);
-        }
-        
-        document.getElementById('password').addEventListener('keypress', (e) => {
+        // Вход по Enter
+        document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('loginForm').dispatchEvent(new Event('submit'));
             }
         });
+        
+        // Автофокус на поле логина
+        document.getElementById('login').focus();
     </script>
 </body>
 </html>
