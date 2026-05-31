@@ -5,7 +5,7 @@ if (!currentUser || !(currentUser.role === 'admin' || currentUser.role === 'both
     window.location.href = 'login.html';
 }
 
-document.getElementById('adminName').innerHTML = `👑 ${currentUser.name}`;
+document.getElementById('adminName').innerHTML = `${currentUser.name}`;
 
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -23,19 +23,15 @@ function switchTab(tab) {
 function loadStats() {
     const stats = getSystemStats();
     
-    document.getElementById('totalEmployees').textContent = stats.totalEmployees;
-    document.getElementById('totalReceipts').textContent = stats.totalReceipts;
-    document.getElementById('todayReceipts').textContent = stats.todayReceipts;
-    document.getElementById('activeUsers').textContent = stats.activeUsers;
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${stats.totalEmployees}</div><div class="stat-label">Сотрудников</div></div>
+        <div class="stat-card"><div class="stat-value">${stats.totalReceipts}</div><div class="stat-label">Всего расписок</div></div>
+        <div class="stat-card"><div class="stat-value">${stats.todayReceipts}</div><div class="stat-label">Сегодня</div></div>
+        <div class="stat-card"><div class="stat-value">${stats.activeUsers}</div><div class="stat-label">Активных</div></div>
+    `;
     
     document.getElementById('employeeStatsBody').innerHTML = stats.employeeStats.map(emp => `
-        <tr>
-            <td>${emp.name}</td>
-            <td>${emp.position || '-'}</td>
-            <td>${emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник')}</td>
-            <td>${emp.receiptCount || 0}</td>
-            <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
-        </tr>
+        <tr><td>${emp.name}</td><td>${emp.position || '-'}</td><td>${emp.receiptCount}</td><td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td></tr>
     `).join('');
     
     document.getElementById('specialtyStatsBody').innerHTML = Object.entries(stats.specialtyStats).map(([code, count]) => `
@@ -45,20 +41,13 @@ function loadStats() {
 
 function loadEmployees() {
     const employees = getEmployees();
-    const tbody = document.getElementById('employeesList');
-    
-    tbody.innerHTML = employees.map(emp => `
+    document.getElementById('employeesList').innerHTML = employees.map(emp => `
         <tr>
-            <td>${emp.name}</td>
-            <td>${emp.login}</td>
-            <td>${emp.position || '-'}</td>
+            <td>${emp.name}</td><td>${emp.login}</td><td>${emp.position || '-'}</td>
             <td>${emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник')}</td>
             <td>${emp.receiptCount || 0}</td>
             <td><span class="status-badge ${emp.isActive ? 'status-active' : 'status-inactive'}">${emp.isActive ? 'Активен' : 'Неактивен'}</span></td>
-            <td class="action-buttons">
-                <button class="action-btn edit-btn" onclick="editEmployee('${emp.login}')">✏️</button>
-                <button class="action-btn delete-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button>
-            </td>
+            <td><button class="action-btn" onclick="editEmployee('${emp.login}')">✏️</button><button class="action-btn" onclick="deleteEmployeeConfirm('${emp.login}')">🗑️</button></td>
         </tr>
     `).join('');
 }
@@ -114,10 +103,7 @@ function saveEmployee() {
         if (password) updates.password = password;
         result = updateEmployee(editLogin, updates);
     } else {
-        if (!password) {
-            showToast('Введите пароль', 'error');
-            return;
-        }
+        if (!password) { showToast('Введите пароль', 'error'); return; }
         result = addEmployee({ login, name, password, position, phone, role });
     }
     
@@ -144,28 +130,19 @@ function deleteEmployeeConfirm(login) {
     }
 }
 
-function closeEmployeeModal() {
-    document.getElementById('employeeModal').style.display = 'none';
-}
+function closeEmployeeModal() { document.getElementById('employeeModal').style.display = 'none'; }
 
-// Управление специальностями
+// ========== СПЕЦИАЛЬНОСТИ ==========
 function loadSpecialties() {
     const config = getConfig();
-    const tbody = document.getElementById('specialtiesList');
-    
-    tbody.innerHTML = Object.entries(config.specialties)
+    document.getElementById('specialtiesList').innerHTML = Object.entries(config.specialties)
         .sort((a, b) => (a[1].order || 999) - (b[1].order || 999))
         .map(([key, data]) => `
             <tr>
-                <td>${data.code}</td>
-                <td>${key}</td>
+                <td>${data.code}</td><td>${key}</td>
                 <td><input type="number" value="${data.order || 999}" style="width: 60px;" onchange="updateSpecialtyOrder('${key}', this.value)"></td>
                 <td><span class="status-badge ${data.active !== false ? 'status-active' : 'status-inactive'}">${data.active !== false ? 'Активна' : 'Скрыта'}</span></td>
-                <td>
-                    <button class="action-btn" onclick="toggleSpecialty('${key}')">${data.active !== false ? '🔒' : '🔓'}</button>
-                    <button class="action-btn edit-btn" onclick="editSpecialty('${key}')">✏️</button>
-                    <button class="action-btn delete-btn" onclick="deleteSpecialty('${key}')">🗑️</button>
-                </td>
+                <td><button class="action-btn" onclick="toggleSpecialty('${key}')">${data.active !== false ? '🔒' : '🔓'}</button><button class="action-btn" onclick="editSpecialty('${key}')">✏️</button><button class="action-btn" onclick="deleteSpecialty('${key}')">🗑️</button></td>
             </tr>
         `).join('');
 }
@@ -173,7 +150,7 @@ function loadSpecialties() {
 function toggleSpecialty(key) {
     const config = getConfig();
     if (config.specialties[key]) {
-        config.specialties[key].active = config.specialties[key].active === false ? true : false;
+        config.specialties[key].active = !config.specialties[key].active;
         saveConfig(config);
         loadSpecialties();
         showToast('Статус обновлён', 'success');
@@ -216,10 +193,7 @@ function saveSpecialty() {
     const name = document.getElementById('specialtyName').value;
     const order = parseInt(document.getElementById('specialtyOrder').value);
     
-    if (!code || !name) {
-        showToast('Заполните все поля', 'error');
-        return;
-    }
+    if (!code || !name) { showToast('Заполните все поля', 'error'); return; }
     
     const config = getConfig();
     if (oldKey && oldKey !== name) delete config.specialties[oldKey];
@@ -240,22 +214,15 @@ function deleteSpecialty(key) {
     }
 }
 
-function closeSpecialtyModal() {
-    document.getElementById('specialtyModal').style.display = 'none';
-}
+function closeSpecialtyModal() { document.getElementById('specialtyModal').style.display = 'none'; }
 
-// Управление документами
+// ========== ДОКУМЕНТЫ ==========
 function loadDocuments() {
     const config = getConfig();
-    const tbody = document.getElementById('documentsList');
-    
-    tbody.innerHTML = config.documentTypes.map((doc, index) => `
+    document.getElementById('documentsList').innerHTML = config.documentTypes.map((doc, index) => `
         <tr>
             <td>${doc}</td>
-            <td>
-                <button class="action-btn edit-btn" onclick="editDocument(${index})">✏️</button>
-                <button class="action-btn delete-btn" onclick="deleteDocument(${index})">🗑️</button>
-            </td>
+            <td><button class="action-btn" onclick="editDocument(${index})">✏️</button><button class="action-btn" onclick="deleteDocument(${index})">🗑️</button></td>
         </tr>
     `).join('');
 }
@@ -292,7 +259,7 @@ function deleteDocument(index) {
     }
 }
 
-// Настройки
+// ========== НАСТРОЙКИ ==========
 function loadSettings() {
     const config = getConfig();
     document.getElementById('maxPhotos').value = config.settings.maxPhotosCount || 4;
@@ -314,15 +281,7 @@ function saveSettings() {
 function showToast(message, type) {
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.style.position = 'fixed';
-    toast.style.bottom = '20px';
-    toast.style.right = '20px';
-    toast.style.background = 'var(--bg-card)';
-    toast.style.borderLeft = `4px solid ${type === 'success' ? 'var(--success)' : 'var(--danger)'}`;
-    toast.style.padding = '12px 20px';
-    toast.style.borderRadius = '12px';
-    toast.style.zIndex = '1100';
-    toast.style.animation = 'slideIn 0.3s ease';
+    toast.style.borderLeftColor = type === 'success' ? '#10b981' : '#ef4444';
     toast.innerHTML = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);

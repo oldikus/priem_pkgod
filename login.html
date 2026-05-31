@@ -5,72 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход - Приемная комиссия</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
-        .login-wrapper {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e2e8f0 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(ellipse at top, var(--bg-card), var(--bg-primary));
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 480px;
             padding: 20px;
         }
-        
+
         .login-card {
-            background: var(--bg-card);
-            border-radius: 32px;
-            padding: 48px;
-            max-width: 440px;
-            width: 100%;
-            border: 1px solid rgba(108, 92, 231, 0.2);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
         }
-        
-        .login-card:hover {
-            border-color: rgba(108, 92, 231, 0.5);
-            box-shadow: 0 0 40px rgba(108, 92, 231, 0.1);
-        }
-        
+
         .logo {
             text-align: center;
             margin-bottom: 32px;
         }
-        
-        .logo-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-        }
-        
-        .logo-icon svg {
-            width: 36px;
-            height: 36px;
-            color: white;
-        }
-        
-        h1 {
+
+        .logo h1 {
             font-size: 28px;
             font-weight: 700;
-            text-align: center;
-            background: linear-gradient(135deg, #fff, var(--primary));
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
         }
-        
-        .subtitle {
-            text-align: center;
-            color: var(--text-secondary);
+
+        .logo p {
             font-size: 14px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        .welcome {
+            text-align: center;
             margin-bottom: 32px;
         }
-        
+
+        .welcome h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1f36;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #1a1f36;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         .alert {
             padding: 12px 16px;
             border-radius: 12px;
@@ -78,72 +130,19 @@
             display: none;
             font-size: 14px;
         }
-        
+
         .alert-error {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
         }
-        
+
         .alert-success {
-            background: rgba(16, 185, 129, 0.15);
-            color: #6ee7b7;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
         }
-        
-        .input-group {
-            margin-bottom: 20px;
-        }
-        
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .input-group input {
-            width: 100%;
-            padding: 14px 16px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            font-size: 15px;
-            color: var(--text-primary);
-            transition: all 0.2s;
-        }
-        
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
-        }
-        
-        .login-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 8px;
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(108, 92, 231, 0.4);
-        }
-        
-        .login-btn:disabled {
-            opacity: 0.7;
-            transform: none;
-        }
-        
+
         .spinner {
             display: inline-block;
             width: 18px;
@@ -155,60 +154,60 @@
             margin-right: 8px;
             vertical-align: middle;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
+
         .test-accounts {
             margin-top: 32px;
             padding-top: 24px;
-            border-top: 1px solid var(--border);
-            font-size: 12px;
-            color: var(--text-secondary);
+            border-top: 1px solid #e2e8f0;
         }
-        
+
         .test-accounts p {
+            font-size: 12px;
+            color: #64748b;
             margin-bottom: 8px;
         }
-        
+
         .test-accounts strong {
-            color: var(--primary);
+            color: #2563eb;
         }
-        
+
         .role-badge {
             display: inline-block;
             padding: 2px 8px;
-            background: rgba(108, 92, 231, 0.2);
+            background: #eff6ff;
             border-radius: 20px;
             font-size: 10px;
             margin-left: 8px;
-            color: var(--primary);
+            color: #2563eb;
         }
     </style>
 </head>
 <body>
-    <div class="login-wrapper">
+    <div class="login-container">
         <div class="login-card">
             <div class="logo">
-                <div class="logo-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                </div>
-                <h1>Приемная комиссия</h1>
-                <p class="subtitle">Войдите в систему</p>
+                <h1>📄 Приемная комиссия</h1>
+                <p>Единая платформа приема документов</p>
+            </div>
+            
+            <div class="welcome">
+                <h2>Добро пожаловать!</h2>
+                <p>Войдите в систему</p>
             </div>
             
             <div id="alert" class="alert"></div>
             
             <form id="loginForm">
-                <div class="input-group">
+                <div class="form-group">
                     <label>Логин</label>
                     <input type="text" id="login" required placeholder="admin" autocomplete="off">
                 </div>
                 
-                <div class="input-group">
+                <div class="form-group">
                     <label>Пароль</label>
                     <input type="password" id="password" required placeholder="••••••••">
                 </div>
@@ -250,7 +249,7 @@
                 showAlert(`Добро пожаловать, ${result.user.name}!`, 'success');
                 setTimeout(() => {
                     if (result.user.role === 'admin' || result.user.role === 'both') {
-                        window.location.href = 'admin.html';
+                        window.location.href = 'dashboard.html';
                     } else {
                         window.location.href = 'dashboard.html';
                     }
