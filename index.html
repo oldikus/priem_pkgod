@@ -124,7 +124,7 @@
                     </div>
                 </div>
                 <div class="user-info"><div class="user-name" id="userName"></div><div class="user-role" id="userRole"></div></div>
-                <button class="logout-btn" onclick="window.logout()">Выйти</button>
+                <button class="logout-btn" onclick="logout()">Выйти</button>
             </div>
         </div>
 
@@ -137,27 +137,30 @@
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
-        var currentUser = null;
+        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+        var currentUserData = null;
+        var globalCharts = { receiptsChart: null, specialtyChart: null, trendChart: null };
         
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
         function init() {
-            currentUser = checkAuth();
-            if (!currentUser) { window.location.href = 'login.html'; return; }
+            currentUserData = checkAuth();
+            if (!currentUserData) { window.location.href = 'login.html'; return; }
             
-            var firstName = currentUser.name.split(' ')[1] || currentUser.name.split(' ')[0];
+            var firstName = currentUserData.name.split(' ')[1] || currentUserData.name.split(' ')[0];
             document.getElementById('userNameShort').innerHTML = firstName;
-            document.getElementById('userName').innerHTML = currentUser.name;
+            document.getElementById('userName').innerHTML = currentUserData.name;
             
             var roleText = '';
-            if (currentUser.role === 'admin') roleText = 'Главный администратор';
-            else if (currentUser.role === 'both') roleText = 'Администратор + Сотрудник';
-            else if (currentUser.role === 'manager') roleText = 'Руководитель';
+            if (currentUserData.role === 'admin') roleText = 'Главный администратор';
+            else if (currentUserData.role === 'both') roleText = 'Администратор + Сотрудник';
+            else if (currentUserData.role === 'manager') roleText = 'Руководитель';
             else roleText = 'Сотрудник архива';
             document.getElementById('userRole').innerHTML = roleText;
             
-            if (currentUser.role === 'admin' || currentUser.role === 'both' || currentUser.role === 'manager') {
+            if (currentUserData.role === 'admin' || currentUserData.role === 'both' || currentUserData.role === 'manager') {
                 document.getElementById('statsGroup').style.display = 'block';
             }
-            if (currentUser.role === 'admin' || currentUser.role === 'both') {
+            if (currentUserData.role === 'admin' || currentUserData.role === 'both') {
                 document.getElementById('adminGroup').style.display = 'block';
                 document.getElementById('adminDivider').style.display = 'block';
             }
@@ -167,6 +170,7 @@
             loadPage('home');
         }
         
+        // ========== ЗАГРУЗКА СТРАНИЦ ==========
         function loadPage(pageName) {
             var loader = document.getElementById('loaderOverlay');
             var container = document.getElementById('pageContent');
@@ -183,6 +187,7 @@
                 .then(function(html) {
                     if (container) {
                         container.innerHTML = html;
+                        // Выполняем скрипты из загруженной страницы
                         var scripts = container.querySelectorAll('script');
                         for (var i = 0; i < scripts.length; i++) {
                             var oldScript = scripts[i];
@@ -207,6 +212,7 @@
             }
         }
         
+        // ========== ОБРАБОТЧИКИ ==========
         function setupEventListeners() {
             document.getElementById('themeToggleBtn').onclick = function() { 
                 document.getElementById('customizerPanel').classList.toggle('show'); 
@@ -308,8 +314,8 @@
         
         function logout() { localStorage.removeItem('receipt_system_current_user'); window.location.href = 'login.html'; }
         
-        window.currentUser = function() { return currentUser; };
-        window.loadPage = loadPage;
+        // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ДОСТУПА ИЗ СТРАНИЦ ==========
+        window.getCurrentUser = function() { return currentUserData; };
         window.showToast = function(msg, type) {
             var toast = document.createElement('div');
             toast.style.position = 'fixed';
@@ -324,6 +330,55 @@
             toast.innerHTML = msg;
             document.body.appendChild(toast);
             setTimeout(function() { toast.remove(); }, 3000);
+        };
+        window.printReceipt = function(receipt) {
+            var now = new Date();
+            var w = window.open('', '_blank');
+            var docHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписка №' + receipt.receiptNumber + '</title><style>body{font-family:"Times New Roman",serif;padding:40px;max-width:800px;margin:0 auto;background:white;color:black;}.header{text-align:center;margin-bottom:30px;}h3{font-size:18px;font-weight:bold;margin:20px 0;}.content{line-height:1.6;}.signature{margin-top:50px;}button{padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}@media print{.no-print{display:none;}}</style></head><body><div class="no-print" style="text-align:center;margin-bottom:20px;"><button onclick="window.print()">🖨️ Печать</button><button onclick="window.close()">✖️ Закрыть</button></div><div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div><div class="content"><p>Настоящая расписка выдана абитуриенту <strong>' + receipt.fullName + '</strong> о том, что от него приняты следующие документы:</p><ul>';
+            var docs = (receipt.documents || '').split('\n');
+            for (var i = 0; i < docs.length; i++) { if (docs[i].trim()) docHtml += '<li>' + docs[i].trim() + '</li>'; }
+            docHtml += '</ul><p><strong>Специальность:</strong> ' + receipt.specialty + '</p><p><strong>Номер расписки:</strong> ' + receipt.receiptNumber + '</p><p><strong>Дата выдачи:</strong> ' + now.toLocaleDateString('ru-RU') + '</p><div class="signature"><p>____________________</p><p><strong>' + receipt.employee + '</strong></p><p>' + receipt.employeePosition + '</p></div></div><script>setTimeout(function(){window.print();},500);<\/script></body></html>';
+            w.document.write(docHtml);
+            w.document.close();
+        };
+        window.updateRatingList = function() {
+            var receipts = getAllReceipts();
+            var specialty = document.getElementById('ratingSpecialty') ? document.getElementById('ratingSpecialty').value : 'all';
+            var sortBy = document.getElementById('ratingSort') ? document.getElementById('ratingSort').value : 'score';
+            
+            var filtered = specialty === 'all' ? receipts : receipts.filter(function(r) { return r.specialty === specialty; });
+            var withScores = filtered.filter(function(r) { return r.score && parseInt(r.score) > 0; });
+            
+            if (sortBy === 'score') {
+                withScores.sort(function(a,b) { return parseInt(b.score) - parseInt(a.score); });
+            } else {
+                withScores.sort(function(a,b) { return a.fullName.localeCompare(b.fullName); });
+            }
+            
+            var totalSpan = document.getElementById('totalApplicants');
+            if (totalSpan) totalSpan.innerHTML = withScores.length;
+            
+            var scores = [];
+            for (var i = 0; i < withScores.length; i++) {
+                var s = parseInt(withScores[i].score);
+                if (!isNaN(s)) scores.push(s);
+            }
+            if (scores.length > 0) {
+                var top10Percent = Math.ceil(scores.length * 0.1);
+                var passing = scores[top10Percent - 1] || scores[scores.length - 1];
+                var passingSpan = document.getElementById('passingScore');
+                if (passingSpan) passingSpan.innerHTML = passing;
+            }
+            
+            var html = '';
+            for (var i = 0; i < withScores.length; i++) {
+                var r = withScores[i];
+                var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+                html += '<tr><td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td>' + r.fullName + '</td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '</td><td><span class="status-badge status-active">Подано</span></td></tr>';
+            }
+            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных<\/td></tr>';
+            var tableBody = document.getElementById('ratingTableBody');
+            if (tableBody) tableBody.innerHTML = html;
         };
         
         init();

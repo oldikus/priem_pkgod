@@ -13,7 +13,7 @@
     </form>
 </div>
 <script>
-    var currentUser = window.currentUser ? window.currentUser() : getCurrentUser();
+    var currentUser = window.getCurrentUser ? window.getCurrentUser() : getCurrentUser();
     
     function loadSpecialties() {
         var config = getConfig();
@@ -41,7 +41,9 @@
         container.innerHTML = html;
     }
     
-    document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
+    if (currentUser) {
+        document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
+    }
     
     function showAlert(msg, type) {
         var el = document.getElementById('alert');
@@ -73,9 +75,9 @@
             photosCount: document.getElementById('photosCount').value,
             score: document.getElementById('score').value,
             city: document.getElementById('city').value,
-            employee: currentUser.name,
-            employeeLogin: currentUser.login,
-            employeePosition: currentUser.position
+            employee: currentUser ? currentUser.name : '',
+            employeeLogin: currentUser ? currentUser.login : '',
+            employeePosition: currentUser ? currentUser.position : ''
         };
         if (!data.fullName || !data.specialty) {
             showAlert('Заполните обязательные поля', 'error');

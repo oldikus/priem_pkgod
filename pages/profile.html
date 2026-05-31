@@ -3,9 +3,10 @@
     <div id="profileInfo"></div>
 </div>
 <script>
-    var currentUser = window.currentUser ? window.currentUser() : getCurrentUser();
+    var currentUser = window.getCurrentUser ? window.getCurrentUser() : getCurrentUser();
     
     function loadProfile() {
+        if (!currentUser) return;
         var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
         var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
         html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
