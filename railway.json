@@ -1,0 +1,10 @@
+{
+    "build": {
+      "builder": "NIXPACKS"
+    },
+    "deploy": {
+      "startCommand": "npx serve -s . -l 3000",
+      "healthcheckPath": "/",
+      "restartPolicyType": "ON_FAILURE"
+    }
+  }
