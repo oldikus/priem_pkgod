@@ -196,7 +196,7 @@
                 <div class="form-group"><label>Пароль *</label><input type="password" id="empPassword" placeholder="••••••••"></div>
                 <div class="form-group"><label>Должность</label><input type="text" id="empPosition" placeholder="Специалист"></div>
                 <div class="form-group"><label>Телефон</label><input type="text" id="empPhone" placeholder="+7 (XXX) XXX-XX-XX"></div>
-                <div class="form-group"><label>Роль</label><select id="empRole"><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="both">Админ+Сотрудник</option></select></div>
+                <div class="form-group"><label>Роль</label><select id="empRole"><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="both">Администратор системы</option></select></div>
                 <div class="form-group"><label>Статус</label><select id="empStatus"><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
             </div>
             <div class="modal-footer"><button class="action-btn" onclick="closeEmployeeModal()">Отмена</button><button class="add-btn" onclick="saveEmployee()">Сохранить</button></div>
@@ -237,9 +237,9 @@
             
             var roleText = '';
             if (currentUserData.role === 'admin') roleText = 'Главный администратор';
-            else if (currentUserData.role === 'both') roleText = 'Администратор + Сотрудник';
+            else if (currentUserData.role === 'both') roleText = 'Администратор системы';
             else if (currentUserData.role === 'manager') roleText = 'Руководитель';
-            else roleText = 'Сотрудник архива';
+            else roleText = 'Сотрудник';
             document.getElementById('userRole').innerHTML = roleText;
             
             if (currentUserData.role === 'admin' || currentUserData.role === 'both' || currentUserData.role === 'manager') {
@@ -720,7 +720,7 @@
         window.loadProfilePage = function() {
             var currentUser = window.getCurrentUser();
             if (!currentUser) return;
-            var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
+            var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор системы' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
             var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
             html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
             html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';

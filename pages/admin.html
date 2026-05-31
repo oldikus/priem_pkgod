@@ -500,7 +500,7 @@
         var html = '';
         for (var i = 0; i < employees.length; i++) {
             var emp = employees[i];
-            var roleText = emp.role === 'both' ? 'Админ+Сотрудник' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник');
+            var roleText = emp.role === 'both' ? 'Администратор системы' : (emp.role === 'manager' ? 'Руководитель' : 'Сотрудник');
             html += '<tr>' +
                 '<td>' + emp.name + '</td>' +
                 '<td>' + emp.login + '</td>' +
