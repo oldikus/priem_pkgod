@@ -12,18 +12,17 @@
         <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
     </form>
 </div>
-
 <script>
-    const currentUser = window.currentUser ? window.currentUser() : getCurrentUser();
+    var currentUser = window.currentUser ? window.currentUser() : getCurrentUser();
     
     function loadSpecialties() {
-        const config = getConfig();
-        const select = document.getElementById('specialty');
+        var config = getConfig();
+        var select = document.getElementById('specialty');
         select.innerHTML = '<option value="">Выберите специальность</option>';
-        for (const key in config.specialties) {
-            const data = config.specialties[key];
+        for (var key in config.specialties) {
+            var data = config.specialties[key];
             if (data.active) {
-                const opt = document.createElement('option');
+                var opt = document.createElement('option');
                 opt.value = key;
                 opt.textContent = data.code + ' - ' + data.name;
                 select.appendChild(opt);
@@ -32,12 +31,12 @@
     }
     
     function loadDocumentCheckboxes() {
-        const config = getConfig();
-        const container = document.getElementById('documentsCheckboxes');
-        let html = '';
-        for (let i = 0; i < config.documentTypes.length; i++) {
-            const doc = config.documentTypes[i];
-            html += `<label class="checkbox-item"><input type="checkbox" value="${doc.replace(/'/g, "\\'")}"><span>${doc}</span></label>`;
+        var config = getConfig();
+        var container = document.getElementById('documentsCheckboxes');
+        var html = '';
+        for (var i = 0; i < config.documentTypes.length; i++) {
+            var doc = config.documentTypes[i];
+            html += '<label class="checkbox-item"><input type="checkbox" value="' + doc.replace(/'/g, "\\'") + '"><span>' + doc + '</span></label>';
         }
         container.innerHTML = html;
     }
@@ -45,22 +44,26 @@
     document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
     
     function showAlert(msg, type) {
-        const el = document.getElementById('alert');
+        var el = document.getElementById('alert');
+        if (!el) return;
         el.textContent = msg;
         el.className = 'alert alert-' + type;
         el.style.display = 'block';
-        setTimeout(() => el.style.display = 'none', 4000);
+        setTimeout(function() { if (el) el.style.display = 'none'; }, 4000);
     }
     
     document.getElementById('receiptForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        const original = btn.innerHTML;
+        var btn = document.getElementById('submitBtn');
+        var original = btn.innerHTML;
         btn.innerHTML = '<span class="spinner"></span> Создание...';
         btn.disabled = true;
         
-        const docs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked')).map(cb => cb.value);
-        const data = {
+        var docs = [];
+        var checkboxes = document.querySelectorAll('#documentsCheckboxes input:checked');
+        for (var i = 0; i < checkboxes.length; i++) { docs.push(checkboxes[i].value); }
+        
+        var data = {
             fullName: document.getElementById('fullName').value,
             specialty: document.getElementById('specialty').value,
             diplomaNumber: document.getElementById('diplomaNumber').value,
@@ -80,11 +83,11 @@
             btn.disabled = false;
             return;
         }
-        const config = getConfig();
-        const code = config.specialties[data.specialty] ? config.specialties[data.specialty].code : 'ОБЩ';
-        const counter = getReceiptCounter(code);
-        const number = code + '-' + counter;
-        const receipt = {
+        var config = getConfig();
+        var code = config.specialties[data.specialty] ? config.specialties[data.specialty].code : 'ОБЩ';
+        var counter = getReceiptCounter(code);
+        var number = code + '-' + counter;
+        var receipt = {
             fullName: data.fullName, specialty: data.specialty, diplomaNumber: data.diplomaNumber,
             diplomaDate: data.diplomaDate, diplomaIssuedBy: data.diplomaIssuedBy, documents: data.documents,
             photosCount: data.photosCount, score: data.score, city: data.city, employee: data.employee,
@@ -92,11 +95,12 @@
             receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString()
         };
         saveReceipt(receipt);
-        window.parent.printReceipt(receipt);
+        if (window.printReceipt) window.printReceipt(receipt);
         showAlert('✅ Расписка №' + number + ' создана!', 'success');
         document.getElementById('receiptForm').reset();
         document.getElementById('photosCount').value = '0';
-        document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
+        var allCheckboxes = document.querySelectorAll('#documentsCheckboxes input');
+        for (var i = 0; i < allCheckboxes.length; i++) { allCheckboxes[i].checked = false; }
         btn.innerHTML = original;
         btn.disabled = false;
     });

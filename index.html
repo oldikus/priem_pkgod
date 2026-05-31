@@ -78,11 +78,53 @@
                 <p>Отдых на выходных — лучшая профилактика авралов.</p>
             </div>
             <div class="user-controls">
-                <div class="user-info">
-                    <div class="user-name" id="userName"></div>
-                    <div class="user-role" id="userRole"></div>
+                <div class="theme-customizer">
+                    <div class="theme-toggle-btn" id="themeToggleBtn">🎨</div>
+                    <div class="customizer-panel" id="customizerPanel">
+                        <h4>Кастомайзер темы</h4>
+                        <p style="font-size: 11px; margin-bottom: 16px;">Персонализируйте интерфейс</p>
+                        <div class="customizer-section">
+                            <span class="customizer-label">Основной цвет</span>
+                            <div class="color-options">
+                                <div class="color-option active" data-color="default"></div>
+                                <div class="color-option" data-color="blue"></div>
+                                <div class="color-option" data-color="green"></div>
+                                <div class="color-option" data-color="orange"></div>
+                                <div class="color-option" data-color="purple"></div>
+                                <div class="color-option" data-color="pink"></div>
+                                <div class="color-option" data-color="cyan"></div>
+                            </div>
+                            <div class="primary-color-picker">
+                                <span style="font-size: 12px;">Свой цвет:</span>
+                                <input type="color" id="customColorPicker" value="#4f46e5">
+                            </div>
+                        </div>
+                        <div class="customizer-section">
+                            <span class="customizer-label">Тема</span>
+                            <div class="theme-options">
+                                <div class="theme-option" data-theme="light">Светлая</div>
+                                <div class="theme-option" data-theme="dark">Тёмная</div>
+                                <div class="theme-option" data-theme="system">Системная</div>
+                            </div>
+                        </div>
+                        <div class="customizer-section">
+                            <span class="customizer-label">Оформление</span>
+                            <div class="style-options">
+                                <div class="style-option active" data-style="standard">Стандартное</div>
+                                <div class="style-option" data-style="outlined">С обводкой</div>
+                            </div>
+                        </div>
+                        <div class="customizer-section">
+                            <span class="customizer-label">Контент</span>
+                            <div class="layout-options">
+                                <div class="layout-option" data-layout="standard">Расширенный</div>
+                                <div class="layout-option" data-layout="compact">Компактный</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="logout-btn" onclick="logout()">Выйти</button>
+                <div class="user-info"><div class="user-name" id="userName"></div><div class="user-role" id="userRole"></div></div>
+                <button class="logout-btn" onclick="window.logout()">Выйти</button>
             </div>
         </div>
 
@@ -95,110 +137,99 @@
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
-        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         var currentUser = null;
         
-        // ========== ИНИЦИАЛИЗАЦИЯ ==========
         function init() {
-            console.log('🔍 Проверка авторизации...');
             currentUser = checkAuth();
-            if (!currentUser) { 
-                console.log('❌ Не авторизован, перенаправление на login.html');
-                window.location.href = 'login.html'; 
-                return; 
-            }
-            console.log('✅ Авторизован:', currentUser.name);
+            if (!currentUser) { window.location.href = 'login.html'; return; }
             
             var firstName = currentUser.name.split(' ')[1] || currentUser.name.split(' ')[0];
-            var userNameShortEl = document.getElementById('userNameShort');
-            var userNameEl = document.getElementById('userName');
-            var userRoleEl = document.getElementById('userRole');
-            
-            if (userNameShortEl) userNameShortEl.innerHTML = firstName;
-            if (userNameEl) userNameEl.innerHTML = currentUser.name;
+            document.getElementById('userNameShort').innerHTML = firstName;
+            document.getElementById('userName').innerHTML = currentUser.name;
             
             var roleText = '';
             if (currentUser.role === 'admin') roleText = 'Главный администратор';
             else if (currentUser.role === 'both') roleText = 'Администратор + Сотрудник';
             else if (currentUser.role === 'manager') roleText = 'Руководитель';
             else roleText = 'Сотрудник архива';
-            if (userRoleEl) userRoleEl.innerHTML = roleText;
-            
-            var statsGroup = document.getElementById('statsGroup');
-            var adminGroup = document.getElementById('adminGroup');
-            var adminDivider = document.getElementById('adminDivider');
+            document.getElementById('userRole').innerHTML = roleText;
             
             if (currentUser.role === 'admin' || currentUser.role === 'both' || currentUser.role === 'manager') {
-                if (statsGroup) statsGroup.style.display = 'block';
+                document.getElementById('statsGroup').style.display = 'block';
             }
             if (currentUser.role === 'admin' || currentUser.role === 'both') {
-                if (adminGroup) adminGroup.style.display = 'block';
-                if (adminDivider) adminDivider.style.display = 'block';
+                document.getElementById('adminGroup').style.display = 'block';
+                document.getElementById('adminDivider').style.display = 'block';
             }
             
+            loadThemeSettings();
+            setupEventListeners();
             loadPage('home');
         }
         
-        // ========== ЗАГРУЗКА СТРАНИЦ ==========
         function loadPage(pageName) {
             var loader = document.getElementById('loaderOverlay');
             var container = document.getElementById('pageContent');
             var loadingMsg = document.getElementById('loadingMessage');
-            
             if (loader) loader.style.display = 'flex';
             if (loadingMsg) loadingMsg.style.display = 'none';
             
-            var url = (pageName === 'admin') ? 'admin.html' : 'pages/' + pageName + '.html';
-            console.log('📄 Загрузка страницы:', url);
-            
+            var url = (pageName === 'admin') ? 'pages/admin.html' : 'pages/' + pageName + '.html';
             fetch(url + '?v=' + Date.now())
                 .then(function(response) {
-                    if (!response.ok) {
-                        throw new Error('Страница не найдена: ' + url);
-                    }
+                    if (!response.ok) throw new Error('Страница не найдена: ' + url);
                     return response.text();
                 })
                 .then(function(html) {
                     if (container) {
                         container.innerHTML = html;
-                        // Выполняем скрипты из загруженной страницы
                         var scripts = container.querySelectorAll('script');
                         for (var i = 0; i < scripts.length; i++) {
                             var oldScript = scripts[i];
                             var newScript = document.createElement('script');
-                            if (oldScript.src) {
-                                newScript.src = oldScript.src;
-                            } else {
-                                newScript.textContent = oldScript.textContent;
-                            }
+                            if (oldScript.src) { newScript.src = oldScript.src; } 
+                            else { newScript.textContent = oldScript.textContent; }
                             document.body.appendChild(newScript);
                         }
                     }
                     if (loader) loader.style.display = 'none';
-                    console.log('✅ Страница загружена:', pageName);
                 })
                 .catch(function(error) {
-                    console.error('❌ Ошибка загрузки:', error);
-                    if (container) {
-                        container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки страницы: ' + pageName + '<br>' + error.message + '</div>';
-                    }
+                    if (container) container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки страницы: ' + pageName + '<br>' + error.message + '</div>';
                     if (loader) loader.style.display = 'none';
                 });
             
-            // Обновляем активный пункт меню
             var navItems = document.querySelectorAll('.nav-item');
             for (var i = 0; i < navItems.length; i++) {
                 var item = navItems[i];
-                if (item.getAttribute('data-page') === pageName) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
+                if (item.getAttribute('data-page') === pageName) { item.classList.add('active'); } 
+                else { item.classList.remove('active'); }
             }
         }
         
-        // ========== ОБРАБОТЧИКИ ==========
         function setupEventListeners() {
+            document.getElementById('themeToggleBtn').onclick = function() { 
+                document.getElementById('customizerPanel').classList.toggle('show'); 
+            };
+            document.getElementById('customColorPicker').onchange = function() { 
+                setThemeColor(this.value); 
+            };
+            var colorOpts = document.querySelectorAll('.color-option');
+            for (var i = 0; i < colorOpts.length; i++) {
+                colorOpts[i].onclick = function() { setThemeColor(this.getAttribute('data-color')); };
+            }
+            var themeOpts = document.querySelectorAll('.theme-option');
+            for (var i = 0; i < themeOpts.length; i++) {
+                themeOpts[i].onclick = function() { setTheme(this.getAttribute('data-theme')); };
+            }
+            var styleOpts = document.querySelectorAll('.style-option');
+            for (var i = 0; i < styleOpts.length; i++) {
+                styleOpts[i].onclick = function() { setStyle(this.getAttribute('data-style')); };
+            }
+            var layoutOpts = document.querySelectorAll('.layout-option');
+            for (var i = 0; i < layoutOpts.length; i++) {
+                layoutOpts[i].onclick = function() { setLayout(this.getAttribute('data-layout')); };
+            }
             var navItems = document.querySelectorAll('.nav-item');
             for (var i = 0; i < navItems.length; i++) {
                 navItems[i].onclick = function(e) {
@@ -207,14 +238,76 @@
                     loadPage(page);
                 };
             }
+            document.addEventListener('click', function(e) {
+                var panel = document.getElementById('customizerPanel');
+                var btn = document.getElementById('themeToggleBtn');
+                if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) { 
+                    panel.classList.remove('show'); 
+                }
+            });
         }
         
-        function logout() { 
-            localStorage.removeItem('receipt_system_current_user'); 
-            window.location.href = 'login.html'; 
+        function setTheme(theme) {
+            localStorage.setItem('app_theme', theme);
+            if (theme === 'dark') document.body.classList.add('dark');
+            else if (theme === 'light') document.body.classList.remove('dark');
+            else if (theme === 'system') {
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.body.classList.add('dark');
+                else document.body.classList.remove('dark');
+            }
+            var opts = document.querySelectorAll('.theme-option');
+            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
+            var active = document.querySelector('.theme-option[data-theme="' + theme + '"]');
+            if (active) active.classList.add('active');
         }
         
-        // Делаем глобальные функции для доступа из загруженных страниц
+        function setStyle(style) {
+            localStorage.setItem('app_style', style);
+            if (style === 'outlined') document.body.classList.add('outlined');
+            else document.body.classList.remove('outlined');
+            var opts = document.querySelectorAll('.style-option');
+            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
+            var active = document.querySelector('.style-option[data-style="' + style + '"]');
+            if (active) active.classList.add('active');
+        }
+        
+        function setLayout(layout) {
+            localStorage.setItem('app_layout', layout);
+            if (layout === 'compact') document.body.classList.add('compact');
+            else document.body.classList.remove('compact');
+            var opts = document.querySelectorAll('.layout-option');
+            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
+            var active = document.querySelector('.layout-option[data-layout="' + layout + '"]');
+            if (active) active.classList.add('active');
+        }
+        
+        function setThemeColor(color) {
+            var colors = { default: '#4f46e5', blue: '#2563eb', green: '#059669', orange: '#ea580c', purple: '#9333ea', pink: '#ec4899', cyan: '#06b6d4' };
+            var primaryColor = colors[color] || color;
+            document.documentElement.style.setProperty('--primary', primaryColor);
+            document.documentElement.style.setProperty('--primary-hover', primaryColor + 'cc');
+            localStorage.setItem('app_color', color);
+            var opts = document.querySelectorAll('.color-option');
+            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
+            var active = document.querySelector('.color-option[data-color="' + color + '"]');
+            if (active) active.classList.add('active');
+        }
+        
+        function loadThemeSettings() {
+            var savedTheme = localStorage.getItem('app_theme') || 'light';
+            var savedStyle = localStorage.getItem('app_style') || 'standard';
+            var savedLayout = localStorage.getItem('app_layout') || 'standard';
+            var savedColor = localStorage.getItem('app_color') || 'default';
+            setTheme(savedTheme);
+            setStyle(savedStyle);
+            setLayout(savedLayout);
+            setThemeColor(savedColor);
+            var picker = document.getElementById('customColorPicker');
+            if (picker) picker.value = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4f46e5';
+        }
+        
+        function logout() { localStorage.removeItem('receipt_system_current_user'); window.location.href = 'login.html'; }
+        
         window.currentUser = function() { return currentUser; };
         window.loadPage = loadPage;
         window.showToast = function(msg, type) {
@@ -233,7 +326,6 @@
             setTimeout(function() { toast.remove(); }, 3000);
         };
         
-        setupEventListeners();
         init();
     </script>
 </body>

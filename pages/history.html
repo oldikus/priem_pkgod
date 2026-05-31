@@ -1,22 +1,23 @@
 <div class="form-container">
-    <h2>👤 Мой профиль</h2>
-    <div id="profileInfo"></div>
+    <h2>📋 Мои расписки</h2>
+    <div id="receiptsList"></div>
 </div>
-
 <script>
-    const currentUser = window.currentUser ? window.currentUser() : getCurrentUser();
+    var currentUser = window.currentUser ? window.currentUser() : getCurrentUser();
     
-    function loadProfile() {
-        const roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
-        const html = `
-            <div class="profile-field"><label>ФИО</label><input type="text" value="${currentUser.name}" readonly></div>
-            <div class="profile-field"><label>Логин</label><input type="text" value="${currentUser.login}" readonly></div>
-            <div class="profile-field"><label>Должность</label><input type="text" value="${currentUser.position || ''}" readonly></div>
-            <div class="profile-field"><label>Телефон</label><input type="text" value="${currentUser.phone || 'Не указан'}" readonly></div>
-            <div class="profile-field"><label>Роль</label><input type="text" value="${roleTxt}" readonly></div>
-        `;
-        document.getElementById('profileInfo').innerHTML = html;
+    function loadReceiptsHistory() {
+        var list = getEmployeeReceipts(currentUser.login);
+        var container = document.getElementById('receiptsList');
+        if (!list.length) { 
+            container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>'; 
+            return; 
+        }
+        var html = '';
+        for (var i = 0; i < list.length; i++) {
+            var r = list[i];
+            html += '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="window.printReceipt(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
+        }
+        container.innerHTML = html;
     }
-    
-    loadProfile();
+    loadReceiptsHistory();
 </script>
