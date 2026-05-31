@@ -1,372 +1,267 @@
-// ========== СИСТЕМА АВТОРИЗАЦИИ ==========
+// auth.js (Firebase версия)
+import { db, auth, collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, deleteDoc, signInWithEmailAndPassword } from './firebase-config.js';
 
 const STORAGE_KEYS = {
-    USERS: 'receipt_system_users',
-    CURRENT_USER: 'receipt_system_current_user',
-    RECEIPTS: 'receipt_system_receipts',
-    COUNTERS: 'receipt_system_counters'
+    CURRENT_USER: 'receipt_system_current_user'
 };
 
-// Хеширование пароля
-function hashPassword(password) {
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-        const char = password.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return hash.toString();
+// ========== ХЕШИРОВАНИЕ ПАРОЛЯ ==========
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ========== ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЕЙ ==========
-function initializeUsers() {
-    const existing = localStorage.getItem(STORAGE_KEYS.USERS);
-    if (existing) return JSON.parse(existing);
-    
-    const users = {
-        'admin': {
-            id: 'admin_1',
-            login: 'admin',
-            password: hashPassword('admin123'),
-            name: 'Главный Администратор',
-            role: 'admin',
-            position: 'Главный администратор',
-            phone: '+7 (499) 156-40-01',
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            canViewStats: true,
-            receiptCount: 0
-        },
-        'osokin': {
-            id: 'emp_1',
-            login: 'osokin',
-            password: hashPassword('123456'),
-            name: 'Осокин Константин Вячеславович',
-            role: 'both',
-            position: 'Ответственный секретарь',
-            phone: '+7 (499) 156-40-02',
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            canViewStats: true,
-            receiptCount: 0
-        },
-        'tsygankova': {
-            id: 'emp_2',
-            login: 'tsygankova',
-            password: hashPassword('123456'),
-            name: 'Цыганкова Юлия Игоревна',
-            role: 'both',
-            position: 'Заместитель ответственного секретаря',
-            phone: '+7 (499) 156-40-03',
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            canViewStats: true,
-            receiptCount: 0
-        },
-        'vorobyeva': {
-            id: 'emp_3',
-            login: 'vorobyeva',
-            password: hashPassword('123456'),
-            name: 'Воробьева Ирина Алексеевна',
-            role: 'employee',
-            position: 'Специалист архива',
-            phone: '+7 (499) 156-40-04',
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            canViewStats: false,
-            receiptCount: 0
-        },
-        'khanakova': {
-            id: 'emp_4',
-            login: 'khanakova',
-            password: hashPassword('123456'),
-            name: 'Ханакова Анастасия Ивановна',
-            role: 'employee',
-            position: 'Специалист архива',
-            phone: '+7 (499) 156-40-05',
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            canViewStats: false,
-            receiptCount: 0
+// ========== АВТОРИЗАЦИЯ ==========
+async function login(login, password) {
+    try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('login', '==', login));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            return { success: false, error: 'Пользователь не найден' };
         }
-    };
-    
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    
-    if (!localStorage.getItem(STORAGE_KEYS.RECEIPTS)) {
-        localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify([]));
+        
+        const userDoc = querySnapshot.docs[0];
+        const user = userDoc.data();
+        const hashedPassword = await hashPassword(password);
+        
+        if (user.password !== hashedPassword) {
+            return { success: false, error: 'Неверный пароль' };
+        }
+        
+        if (!user.isActive) {
+            return { success: false, error: 'Аккаунт деактивирован' };
+        }
+        
+        const session = {
+            userId: userDoc.id,
+            login: user.login,
+            name: user.name,
+            role: user.role,
+            position: user.position,
+            canViewStats: user.canViewStats,
+            loginTime: new Date().toISOString()
+        };
+        
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+        return { success: true, user: session };
+        
+    } catch (error) {
+        return { success: false, error: error.message };
     }
-    if (!localStorage.getItem(STORAGE_KEYS.COUNTERS)) {
-        localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify({}));
-    }
-    
-    return users;
 }
 
-// ========== ОСНОВНЫЕ ФУНКЦИИ АВТОРИЗАЦИИ ==========
-
-// Вход в систему
-function login(login, password) {
-    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-    const user = users[login];
-    
-    if (!user) return { success: false, error: 'Пользователь не найден' };
-    if (!user.isActive) return { success: false, error: 'Аккаунт деактивирован' };
-    if (user.password !== hashPassword(password)) return { success: false, error: 'Неверный пароль' };
-    
-    const session = {
-        userId: user.id,
-        login: user.login,
-        name: user.name,
-        role: user.role,
-        position: user.position,
-        phone: user.phone,
-        canViewStats: user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager',
-        loginTime: new Date().toISOString()
-    };
-    
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
-    return { success: true, user: session };
-}
-
-// Выход из системы
 function logout() {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     window.location.href = 'login.html';
 }
 
-// Проверка авторизации (с редиректом)
 function checkAuth() {
-    const currentUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    if (!currentUser) {
-        if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html')) {
-            window.location.href = 'login.html';
-        }
+    const user = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    if (!user && !window.location.pathname.includes('login.html')) {
+        window.location.href = 'login.html';
         return null;
     }
-    return JSON.parse(currentUser);
+    return user ? JSON.parse(user) : null;
 }
 
-// Получить текущего пользователя (без редиректа)
 function getCurrentUser() {
     const user = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return user ? JSON.parse(user) : null;
 }
 
-// Проверка прав администратора
-function isAdmin() {
-    const user = getCurrentUser();
-    return user && (user.role === 'admin' || user.role === 'both');
+// ========== УПРАВЛЕНИЕ РАСПИСКАМИ ==========
+async function getAllReceipts() {
+    const receiptsRef = collection(db, 'receipts');
+    const q = query(receiptsRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-// Проверка доступа к статистике
-function canViewStats() {
-    const user = getCurrentUser();
-    return user && (user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager');
-}
-
-// ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ==========
-
-// Получить всех пользователей
-function getAllUsers() {
-    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-    return Object.values(users);
-}
-
-// Получить только сотрудников (не админов)
-function getEmployees() {
-    const users = getAllUsers();
-    return users.filter(function(u) { 
-        return u.role === 'employee' || u.role === 'both' || u.role === 'manager';
+async function saveReceipt(receiptData) {
+    const receiptsRef = collection(db, 'receipts');
+    const docRef = await addDoc(receiptsRef, {
+        ...receiptData,
+        createdAt: new Date().toISOString()
     });
+    return { id: docRef.id, ...receiptData };
 }
 
-// Добавить сотрудника
-function addEmployee(employeeData) {
-    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+async function getEmployeeReceipts(employeeLogin) {
+    const receiptsRef = collection(db, 'receipts');
+    const q = query(receiptsRef, where('employeeLogin', '==', employeeLogin), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+// ========== УПРАВЛЕНИЕ СОТРУДНИКАМИ ==========
+async function getEmployees() {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('role', 'in', ['employee', 'both', 'manager']));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+async function getAllUsers() {
+    const usersRef = collection(db, 'users');
+    const querySnapshot = await getDocs(usersRef);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+async function addEmployee(employeeData) {
+    const hashedPassword = await hashPassword(employeeData.password);
+    const usersRef = collection(db, 'users');
     
-    if (users[employeeData.login]) {
-        return { success: false, error: 'Логин уже существует' };
-    }
-    
-    const canViewStats = employeeData.role === 'manager' || employeeData.role === 'both' || employeeData.role === 'admin';
-    
-    const newUser = {
-        id: 'emp_' + Date.now(),
+    const docRef = await addDoc(usersRef, {
         login: employeeData.login,
-        password: hashPassword(employeeData.password),
+        password: hashedPassword,
         name: employeeData.name,
         role: employeeData.role || 'employee',
         position: employeeData.position,
         phone: employeeData.phone,
-        createdAt: new Date().toISOString(),
         isActive: true,
+        canViewStats: employeeData.role === 'manager' || employeeData.role === 'both',
         receiptCount: 0,
-        canViewStats: canViewStats
-    };
-    
-    users[employeeData.login] = newUser;
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return { success: true, user: newUser };
-}
-
-// Обновить сотрудника
-function updateEmployee(login, updates) {
-    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-    if (!users[login]) return { success: false, error: 'Пользователь не найден' };
-    if (updates.password) updates.password = hashPassword(updates.password);
-    // Обновляем canViewStats на основе роли
-    if (updates.role) {
-        updates.canViewStats = updates.role === 'manager' || updates.role === 'both' || updates.role === 'admin';
-    }
-    users[login] = Object.assign({}, users[login], updates);
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return { success: true };
-}
-
-// Удалить сотрудника
-function deleteEmployee(login) {
-    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-    if (!users[login]) return { success: false, error: 'Пользователь не найден' };
-    if (users[login].login === 'admin') return { success: false, error: 'Нельзя удалить главного администратора' };
-    delete users[login];
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return { success: true };
-}
-
-// ========== УПРАВЛЕНИЕ РАСПИСКАМИ ==========
-
-// Сохранить расписку
-function saveReceipt(receiptData) {
-    const receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
-    receipts.push(Object.assign({}, receiptData, {
-        id: 'receipt_' + Date.now(),
         createdAt: new Date().toISOString()
-    }));
-    localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(receipts));
+    });
     
-    // Обновляем счётчик сотрудника
-    const currentUser = getCurrentUser();
-    if (currentUser && (currentUser.role === 'employee' || currentUser.role === 'both' || currentUser.role === 'manager')) {
-        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
-        const user = users[currentUser.login];
-        if (user) {
-            user.receiptCount = (user.receiptCount || 0) + 1;
-            users[currentUser.login] = user;
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-        }
+    return { success: true, user: { id: docRef.id, ...employeeData } };
+}
+
+async function updateEmployee(login, updates) {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('login', '==', login));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+        return { success: false, error: 'Пользователь не найден' };
     }
+    
+    const userDoc = querySnapshot.docs[0];
+    await updateDoc(doc(db, 'users', userDoc.id), updates);
+    return { success: true };
 }
 
-// Получить расписки с фильтрами
-function getReceipts(filters) {
-    filters = filters || {};
-    let receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
-    if (filters.employeeLogin) {
-        receipts = receipts.filter(function(r) { return r.employeeLogin === filters.employeeLogin; });
+async function deleteEmployee(login) {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('login', '==', login));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+        return { success: false, error: 'Пользователь не найден' };
     }
-    return receipts.sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
-}
-
-// Получить все расписки
-function getAllReceipts() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
-}
-
-// Получить расписки сотрудника
-function getEmployeeReceipts(employeeLogin) {
-    return getReceipts({ employeeLogin: employeeLogin });
-}
-
-// Получить счётчик для специальности
-function getReceiptCounter(specialtyCode) {
-    const counters = JSON.parse(localStorage.getItem(STORAGE_KEYS.COUNTERS) || '{}');
-    const current = counters[specialtyCode] || 0;
-    counters[specialtyCode] = current + 1;
-    localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify(counters));
-    return current + 1;
+    
+    const userDoc = querySnapshot.docs[0];
+    await deleteDoc(doc(db, 'users', userDoc.id));
+    return { success: true };
 }
 
 // ========== СТАТИСТИКА ==========
-
-// Получить статистику системы
-function getSystemStats() {
-    const users = getAllUsers();
-    const receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+async function getSystemStats() {
+    const users = await getAllUsers();
+    const receipts = await getAllReceipts();
+    
     const today = new Date().toDateString();
-    const todayReceipts = receipts.filter(function(r) { 
-        return new Date(r.createdAt).toDateString() === today; 
+    const todayReceipts = receipts.filter(r => {
+        const date = new Date(r.createdAt);
+        return date.toDateString() === today;
     });
     
-    const employeeStats = getEmployees().map(function(emp) {
-        return {
-            name: emp.name,
-            login: emp.login,
-            receiptCount: emp.receiptCount || 0,
-            position: emp.position,
-            isActive: emp.isActive,
-            role: emp.role
-        };
-    });
+    const employeeStats = users
+        .filter(u => u.role !== 'admin')
+        .map(u => ({
+            name: u.name,
+            login: u.login,
+            receiptCount: u.receiptCount || 0,
+            position: u.position,
+            isActive: u.isActive
+        }));
     
     const specialtyStats = {};
-    for (var i = 0; i < receipts.length; i++) {
-        var code = receipts[i].specialtyCode;
+    receipts.forEach(r => {
+        const code = r.specialtyCode;
         if (!specialtyStats[code]) specialtyStats[code] = 0;
         specialtyStats[code]++;
-    }
-    
-    const monthlyStats = {};
-    for (var i = 0; i < receipts.length; i++) {
-        var month = new Date(receipts[i].createdAt).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
-        if (!monthlyStats[month]) monthlyStats[month] = 0;
-        monthlyStats[month]++;
-    }
+    });
     
     return {
-        totalEmployees: users.filter(function(u) { return u.role !== 'admin'; }).length,
+        totalEmployees: users.filter(u => u.role !== 'admin').length,
         totalReceipts: receipts.length,
         todayReceipts: todayReceipts.length,
-        activeUsers: users.filter(function(u) { return u.isActive; }).length,
-        employeeStats: employeeStats,
-        specialtyStats: specialtyStats,
-        monthlyStats: monthlyStats,
-        lastReceipts: receipts.slice(0, 10)
+        activeUsers: users.filter(u => u.isActive).length,
+        employeeStats,
+        specialtyStats
     };
 }
 
-// Сбросить все счётчики
-function resetAllCounters() {
-    localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify({}));
+// ========== СЧЁТЧИКИ ==========
+function getReceiptCounter(specialtyCode) {
+    // В Firebase лучше хранить счётчики в отдельной коллекции
+    // Пока используем localStorage для совместимости
+    const counters = JSON.parse(localStorage.getItem('receipt_system_counters') || '{}');
+    const current = counters[specialtyCode] || 0;
+    counters[specialtyCode] = current + 1;
+    localStorage.setItem('receipt_system_counters', JSON.stringify(counters));
+    return current + 1;
 }
 
-// ========== ЭКСПОРТ ДЛЯ ГЛОБАЛЬНОГО ИСПОЛЬЗОВАНИЯ ==========
-if (typeof window !== 'undefined') {
-    window.login = login;
-    window.logout = logout;
-    window.checkAuth = checkAuth;
-    window.getCurrentUser = getCurrentUser;
-    window.isAdmin = isAdmin;
-    window.canViewStats = canViewStats;
-    
-    window.getAllUsers = getAllUsers;
-    window.getEmployees = getEmployees;
-    window.addEmployee = addEmployee;
-    window.updateEmployee = updateEmployee;
-    window.deleteEmployee = deleteEmployee;
-    
-    window.saveReceipt = saveReceipt;
-    window.getReceipts = getReceipts;
-    window.getAllReceipts = getAllReceipts;
-    window.getEmployeeReceipts = getEmployeeReceipts;
-    window.getReceiptCounter = getReceiptCounter;
-    
-    window.getSystemStats = getSystemStats;
-    window.resetAllCounters = resetAllCounters;
+// ========== НАСТРОЙКИ ==========
+async function getConfig() {
+    const settingsRef = collection(db, 'settings');
+    const querySnapshot = await getDocs(settingsRef);
+    const settings = {};
+    querySnapshot.docs.forEach(doc => {
+        settings[doc.id] = doc.data().value;
+    });
+    return settings;
 }
 
-// ИНИЦИАЛИЗАЦИЯ
-initializeUsers();
+// ========== ИНИЦИАЛИЗАЦИЯ НАЧАЛЬНЫХ ДАННЫХ ==========
+async function initializeFirebaseData() {
+    const usersRef = collection(db, 'users');
+    const querySnapshot = await getDocs(usersRef);
+    
+    if (querySnapshot.empty) {
+        console.log('📦 Создаём начальные данные...');
+        
+        const adminPassword = await hashPassword('admin123');
+        await addDoc(usersRef, {
+            login: 'admin',
+            password: adminPassword,
+            name: 'Главный Администратор',
+            role: 'admin',
+            position: 'Главный администратор',
+            phone: '+7 (499) 156-40-01',
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0,
+            createdAt: new Date().toISOString()
+        });
+        
+        console.log('✅ Начальные данные созданы');
+    }
+}
 
-console.log('✅ auth.js загружен');
-console.log('📊 Доступные пользователи:', Object.keys(JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}')).join(', '));
+// Запуск инициализации
+initializeFirebaseData();
+
+// Экспорт глобальных функций
+window.login = login;
+window.logout = logout;
+window.checkAuth = checkAuth;
+window.getCurrentUser = getCurrentUser;
+window.getAllReceipts = getAllReceipts;
+window.saveReceipt = saveReceipt;
+window.getEmployeeReceipts = getEmployeeReceipts;
+window.getEmployees = getEmployees;
+window.getAllUsers = getAllUsers;
+window.addEmployee = addEmployee;
+window.updateEmployee = updateEmployee;
+window.deleteEmployee = deleteEmployee;
+window.getSystemStats = getSystemStats;
+window.getReceiptCounter = getReceiptCounter;
+
+console.log('✅ auth.js (Firebase version) загружен');
