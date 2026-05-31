@@ -43,6 +43,7 @@
             overflow: hidden;
         }
 
+        /* Анимированный фон */
         body::before {
             content: '';
             position: absolute;
@@ -305,6 +306,7 @@
             color: var(--primary);
         }
 
+        /* Адаптивность */
         @media (max-width: 640px) {
             .login-card {
                 padding: 32px 24px;
@@ -353,14 +355,14 @@
                 
                 <button type="submit" class="login-btn" id="loginBtn">Войти в систему</button>
             </form>
-            
+            <!--
             <div class="test-accounts">
                 <p><strong>👑 Администратор:</strong> admin / admin123 <span class="role-badge">полный доступ</span></p>
                 <p><strong>👔 Ответственный секретарь:</strong> osokin / 123456 <span class="role-badge">статистика + расписки</span></p>
                 <p><strong>👔 Зам. секретаря:</strong> tsygankova / 123456 <span class="role-badge">статистика + расписки</span></p>
                 <p><strong>📄 Специалист:</strong> vorobyeva / 123456 <span class="role-badge">только расписки</span></p>
                 <p><strong>📄 Специалист:</strong> khanakova / 123456 <span class="role-badge">только расписки</span></p>
-            </div>
+            </div> -->
         </div>
     </div>
     
@@ -376,8 +378,7 @@
             }, 4000);
         }
         
-        // Асинхронная обработка формы (важно!)
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             var loginVal = document.getElementById('login').value.trim().toLowerCase();
@@ -393,24 +394,15 @@
             loginBtn.innerHTML = '<span class="spinner"></span> Вход...';
             loginBtn.disabled = true;
             
-            try {
-                // Важно: используем await, так как login теперь асинхронный
-                var result = await window.login(loginVal, password);
-                console.log('Результат входа:', result);
-                
-                if (result && result.success) {
-                    showAlert('Добро пожаловать, ' + result.user.name + '!', 'success');
-                    setTimeout(function() {
-                        window.location.href = 'index.html';
-                    }, 600);
-                } else {
-                    showAlert(result?.error || 'Ошибка входа', 'error');
-                    loginBtn.innerHTML = originalText;
-                    loginBtn.disabled = false;
-                }
-            } catch (err) {
-                console.error('Ошибка:', err);
-                showAlert('Ошибка при входе: ' + err.message, 'error');
+            var result = login(loginVal, password);
+            
+            if (result.success) {
+                showAlert('Добро пожаловать, ' + result.user.name + '!', 'success');
+                setTimeout(function() {
+                    window.location.href = 'index.html';
+                }, 600);
+            } else {
+                showAlert(result.error, 'error');
                 loginBtn.innerHTML = originalText;
                 loginBtn.disabled = false;
             }

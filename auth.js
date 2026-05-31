@@ -1,144 +1,372 @@
-// auth.js - ЧИСТАЯ ВЕРСИЯ ТОЛЬКО ДЛЯ БД
+// ========== СИСТЕМА АВТОРИЗАЦИИ ==========
 
-async function login(login, password) {
-    try {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login, password })
-        });
-        const result = await response.json();
-        if (result.success) {
-            localStorage.setItem('receipt_system_current_user', JSON.stringify(result.user));
-            return { success: true, user: result.user };
-        }
-        return { success: false, error: result.error };
-    } catch (err) {
-        return { success: false, error: err.message };
+const STORAGE_KEYS = {
+    USERS: 'receipt_system_users',
+    CURRENT_USER: 'receipt_system_current_user',
+    RECEIPTS: 'receipt_system_receipts',
+    COUNTERS: 'receipt_system_counters'
+};
+
+// Хеширование пароля
+function hashPassword(password) {
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
     }
+    return hash.toString();
 }
 
+// ========== ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЕЙ ==========
+function initializeUsers() {
+    const existing = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (existing) return JSON.parse(existing);
+    
+    const users = {
+        'admin': {
+            id: 'admin_1',
+            login: 'admin',
+            password: hashPassword('admin123'),
+            name: 'Главный Администратор',
+            role: 'admin',
+            position: 'Главный администратор',
+            phone: '+7 (499) 156-40-01',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0
+        },
+        'osokin': {
+            id: 'emp_1',
+            login: 'osokin',
+            password: hashPassword('123456'),
+            name: 'Осокин Константин Вячеславович',
+            role: 'both',
+            position: 'Ответственный секретарь',
+            phone: '+7 (499) 156-40-02',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0
+        },
+        'tsygankova': {
+            id: 'emp_2',
+            login: 'tsygankova',
+            password: hashPassword('123456'),
+            name: 'Цыганкова Юлия Игоревна',
+            role: 'both',
+            position: 'Заместитель ответственного секретаря',
+            phone: '+7 (499) 156-40-03',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0
+        },
+        'vorobyeva': {
+            id: 'emp_3',
+            login: 'vorobyeva',
+            password: hashPassword('123456'),
+            name: 'Воробьева Ирина Алексеевна',
+            role: 'employee',
+            position: 'Специалист архива',
+            phone: '+7 (499) 156-40-04',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: false,
+            receiptCount: 0
+        },
+        'khanakova': {
+            id: 'emp_4',
+            login: 'khanakova',
+            password: hashPassword('123456'),
+            name: 'Ханакова Анастасия Ивановна',
+            role: 'employee',
+            position: 'Специалист архива',
+            phone: '+7 (499) 156-40-05',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: false,
+            receiptCount: 0
+        }
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    if (!localStorage.getItem(STORAGE_KEYS.RECEIPTS)) {
+        localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.COUNTERS)) {
+        localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify({}));
+    }
+    
+    return users;
+}
+
+// ========== ОСНОВНЫЕ ФУНКЦИИ АВТОРИЗАЦИИ ==========
+
+// Вход в систему
+function login(login, password) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    const user = users[login];
+    
+    if (!user) return { success: false, error: 'Пользователь не найден' };
+    if (!user.isActive) return { success: false, error: 'Аккаунт деактивирован' };
+    if (user.password !== hashPassword(password)) return { success: false, error: 'Неверный пароль' };
+    
+    const session = {
+        userId: user.id,
+        login: user.login,
+        name: user.name,
+        role: user.role,
+        position: user.position,
+        phone: user.phone,
+        canViewStats: user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager',
+        loginTime: new Date().toISOString()
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+    return { success: true, user: session };
+}
+
+// Выход из системы
 function logout() {
-    localStorage.removeItem('receipt_system_current_user');
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     window.location.href = 'login.html';
 }
 
+// Проверка авторизации (с редиректом)
 function checkAuth() {
-    const user = localStorage.getItem('receipt_system_current_user');
-    if (!user && !window.location.pathname.includes('login.html')) {
-        window.location.href = 'login.html';
+    const currentUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    if (!currentUser) {
+        if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html')) {
+            window.location.href = 'login.html';
+        }
         return null;
     }
-    return user ? JSON.parse(user) : null;
+    return JSON.parse(currentUser);
 }
 
+// Получить текущего пользователя (без редиректа)
 function getCurrentUser() {
-    const user = localStorage.getItem('receipt_system_current_user');
+    const user = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return user ? JSON.parse(user) : null;
 }
 
-async function getAllReceipts() {
-    const response = await fetch('/api/receipts');
-    return response.json();
+// Проверка прав администратора
+function isAdmin() {
+    const user = getCurrentUser();
+    return user && (user.role === 'admin' || user.role === 'both');
 }
 
-async function saveReceipt(data) {
-    const response = await fetch('/api/receipts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+// Проверка доступа к статистике
+function canViewStats() {
+    const user = getCurrentUser();
+    return user && (user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager');
+}
+
+// ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ==========
+
+// Получить всех пользователей
+function getAllUsers() {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    return Object.values(users);
+}
+
+// Получить только сотрудников (не админов)
+function getEmployees() {
+    const users = getAllUsers();
+    return users.filter(function(u) { 
+        return u.role === 'employee' || u.role === 'both' || u.role === 'manager';
     });
-    return response.json();
 }
 
-async function getEmployeeReceipts(login) {
-    const response = await fetch(`/api/receipts/employee/${login}`);
-    return response.json();
+// Добавить сотрудника
+function addEmployee(employeeData) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    
+    if (users[employeeData.login]) {
+        return { success: false, error: 'Логин уже существует' };
+    }
+    
+    const canViewStats = employeeData.role === 'manager' || employeeData.role === 'both' || employeeData.role === 'admin';
+    
+    const newUser = {
+        id: 'emp_' + Date.now(),
+        login: employeeData.login,
+        password: hashPassword(employeeData.password),
+        name: employeeData.name,
+        role: employeeData.role || 'employee',
+        position: employeeData.position,
+        phone: employeeData.phone,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+        receiptCount: 0,
+        canViewStats: canViewStats
+    };
+    
+    users[employeeData.login] = newUser;
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return { success: true, user: newUser };
 }
 
-async function getEmployees() {
-    const response = await fetch('/api/users');
-    const users = await response.json();
-    return users.filter(u => u.role !== 'admin');
-}
-
-async function getAllUsers() {
-    const response = await fetch('/api/users');
-    return response.json();
-}
-
-async function addEmployee(data) {
-    const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    return response.json();
-}
-
-async function updateEmployee(login, data) {
-    const response = await fetch(`/api/users/${login}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    return response.json();
-}
-
-async function deleteEmployee(login) {
-    const response = await fetch(`/api/users/${login}`, { method: 'DELETE' });
-    return response.json();
-}
-
-async function getSystemStats() {
-    const response = await fetch('/api/stats');
-    return response.json();
-}
-
-async function getConfig() {
-    const response = await fetch('/api/config');
-    return response.json();
-}
-
-async function saveConfig(config) {
-    localStorage.setItem('receipt_system_config_backup', JSON.stringify(config));
+// Обновить сотрудника
+function updateEmployee(login, updates) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    if (!users[login]) return { success: false, error: 'Пользователь не найден' };
+    if (updates.password) updates.password = hashPassword(updates.password);
+    // Обновляем canViewStats на основе роли
+    if (updates.role) {
+        updates.canViewStats = updates.role === 'manager' || updates.role === 'both' || updates.role === 'admin';
+    }
+    users[login] = Object.assign({}, users[login], updates);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     return { success: true };
 }
 
-async function getReceiptCounter(specialtyCode) {
-    const response = await fetch(`/api/counter/${specialtyCode}`);
-    const data = await response.json();
-    return data.number;
+// Удалить сотрудника
+function deleteEmployee(login) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    if (!users[login]) return { success: false, error: 'Пользователь не найден' };
+    if (users[login].login === 'admin') return { success: false, error: 'Нельзя удалить главного администратора' };
+    delete users[login];
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return { success: true };
 }
 
-function showToast(msg, type) {
-    const toast = document.createElement('div');
-    toast.textContent = msg;
-    toast.style.cssText = `
-        position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
-        background: ${type === 'success' ? '#10b981' : '#ef4444'}; color: white;
-        border-radius: 8px; z-index: 10000; font-size: 14px;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+// ========== УПРАВЛЕНИЕ РАСПИСКАМИ ==========
+
+// Сохранить расписку
+function saveReceipt(receiptData) {
+    const receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+    receipts.push(Object.assign({}, receiptData, {
+        id: 'receipt_' + Date.now(),
+        createdAt: new Date().toISOString()
+    }));
+    localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(receipts));
+    
+    // Обновляем счётчик сотрудника
+    const currentUser = getCurrentUser();
+    if (currentUser && (currentUser.role === 'employee' || currentUser.role === 'both' || currentUser.role === 'manager')) {
+        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+        const user = users[currentUser.login];
+        if (user) {
+            user.receiptCount = (user.receiptCount || 0) + 1;
+            users[currentUser.login] = user;
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
+    }
 }
 
-window.login = login;
-window.logout = logout;
-window.checkAuth = checkAuth;
-window.getCurrentUser = getCurrentUser;
-window.getAllReceipts = getAllReceipts;
-window.saveReceipt = saveReceipt;
-window.getEmployeeReceipts = getEmployeeReceipts;
-window.getEmployees = getEmployees;
-window.getAllUsers = getAllUsers;
-window.addEmployee = addEmployee;
-window.updateEmployee = updateEmployee;
-window.deleteEmployee = deleteEmployee;
-window.getSystemStats = getSystemStats;
-window.getConfig = getConfig;
-window.saveConfig = saveConfig;
-window.getReceiptCounter = getReceiptCounter;
-window.showToast = showToast;
+// Получить расписки с фильтрами
+function getReceipts(filters) {
+    filters = filters || {};
+    let receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+    if (filters.employeeLogin) {
+        receipts = receipts.filter(function(r) { return r.employeeLogin === filters.employeeLogin; });
+    }
+    return receipts.sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+}
 
-console.log('✅ auth.js загружен (полная БД версия)');
+// Получить все расписки
+function getAllReceipts() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+}
+
+// Получить расписки сотрудника
+function getEmployeeReceipts(employeeLogin) {
+    return getReceipts({ employeeLogin: employeeLogin });
+}
+
+// Получить счётчик для специальности
+function getReceiptCounter(specialtyCode) {
+    const counters = JSON.parse(localStorage.getItem(STORAGE_KEYS.COUNTERS) || '{}');
+    const current = counters[specialtyCode] || 0;
+    counters[specialtyCode] = current + 1;
+    localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify(counters));
+    return current + 1;
+}
+
+// ========== СТАТИСТИКА ==========
+
+// Получить статистику системы
+function getSystemStats() {
+    const users = getAllUsers();
+    const receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+    const today = new Date().toDateString();
+    const todayReceipts = receipts.filter(function(r) { 
+        return new Date(r.createdAt).toDateString() === today; 
+    });
+    
+    const employeeStats = getEmployees().map(function(emp) {
+        return {
+            name: emp.name,
+            login: emp.login,
+            receiptCount: emp.receiptCount || 0,
+            position: emp.position,
+            isActive: emp.isActive,
+            role: emp.role
+        };
+    });
+    
+    const specialtyStats = {};
+    for (var i = 0; i < receipts.length; i++) {
+        var code = receipts[i].specialtyCode;
+        if (!specialtyStats[code]) specialtyStats[code] = 0;
+        specialtyStats[code]++;
+    }
+    
+    const monthlyStats = {};
+    for (var i = 0; i < receipts.length; i++) {
+        var month = new Date(receipts[i].createdAt).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+        if (!monthlyStats[month]) monthlyStats[month] = 0;
+        monthlyStats[month]++;
+    }
+    
+    return {
+        totalEmployees: users.filter(function(u) { return u.role !== 'admin'; }).length,
+        totalReceipts: receipts.length,
+        todayReceipts: todayReceipts.length,
+        activeUsers: users.filter(function(u) { return u.isActive; }).length,
+        employeeStats: employeeStats,
+        specialtyStats: specialtyStats,
+        monthlyStats: monthlyStats,
+        lastReceipts: receipts.slice(0, 10)
+    };
+}
+
+// Сбросить все счётчики
+function resetAllCounters() {
+    localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify({}));
+}
+
+// ========== ЭКСПОРТ ДЛЯ ГЛОБАЛЬНОГО ИСПОЛЬЗОВАНИЯ ==========
+if (typeof window !== 'undefined') {
+    window.login = login;
+    window.logout = logout;
+    window.checkAuth = checkAuth;
+    window.getCurrentUser = getCurrentUser;
+    window.isAdmin = isAdmin;
+    window.canViewStats = canViewStats;
+    
+    window.getAllUsers = getAllUsers;
+    window.getEmployees = getEmployees;
+    window.addEmployee = addEmployee;
+    window.updateEmployee = updateEmployee;
+    window.deleteEmployee = deleteEmployee;
+    
+    window.saveReceipt = saveReceipt;
+    window.getReceipts = getReceipts;
+    window.getAllReceipts = getAllReceipts;
+    window.getEmployeeReceipts = getEmployeeReceipts;
+    window.getReceiptCounter = getReceiptCounter;
+    
+    window.getSystemStats = getSystemStats;
+    window.resetAllCounters = resetAllCounters;
+}
+
+// ИНИЦИАЛИЗАЦИЯ
+initializeUsers();
+
+console.log('✅ auth.js загружен');
+console.log('📊 Доступные пользователи:', Object.keys(JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}')).join(', '));
