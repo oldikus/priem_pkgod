@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Подключение к БД
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
@@ -12,7 +13,9 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-// API: вход
+// ========== API ЭНДПОИНТЫ ==========
+
+// Вход
 app.post('/api/login', async (req, res) => {
     const { login, password } = req.body;
     try {
@@ -25,7 +28,7 @@ app.post('/api/login', async (req, res) => {
             res.json({
                 success: true,
                 user: {
-                    userId: user.id,
+                    id: user.id,
                     login: user.login,
                     name: user.name,
                     role: user.role,
@@ -41,7 +44,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// API: получить расписки
+// Получить все расписки
 app.get('/api/receipts', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM receipts ORDER BY created_at DESC');
@@ -51,13 +54,13 @@ app.get('/api/receipts', async (req, res) => {
     }
 });
 
-// API: сохранить расписку
+// Сохранить расписку
 app.post('/api/receipts', async (req, res) => {
     const { receipt_number, full_name, specialty, specialty_code, score, documents, employee, employee_login, employee_position } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO receipts (receipt_number, full_name, specialty, specialty_code, score, documents, employee, employee_login, employee_position) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            `INSERT INTO receipts (receipt_number, full_name, specialty, specialty_code, score, documents, employee, employee_login, employee_position, created_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()) RETURNING *`,
             [receipt_number, full_name, specialty, specialty_code, score, documents, employee, employee_login, employee_position]
         );
         res.json(result.rows[0]);
@@ -66,7 +69,7 @@ app.post('/api/receipts', async (req, res) => {
     }
 });
 
-// API: получить сотрудников
+// Получить сотрудников
 app.get('/api/employees', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM users WHERE role != 'admin'");
@@ -76,7 +79,7 @@ app.get('/api/employees', async (req, res) => {
     }
 });
 
-// API: статистика
+// Статистика
 app.get('/api/stats', async (req, res) => {
     try {
         const users = await pool.query("SELECT * FROM users");
@@ -104,6 +107,7 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Сервер запущен на порту ${PORT}`);
+    console.log(`🌐 Открыть: https://priem-pkgod.up.railway.app`);
 });
