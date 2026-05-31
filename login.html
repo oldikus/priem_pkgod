@@ -1,51 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - Приемная комиссия ЕПК</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <h1>📄 Приемная комиссия</h1>
-                <p>ЕПК - Единая платформа документооборота</p>
-            </div>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>👤 Логин</label>
-                    <input type="text" id="login" required placeholder="Введите ваш логин">
-                </div>
-                <div class="form-group">
-                    <label>🔒 Пароль</label>
-                    <input type="password" id="password" required placeholder="Введите пароль">
-                </div>
-                <button type="submit" class="submit-btn">Войти в систему</button>
-            </form>
-            <div id="loginError" class="alert alert-error" style="display: none; margin-top: 16px;"></div>
-        </div>
-    </div>
-    <script src="js/auth.js"></script>
-    <script src="js/config.js"></script>
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const loginVal = document.getElementById('login').value;
-            const password = document.getElementById('password').value;
-            
-            const result = login(loginVal, password);
-            
-            if (result.success) {
-                window.location.href = 'index.html';
-            } else {
-                const errorEl = document.getElementById('loginError');
-                errorEl.textContent = result.error;
-                errorEl.style.display = 'block';
-            }
-        });
-    </script>
-</body>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Вход - Приемная комиссия</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/style.css"></head>
+<body><div class="login-container"><div class="login-card"><div class="login-header"><h1>📄 Приемная комиссия</h1><p>ЕПК - Единая платформа</p></div><form id="loginForm"><div class="form-group"><label>Логин</label><input type="text" id="login" required></div><div class="form-group"><label>Пароль</label><input type="password" id="password" required></div><button type="submit" class="submit-btn">Войти</button></form><div id="loginError" class="alert alert-error" style="display:none; margin-top:16px"></div></div></div><script src="js/auth.js"></script><script>document.getElementById('loginForm').addEventListener('submit',function(e){e.preventDefault(); let res=login(document.getElementById('login').value, document.getElementById('password').value); if(res.success) window.location.href='index.html'; else { let errDiv=document.getElementById('loginError'); errDiv.innerText=res.error; errDiv.style.display='block'; }});</script></body>
 </html>
