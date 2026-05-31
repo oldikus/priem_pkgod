@@ -1,6 +1,6 @@
 
     const SUPABASE_URL = 'https://hbuqzfyamthalvcjdmft.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhidXF6ZnlhbXRoYWx2Y2pkbWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMDk5MjAsImV4cCI6MjA5NTc4NTkyMH0.h-ZOdYjYbd-eRlkhMAMoiX7aL7wyL7oXW3GPmMivoms';
+    const SUPABASE_ANON_KEY = 'sb_publishable_9ZuMto9CmS5PWrhpxTZjHA_eqPlM69u';
 // Загружаем Supabase SDK
 function initSupabase() {
     if (window.supabase && window.supabase.createClient) {
