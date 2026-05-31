@@ -12,29 +12,6 @@
         /* ========== СТИЛИ ДЛЯ КАРКАСА ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        :root {
-            --bg-primary: #f5f7fa;
-            --bg-card: #ffffff;
-            --bg-input: #f8fafc;
-            --text-primary: #1a1f36;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --primary: #4f46e5;
-            --secondary: #7c3aed;
-            --success: #10b981;
-            --danger: #ef4444;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        body.dark {
-            --bg-primary: #0a0e27;
-            --bg-card: #11152f;
-            --bg-input: #1a1f3e;
-            --text-primary: #ffffff;
-            --text-secondary: #8b92b0;
-            --border: #1e2342;
-        }
-        
         body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); transition: all 0.3s ease; }
         
         /* Сайдбар */
@@ -44,9 +21,9 @@
         .logo-area p { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
         .nav-menu { padding: 20px 16px; }
         .nav-group { margin-bottom: 24px; }
-        .nav-group-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; padding-left: 12px; }
+        .nav-group-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; padding-left: 12px; letter-spacing: 0.5px; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 4px; border-radius: 10px; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .nav-item:hover { background: rgba(79,70,229,0.1); color: var(--text-primary); }
+        .nav-item:hover { background: rgba(var(--v-theme-primary), 0.1); color: var(--text-primary); }
         .nav-item.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
         .nav-divider { height: 1px; background: var(--border); margin: 16px 0; }
         
@@ -59,7 +36,7 @@
         .user-info { text-align: right; }
         .user-name { font-weight: 600; font-size: 14px; }
         .user-role { font-size: 12px; color: var(--text-secondary); }
-        .logout-btn { padding: 8px 16px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #f87171; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .logout-btn { padding: 8px 16px; background: rgba(var(--v-theme-error), 0.15); border: 1px solid rgba(var(--v-theme-error), 0.3); border-radius: 10px; color: #f87171; cursor: pointer; font-size: 13px; transition: all 0.2s; }
         .logout-btn:hover { background: var(--danger); color: white; }
         
         .page-content { animation: fadeIn 0.3s ease; min-height: 400px; }
@@ -70,9 +47,9 @@
         .theme-customizer { position: relative; }
         .theme-toggle-btn { width: 40px; height: 40px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; }
         .theme-toggle-btn:hover { background: var(--primary); color: white; }
-        .customizer-panel { position: absolute; top: 50px; right: 0; width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; display: none; }
+        .customizer-panel { position: absolute; top: 50px; right: 0; width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow-lg); z-index: 1000; display: none; }
         .customizer-panel.show { display: block; animation: fadeIn 0.2s ease; }
-        .customizer-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+        .customizer-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
         .customizer-section { margin-bottom: 20px; }
         .customizer-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; display: block; }
         .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -95,22 +72,22 @@
         .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
         .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { font-size: 18px; font-weight: 600; }
+        .modal-header h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); }
         .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); }
         .modal-body { padding: 24px; }
         .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
         
-        .action-btn { padding: 6px 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .action-btn { padding: 6px 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; transition: all 0.2s; color: var(--text-secondary); }
         .action-btn:hover { background: var(--primary); color: white; }
         .add-btn { padding: 8px 16px; background: var(--primary); border: none; border-radius: 8px; color: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-        .add-btn:hover { background: var(--primary-dark); }
+        .add-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
         .form-group input, .form-group select { width: 100%; padding: 10px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; font-size: 14px; color: var(--text-primary); }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); z-index: 1000; } .main-content { margin-left: 0; } }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); z-index: 1000; transition: transform 0.3s; } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } }
     </style>
 </head>
 <body>
@@ -381,7 +358,7 @@
             };
             var primaryColor = colors[color] || color;
             document.documentElement.style.setProperty('--primary', primaryColor);
-            document.documentElement.style.setProperty('--primary-hover', primaryColor + 'cc');
+            document.documentElement.style.setProperty('--primary-dark', primaryColor + 'cc');
             localStorage.setItem('app_color', color);
             var opts = document.querySelectorAll('.color-option');
             for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
@@ -678,9 +655,9 @@
             for (var i = 0; i < withScores.length; i++) {
                 var r = withScores[i];
                 var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + r.fullName + '</strong></td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '<td><td><span class="status-badge status-active">Подано</span></td></tr>';
+                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + r.fullName + '</strong></td><td>' + r.specialty + '</td><td style="font-weight:700;color:var(--primary)">' + r.score + '</td><td><span class="status-badge status-active">Подано</span></td></tr>';
             }
-            if (withScores.length === 0) html = '<td><td colspan="5" class="empty-state">Нет данных<\/td></tr>';
+            if (withScores.length === 0) html = '<tr><td colspan="5" class="empty-state">Нет данных<\/td></tr>';
             var tableBody = document.getElementById('ratingTableBody');
             if (tableBody) tableBody.innerHTML = html;
         };
@@ -716,7 +693,7 @@
             for (var i = 0; i < sorted.length; i++) {
                 var e = sorted[i];
                 var rankClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '<td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
+                html += '<tr><td style="text-align:center"><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
             }
             var empBody = document.getElementById('employeeStatsBody');
             if (empBody) empBody.innerHTML = html;
@@ -779,7 +756,7 @@
                 if (window.receiptsChart) window.receiptsChart.destroy();
                 window.receiptsChart = new Chart(ctx1.getContext('2d'), { 
                     type: 'line', 
-                    data: { labels: last7Days, datasets: [{ label: 'Количество расписок', data: dailyCounts, borderColor: 'var(--primary)', backgroundColor: 'rgba(79,70,229,0.1)', fill: true, tension: 0.3 }] }, 
+                    data: { labels: last7Days, datasets: [{ label: 'Количество расписок', data: dailyCounts, borderColor: 'var(--primary)', backgroundColor: 'rgba(var(--v-theme-primary), 0.1)', fill: true, tension: 0.3 }] }, 
                     options: { responsive: true, maintainAspectRatio: true } 
                 });
             }
