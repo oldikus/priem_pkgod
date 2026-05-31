@@ -1,0 +1,113 @@
+<div class="form-container">
+    <h2>📤 Экспорт данных в ФИС ГИА</h2>
+    <div class="stats-grid" style="margin-bottom: 20px;">
+        <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" id="exportCount">0</div><div class="stat-label">Абитуриентов для экспорта</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="validCount">0</div><div class="stat-label">Валидных записей</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value" id="invalidCount">0</div><div class="stat-label">Требуют проверки</div></div>
+    </div>
+    <div class="form-row" style="margin-bottom: 20px;">
+        <div class="form-group">
+            <label>Формат выгрузки</label>
+            <select id="exportFormat">
+                <option value="csv">CSV</option>
+                <option value="xml">XML</option>
+                <option value="json">JSON</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Период</label>
+            <select id="exportPeriod">
+                <option value="all">Все данные</option>
+                <option value="today">За сегодня</option>
+                <option value="week">За неделю</option>
+                <option value="month">За месяц</option>
+            </select>
+        </div>
+    </div>
+    <button class="add-btn" onclick="validateAndExport()" style="width: 100%; margin-bottom: 10px;">🔍 Валидировать и подготовить к выгрузке</button>
+    <button class="submit-btn" onclick="exportToFIS()" id="exportBtn">📥 Экспортировать в ФИС ГИА</button>
+    <div id="validationResults" style="margin-top: 20px; max-height: 300px; overflow-y: auto;"></div>
+</div>
+
+<script>
+    let exportData = null;
+    
+    function escapeXml(str) {
+        return str.replace(/[<>&]/g, function(m) {
+            return m === '<' ? '&lt;' : m === '>' ? '&gt;' : '&amp;';
+        });
+    }
+    
+    function validateAndExport() {
+        const receipts = getAllReceipts();
+        const period = document.getElementById('exportPeriod').value;
+        const now = new Date();
+        const filtered = receipts.filter(r => {
+            const date = new Date(r.createdAt);
+            if (period === 'today') return date.toDateString() === now.toDateString();
+            if (period === 'week') return (now - date) <= 7 * 24 * 3600000;
+            if (period === 'month') return (now - date) <= 30 * 24 * 3600000;
+            return true;
+        });
+        
+        const valid = filtered.filter(r => r.fullName && r.specialty && r.score && parseInt(r.score) > 0);
+        const invalid = filtered.filter(r => !r.fullName || !r.specialty || !r.score);
+        
+        document.getElementById('exportCount').innerHTML = filtered.length;
+        document.getElementById('validCount').innerHTML = valid.length;
+        document.getElementById('invalidCount').innerHTML = invalid.length;
+        
+        let resultsHtml = '<div style="max-height:200px; overflow-y:auto;">';
+        if (invalid.length > 0) {
+            resultsHtml += '<p style="color: var(--warning);">⚠️ Требуют проверки:</p><ul>';
+            invalid.forEach(r => {
+                resultsHtml += `<li>${r.fullName || 'Без ФИО'} - ${r.specialty || 'нет специальности'} - баллы: ${r.score || 'не указаны'}</li>`;
+            });
+            resultsHtml += '</ul>';
+        } else {
+            resultsHtml += '<p style="color: var(--success);">✅ Все данные валидны, можно выполнять выгрузку</p>';
+        }
+        resultsHtml += '</div>';
+        document.getElementById('validationResults').innerHTML = resultsHtml;
+        exportData = { valid, format: document.getElementById('exportFormat').value };
+    }
+    
+    function exportToFIS() {
+        if (!exportData || exportData.valid.length === 0) {
+            window.parent.showToast('Сначала выполните валидацию данных', 'error');
+            return;
+        }
+        const data = exportData.valid;
+        const format = exportData.format;
+        let content = '';
+        
+        if (format === 'csv') {
+            const headers = ['ФИО', 'Специальность', 'Баллы ГИА', 'Номер аттестата', 'Дата выдачи', 'Дата подачи'];
+            const rows = data.map(r => [r.fullName, r.specialty, r.score, r.diplomaNumber || '', r.diplomaDate || '', new Date(r.createdAt).toLocaleDateString('ru-RU')]);
+            content = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
+            const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `export_fis_gia_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        } else if (format === 'xml') {
+            content = '<?xml version="1.0" encoding="UTF-8"?>\n<export>\n';
+            data.forEach(r => {
+                content += `  <applicant>\n    <fullName>${escapeXml(r.fullName)}</fullName>\n    <specialty>${escapeXml(r.specialty)}</specialty>\n    <score>${r.score}</score>\n    <diplomaNumber>${escapeXml(r.diplomaNumber || '')}</diplomaNumber>\n    <createdAt>${new Date(r.createdAt).toISOString()}</createdAt>\n  </applicant>\n`;
+            });
+            content += '</export>';
+            const blob = new Blob([content], { type: 'application/xml' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `export_fis_gia_${new Date().toISOString().slice(0,10)}.xml`;
+            link.click();
+        } else {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `export_fis_gia_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+        }
+        window.parent.showToast('Экспорт выполнен успешно', 'success');
+    }
+</script>

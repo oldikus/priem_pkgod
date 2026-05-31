@@ -51,15 +51,15 @@ let SYSTEM_CONFIG = {
           active: true,
           order: 8
       },
-      '15.02.18 Техническая эксплуатация и обслуживание роботизированного производства (по отраслям)': {
+      '15.02.18 Техническая эксплуатация и обслуживание роботизированного производства': {
           code: 'ТРП',
           name: 'Техническая эксплуатация роботизированного производства',
           active: true,
           order: 9
       },
-      '27.02.07 Управление качеством продукции, процессов и услуг (по отраслям)': {
+      '27.02.07 Управление качеством продукции, процессов и услуг': {
           code: 'УК',
-          name: 'Управление качеством продукции, процессов и услуг (по отраслям)',
+          name: 'Управление качеством',
           active: true,
           order: 10
       },
@@ -109,7 +109,6 @@ function getConfig() {
   if (saved) {
       try {
           const parsed = JSON.parse(saved);
-          // Глубокое слияние
           SYSTEM_CONFIG = {
               specialties: { ...SYSTEM_CONFIG.specialties, ...(parsed.specialties || {}) },
               documentTypes: parsed.documentTypes || SYSTEM_CONFIG.documentTypes,

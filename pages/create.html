@@ -1,0 +1,116 @@
+<div class="form-container">
+    <h2>📝 Создание новой расписки</h2>
+    <div id="alert" class="alert"></div>
+    <form id="receiptForm">
+        <div class="form-group"><label>ФИО абитуриента *</label><input type="text" id="fullName" required placeholder="Иванов Иван Иванович"></div>
+        <div class="form-group"><label>Специальность *</label><select id="specialty" required><option value="">Выберите специальность</option></select></div>
+        <div class="form-row"><div class="form-group"><label>Номер аттестата/диплома</label><input type="text" id="diplomaNumber" placeholder="№ документа"></div><div class="form-group"><label>Дата выдачи</label><input type="date" id="diplomaDate"></div></div>
+        <div class="form-group"><label>Кем выдан аттестат</label><input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение"></div>
+        <div class="form-group"><label>Принятые документы</label><div class="checkbox-group" id="documentsCheckboxes"></div></div>
+        <div class="form-row"><div class="form-group"><label>Количество фотографий (0-4)</label><input type="number" id="photosCount" min="0" max="4" value="0"></div><div class="form-group"><label>Баллы ГИА</label><input type="number" id="score" placeholder="Баллы"></div></div>
+        <div class="form-row"><div class="form-group"><label>Город получения аттестата</label><input type="text" id="city" placeholder="Город"></div><div class="form-group"><label>Сотрудник</label><input type="text" id="employeeField" readonly></div></div>
+        <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
+    </form>
+</div>
+
+<script src="../config.js"></script>
+<script src="../auth.js"></script>
+<script>
+    (function() {
+        const currentUser = getCurrentUser();
+        if (!currentUser) return;
+        
+        document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
+        
+        function loadSpecialties() {
+            const config = getConfig();
+            const select = document.getElementById('specialty');
+            select.innerHTML = '<option value="">Выберите специальность</option>';
+            for (const key in config.specialties) {
+                const data = config.specialties[key];
+                if (data.active) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = data.code + ' - ' + data.name;
+                    select.appendChild(opt);
+                }
+            }
+        }
+        
+        function loadDocumentCheckboxes() {
+            const config = getConfig();
+            const container = document.getElementById('documentsCheckboxes');
+            let html = '';
+            for (let i = 0; i < config.documentTypes.length; i++) {
+                const doc = config.documentTypes[i];
+                html += '<label class="checkbox-item"><input type="checkbox" value="' + doc.replace(/'/g, "\\'") + '"><span>' + doc + '</span></label>';
+            }
+            container.innerHTML = html;
+        }
+        
+        function showAlert(msg, type) {
+            const el = document.getElementById('alert');
+            el.textContent = msg;
+            el.className = 'alert alert-' + type;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+        
+        window.printReceipt = function(receipt) {
+            const now = new Date();
+            const w = window.open('', '_blank');
+            let docHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписка №' + receipt.receiptNumber + '</title><style>body{font-family:"Times New Roman",serif;padding:40px;max-width:800px;margin:0 auto;background:white;color:black;}.header{text-align:center;margin-bottom:30px;}h3{font-size:18px;font-weight:bold;margin:20px 0;}.content{line-height:1.6;}.signature{margin-top:50px;}button{padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}@media print{.no-print{display:none;}}</style></head><body><div class="no-print" style="text-align:center;margin-bottom:20px;"><button onclick="window.print()">🖨️ Печать</button><button onclick="window.close()">✖️ Закрыть</button></div><div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div><div class="content"><p>Настоящая расписка выдана абитуриенту <strong>' + receipt.fullName + '</strong> о том, что от него приняты следующие документы:</p><ul>';
+            const docs = (receipt.documents || '').split('\n');
+            for (let i = 0; i < docs.length; i++) { if (docs[i].trim()) docHtml += '<li>' + docs[i].trim() + '</li>'; }
+            docHtml += '</ul><p><strong>Специальность:</strong> ' + receipt.specialty + '</p><p><strong>Номер расписки:</strong> ' + receipt.receiptNumber + '</p><p><strong>Дата выдачи:</strong> ' + now.toLocaleDateString('ru-RU') + '</p><div class="signature"><p>____________________</p><p><strong>' + receipt.employee + '</strong></p><p>' + receipt.employeePosition + '</p></div></div><script>setTimeout(function(){window.print();},500);<\/script></body></html>';
+            w.document.write(docHtml);
+            w.document.close();
+        };
+        
+        document.getElementById('receiptForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner"></span> Создание...';
+            btn.disabled = true;
+            
+            const docs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked')).map(cb => cb.value);
+            const data = {
+                fullName: document.getElementById('fullName').value,
+                specialty: document.getElementById('specialty').value,
+                diplomaNumber: document.getElementById('diplomaNumber').value,
+                diplomaDate: document.getElementById('diplomaDate').value,
+                diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
+                documents: docs.join('\n'),
+                photosCount: document.getElementById('photosCount').value,
+                score: document.getElementById('score').value,
+                city: document.getElementById('city').value,
+                employee: currentUser.name,
+                employeeLogin: currentUser.login,
+                employeePosition: currentUser.position
+            };
+            if (!data.fullName || !data.specialty) {
+                showAlert('Заполните обязательные поля', 'error');
+                btn.innerHTML = original;
+                btn.disabled = false;
+                return;
+            }
+            const config = getConfig();
+            const code = config.specialties[data.specialty] ? config.specialties[data.specialty].code : 'ОБЩ';
+            const counter = getReceiptCounter(code);
+            const number = code + '-' + counter;
+            const receipt = { ...data, receiptNumber: number, specialtyCode: code, createdAt: new Date().toISOString() };
+            saveReceipt(receipt);
+            window.printReceipt(receipt);
+            showAlert('✅ Расписка №' + number + ' создана!', 'success');
+            document.getElementById('receiptForm').reset();
+            document.getElementById('photosCount').value = '0';
+            document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
+            btn.innerHTML = original;
+            btn.disabled = false;
+        });
+        
+        loadSpecialties();
+        loadDocumentCheckboxes();
+    })();
+</script>

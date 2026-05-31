@@ -54,7 +54,7 @@ function initializeUsers() {
             login: 'tsygankova',
             password: hashPassword('123456'),
             name: 'Цыганкова Юлия Игоревна',
-            role: 'manager',
+            role: 'both',
             position: 'Заместитель ответственного секретаря',
             phone: '+7 (499) 156-40-03',
             createdAt: new Date().toISOString(),
@@ -68,7 +68,7 @@ function initializeUsers() {
             password: hashPassword('123456'),
             name: 'Воробьева Ирина Алексеевна',
             role: 'employee',
-            position: 'Специалист архива',
+            position: 'Специалист',
             phone: '+7 (499) 156-40-04',
             createdAt: new Date().toISOString(),
             isActive: true,
@@ -81,7 +81,7 @@ function initializeUsers() {
             password: hashPassword('123456'),
             name: 'Ханакова Анастасия Ивановна',
             role: 'employee',
-            position: 'Специалист архива',
+            position: 'Специалист',
             phone: '+7 (499) 156-40-05',
             createdAt: new Date().toISOString(),
             isActive: true,
@@ -118,7 +118,7 @@ function login(login, password) {
         role: user.role,
         position: user.position,
         phone: user.phone,
-        canViewStats: user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager',
+        canViewStats: user.canViewStats || false,
         loginTime: new Date().toISOString()
     };
     
@@ -154,7 +154,7 @@ function isAdmin() {
 
 function canViewStats() {
     const user = getCurrentUser();
-    return user && (user.canViewStats || user.role === 'admin' || user.role === 'both' || user.role === 'manager');
+    return user && (user.canViewStats || user.role === 'admin');
 }
 
 // ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ==========
@@ -166,7 +166,7 @@ function getAllUsers() {
 
 function getEmployees() {
     const users = getAllUsers();
-    return users.filter(u => u.role !== 'admin');
+    return users.filter(u => u.role === 'employee' || u.role === 'both');
 }
 
 function addEmployee(employeeData) {
@@ -224,9 +224,8 @@ function saveReceipt(receiptData) {
     });
     localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(receipts));
     
-    // Обновляем счётчик сотрудника
     const currentUser = getCurrentUser();
-    if (currentUser) {
+    if (currentUser && (currentUser.role === 'employee' || currentUser.role === 'both')) {
         const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
         const user = users[currentUser.login];
         if (user) {
@@ -274,7 +273,6 @@ function getSystemStats() {
         login: emp.login,
         receiptCount: emp.receiptCount || 0,
         position: emp.position,
-        role: emp.role,
         isActive: emp.isActive
     }));
     
@@ -285,14 +283,47 @@ function getSystemStats() {
         specialtyStats[code]++;
     });
     
+    const monthlyStats = {};
+    receipts.forEach(receipt => {
+        const month = new Date(receipt.createdAt).toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+        if (!monthlyStats[month]) monthlyStats[month] = 0;
+        monthlyStats[month]++;
+    });
+    
     return {
-        totalEmployees: users.filter(u => u.role !== 'admin').length,
+        totalEmployees: users.filter(u => u.role === 'employee' || u.role === 'both').length,
         totalReceipts: receipts.length,
         todayReceipts: todayReceipts.length,
         activeUsers: users.filter(u => u.isActive).length,
         employeeStats,
-        specialtyStats
+        specialtyStats,
+        monthlyStats,
+        lastReceipts: receipts.slice(0, 10)
     };
+}
+
+// ========== ЭКСПОРТ ДЛЯ ГЛОБАЛЬНОГО ИСПОЛЬЗОВАНИЯ ==========
+if (typeof window !== 'undefined') {
+    window.login = login;
+    window.logout = logout;
+    window.checkAuth = checkAuth;
+    window.getCurrentUser = getCurrentUser;
+    window.isAdmin = isAdmin;
+    window.canViewStats = canViewStats;
+    
+    window.getAllUsers = getAllUsers;
+    window.getEmployees = getEmployees;
+    window.addEmployee = addEmployee;
+    window.updateEmployee = updateEmployee;
+    window.deleteEmployee = deleteEmployee;
+    
+    window.saveReceipt = saveReceipt;
+    window.getReceipts = getReceipts;
+    window.getAllReceipts = getAllReceipts;
+    window.getEmployeeReceipts = getEmployeeReceipts;
+    window.getReceiptCounter = getReceiptCounter;
+    
+    window.getSystemStats = getSystemStats;
 }
 
 // ИНИЦИАЛИЗАЦИЯ

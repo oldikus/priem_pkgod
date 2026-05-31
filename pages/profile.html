@@ -1,0 +1,25 @@
+<div class="form-container">
+    <h2>👤 Мой профиль</h2>
+    <div id="profileInfo"></div>
+</div>
+
+<script src="../config.js"></script>
+<script src="../auth.js"></script>
+<script>
+    (function() {
+        const currentUser = getCurrentUser();
+        if (!currentUser) return;
+        
+        function loadProfile() {
+            const roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
+            let html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
+            html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
+            html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';
+            html += '<div class="profile-field"><label>Телефон</label><input type="text" value="' + (currentUser.phone || 'Не указан') + '" readonly></div>';
+            html += '<div class="profile-field"><label>Роль</label><input type="text" value="' + roleTxt + '" readonly></div>';
+            document.getElementById('profileInfo').innerHTML = html;
+        }
+        
+        loadProfile();
+    })();
+</script>

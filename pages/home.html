@@ -1,0 +1,29 @@
+<div class="stats-grid" id="homeStatsGrid"></div>
+<div class="form-container">
+    <h2>📢 Добро пожаловать в систему!</h2>
+    <p style="margin-bottom: 16px;">Здесь вы можете:</p>
+    <ul style="margin-left: 20px; line-height: 1.8;">
+        <li>✅ Создавать расписки о приёме документов</li>
+        <li>✅ Просматривать историю своих расписок</li>
+        <li>✅ Формировать рейтинговые списки абитуриентов</li>
+        <li>✅ Экспортировать данные для загрузки в ФИС ГИА</li>
+        <li>✅ Анализировать статистику приёма</li>
+    </ul>
+    <div style="margin-top: 24px; padding: 16px; background: rgba(79,70,229,0.1); border-radius: 12px;">
+        <p style="font-size: 13px; color: var(--text-secondary);">📌 Текущий статус: <strong id="todayStatsInfo">Загрузка...</strong></p>
+    </div>
+</div>
+
+<script>
+    function loadHomeStats() {
+        const stats = getSystemStats();
+        document.getElementById('homeStatsGrid').innerHTML = `
+            <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">${stats.totalReceipts || 0}</div><div class="stat-label">Всего расписок</div></div>
+            <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">${stats.todayReceipts || 0}</div><div class="stat-label">Сегодня</div></div>
+            <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">${stats.totalEmployees || 0}</div><div class="stat-label">Сотрудников</div></div>
+            <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value">${Object.keys(stats.specialtyStats || {}).length}</div><div class="stat-label">Специальностей</div></div>
+        `;
+        document.getElementById('todayStatsInfo').innerHTML = `Сегодня оформлено ${stats.todayReceipts || 0} расписок. Всего в системе ${stats.totalReceipts || 0}`;
+    }
+    loadHomeStats();
+</script>
