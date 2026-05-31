@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
+        /* ========== СТИЛИ (как в предыдущем сообщении) ========== */
         * {
             margin: 0;
             padding: 0;
@@ -19,13 +20,12 @@
             color: #1a1f36;
         }
 
-        /* ========== ОСНОВНАЯ СТРУКТУРА ========== */
         .app {
             display: flex;
             min-height: 100vh;
         }
 
-        /* ========== САЙДБАР (как в АИС ЕПК) ========== */
+        /* Сайдбар */
         .sidebar {
             width: 280px;
             background: white;
@@ -99,25 +99,20 @@
             color: #2563eb;
         }
 
-        .nav-item i {
-            width: 20px;
-            font-size: 18px;
-        }
-
         .nav-divider {
             height: 1px;
             background: #e2e8f0;
             margin: 16px 0;
         }
 
-        /* ========== ОСНОВНОЙ КОНТЕНТ ========== */
+        /* Основной контент */
         .main-content {
             flex: 1;
             margin-left: 280px;
             padding: 24px 32px;
         }
 
-        /* ========== ХЕДЕР ========== */
+        /* Топ бар */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -173,7 +168,7 @@
             color: #ef4444;
         }
 
-        /* ========== КАРТОЧКИ СТАТИСТИКИ ========== */
+        /* Карточки статистики */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -191,7 +186,6 @@
 
         .stat-card:hover {
             border-color: #2563eb;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         .stat-icon {
@@ -211,7 +205,7 @@
             margin-top: 4px;
         }
 
-        /* ========== ТАБЛИЦА РЕЙТИНГА ========== */
+        /* Таблица рейтинга */
         .stats-table-container {
             background: white;
             border: 1px solid #e2e8f0;
@@ -227,7 +221,6 @@
         .stats-table-header h3 {
             font-size: 16px;
             font-weight: 600;
-            color: #1a1f36;
         }
 
         .stats-table {
@@ -289,7 +282,7 @@
             color: #dc2626;
         }
 
-        /* ========== ФОРМА ========== */
+        /* Форма */
         .form-container {
             background: white;
             border: 1px solid #e2e8f0;
@@ -301,7 +294,6 @@
             font-size: 18px;
             margin-bottom: 20px;
             font-weight: 600;
-            color: #1a1f36;
         }
 
         .form-group {
@@ -326,7 +318,6 @@
             border-radius: 10px;
             font-size: 14px;
             color: #1a1f36;
-            transition: all 0.2s;
         }
 
         .form-group input:focus,
@@ -361,7 +352,6 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s;
         }
 
         .checkbox-item:hover {
@@ -397,7 +387,7 @@
             cursor: not-allowed;
         }
 
-        /* ========== ИСТОРИЯ ========== */
+        /* История */
         .receipt-card {
             background: white;
             border: 1px solid #e2e8f0;
@@ -407,7 +397,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
         }
 
         .receipt-card:hover {
@@ -423,7 +412,6 @@
         .receipt-student {
             font-size: 14px;
             margin-top: 4px;
-            color: #1a1f36;
         }
 
         .receipt-date {
@@ -449,7 +437,7 @@
             border-color: #2563eb;
         }
 
-        /* ========== ПРОФИЛЬ ========== */
+        /* Профиль */
         .profile-field {
             margin-bottom: 16px;
         }
@@ -467,11 +455,9 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
-            color: #1a1f36;
             font-size: 14px;
         }
 
-        /* ========== ОБЩИЕ ========== */
         .empty-state {
             text-align: center;
             padding: 48px;
@@ -522,7 +508,6 @@
             display: block;
         }
 
-        /* ========== АДАПТИВ ========== */
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -839,7 +824,7 @@
                 <style>
                     body { font-family: 'Times New Roman', serif; padding: 40px; max-width: 800px; margin: 0 auto; background: white; color: black; }
                     .header { text-align: center; margin-bottom: 30px; }
-                    h3 { font-size: 18px; font-weight: bold; margin: 20px 0; }
+                    .title { font-size: 18px; font-weight: bold; margin: 20px 0; }
                     .content { line-height: 1.6; }
                     .signature { margin-top: 50px; }
                     button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
