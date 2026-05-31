@@ -1,47 +1,140 @@
-// ========== СИСТЕМА АВТОРИЗАЦИИ (API VERSION) ==========
-
-const API_BASE_URL = '/.netlify/functions';
+// ========== СИСТЕМА АВТОРИЗАЦИИ (LOCAL STORAGE) ==========
 
 const STORAGE_KEYS = {
-    CURRENT_USER: 'receipt_system_current_user'
+    USERS: 'receipt_system_users',
+    CURRENT_USER: 'receipt_system_current_user',
+    RECEIPTS: 'receipt_system_receipts',
+    COUNTERS: 'receipt_system_counters'
 };
 
-// ========== ОСНОВНЫЕ ФУНКЦИИ ==========
-
-// Функция входа через API
-async function login(login, password) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'login', login, password })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(result.user));
-            return { success: true, user: result.user };
-        } else {
-            return { success: false, error: result.error };
-        }
-    } catch (error) {
-        console.error('Ошибка входа:', error);
-        return { success: false, error: 'Ошибка соединения с сервером' };
+function hashPassword(password) {
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
     }
+    return hash.toString();
 }
 
-// Выход из системы
+// ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЕЙ
+function initializeUsers() {
+    const existing = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (existing) return JSON.parse(existing);
+    
+    const users = {
+        'admin': {
+            id: 'admin_1',
+            login: 'admin',
+            password: hashPassword('admin123'),
+            name: 'Главный Администратор',
+            role: 'admin',
+            position: 'Главный администратор',
+            phone: '+7 (499) 156-40-01',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0
+        },
+        'osokin': {
+            id: 'emp_1',
+            login: 'osokin',
+            password: hashPassword('123456'),
+            name: 'Осокин Константин Вячеславович',
+            role: 'both',
+            position: 'Ответственный секретарь',
+            phone: '+7 (499) 156-40-02',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0
+        },
+        'tsygankova': {
+            id: 'emp_2',
+            login: 'tsygankova',
+            password: hashPassword('123456'),
+            name: 'Цыганкова Юлия Игоревна',
+            role: 'both',
+            position: 'Заместитель ответственного секретаря',
+            phone: '+7 (499) 156-40-03',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: true,
+            receiptCount: 0
+        },
+        'vorobyeva': {
+            id: 'emp_3',
+            login: 'vorobyeva',
+            password: hashPassword('123456'),
+            name: 'Воробьева Ирина Алексеевна',
+            role: 'employee',
+            position: 'Специалист',
+            phone: '+7 (499) 156-40-04',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: false,
+            receiptCount: 0
+        },
+        'khanakova': {
+            id: 'emp_4',
+            login: 'khanakova',
+            password: hashPassword('123456'),
+            name: 'Ханакова Анастасия Ивановна',
+            role: 'employee',
+            position: 'Специалист',
+            phone: '+7 (499) 156-40-05',
+            createdAt: new Date().toISOString(),
+            isActive: true,
+            canViewStats: false,
+            receiptCount: 0
+        }
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    
+    if (!localStorage.getItem(STORAGE_KEYS.RECEIPTS)) {
+        localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.COUNTERS)) {
+        localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify({}));
+    }
+    
+    return users;
+}
+
+// ВХОД
+function login(login, password) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    const user = users[login];
+    
+    if (!user) return { success: false, error: 'Пользователь не найден' };
+    if (!user.isActive) return { success: false, error: 'Аккаунт деактивирован' };
+    if (user.password !== hashPassword(password)) return { success: false, error: 'Неверный пароль' };
+    
+    const session = {
+        userId: user.id,
+        login: user.login,
+        name: user.name,
+        role: user.role,
+        position: user.position,
+        phone: user.phone,
+        canViewStats: user.canViewStats || false,
+        loginTime: new Date().toISOString()
+    };
+    
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+    return { success: true, user: session };
+}
+
 function logout() {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     window.location.href = 'login.html';
 }
 
-// Проверка авторизации (с редиректом)
 function checkAuth() {
     const currentUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     if (!currentUser) {
-        if (window.location.pathname !== '/login.html' && !window.location.pathname.includes('login')) {
+        if (!window.location.pathname.includes('login.html')) {
             window.location.href = 'login.html';
         }
         return null;
@@ -49,260 +142,155 @@ function checkAuth() {
     return JSON.parse(currentUser);
 }
 
-// Получить текущего пользователя (без редиректа)
 function getCurrentUser() {
     const user = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return user ? JSON.parse(user) : null;
 }
 
-// Проверка прав администратора
 function isAdmin() {
     const user = getCurrentUser();
     return user && (user.role === 'admin' || user.role === 'both');
 }
 
-// Проверка доступа к статистике
 function canViewStats() {
     const user = getCurrentUser();
     return user && (user.canViewStats || user.role === 'admin');
 }
 
-// ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ (ЧЕРЕЗ API) ==========
+// ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ==========
 
-// Получить всех пользователей
-async function getAllUsers() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/employees`);
-        const result = await response.json();
-        if (result.success) {
-            return result.employees || [];
-        }
-        return [];
-    } catch (error) {
-        console.error('Ошибка загрузки пользователей:', error);
-        return [];
-    }
+function getAllUsers() {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    return Object.values(users);
 }
 
-// Получить только сотрудников
-async function getEmployees() {
-    const users = await getAllUsers();
+function getEmployees() {
+    const users = getAllUsers();
     return users.filter(u => u.role === 'employee' || u.role === 'both');
 }
 
-// Добавить сотрудника
-async function addEmployee(employeeData) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/employees`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(employeeData)
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Ошибка добавления сотрудника:', error);
-        return { success: false, error: error.message };
+function addEmployee(employeeData) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    
+    if (users[employeeData.login]) {
+        return { success: false, error: 'Логин уже существует' };
     }
+    
+    const newUser = {
+        id: 'emp_' + Date.now(),
+        login: employeeData.login,
+        password: hashPassword(employeeData.password),
+        name: employeeData.name,
+        role: employeeData.role || 'employee',
+        position: employeeData.position,
+        phone: employeeData.phone,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+        receiptCount: 0,
+        canViewStats: employeeData.canViewStats || false
+    };
+    
+    users[employeeData.login] = newUser;
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return { success: true, user: newUser };
 }
 
-// Обновить сотрудника
-async function updateEmployee(login, updates) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/employees`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login, updates })
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Ошибка обновления сотрудника:', error);
-        return { success: false, error: error.message };
-    }
+function updateEmployee(login, updates) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    if (!users[login]) return { success: false, error: 'Пользователь не найден' };
+    if (updates.password) updates.password = hashPassword(updates.password);
+    users[login] = { ...users[login], ...updates };
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return { success: true };
 }
 
-// Удалить сотрудника
-async function deleteEmployee(login) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/employees`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login })
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Ошибка удаления сотрудника:', error);
-        return { success: false, error: error.message };
-    }
+function deleteEmployee(login) {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+    if (!users[login]) return { success: false, error: 'Пользователь не найден' };
+    if (users[login].login === 'admin') return { success: false, error: 'Нельзя удалить администратора' };
+    delete users[login];
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return { success: true };
 }
 
 // ========== УПРАВЛЕНИЕ РАСПИСКАМИ ==========
 
-// Сохранить расписку
-async function saveReceipt(receiptData) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/receipts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'create', receiptData })
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Ошибка создания расписки:', error);
-        return { success: false, error: error.message };
+function saveReceipt(receiptData) {
+    const receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+    receipts.push({
+        ...receiptData,
+        id: 'receipt_' + Date.now(),
+        createdAt: new Date().toISOString()
+    });
+    localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(receipts));
+    
+    // Обновляем счётчик сотрудника
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+        const user = users[currentUser.login];
+        if (user) {
+            user.receiptCount = (user.receiptCount || 0) + 1;
+            users[currentUser.login] = user;
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
     }
 }
 
-// Получить расписки сотрудника
-async function getEmployeeReceipts(employeeLogin) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/receipts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'getByEmployee', employeeLogin })
-        });
-        const result = await response.json();
-        return result.success ? result.receipts : [];
-    } catch (error) {
-        console.error('Ошибка загрузки расписок:', error);
-        return [];
+function getReceipts(filters = {}) {
+    let receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+    if (filters.employeeLogin) {
+        receipts = receipts.filter(r => r.employeeLogin === filters.employeeLogin);
     }
+    return receipts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
-// Получить все расписки (для админа)
-async function getAllReceipts() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/receipts`);
-        const result = await response.json();
-        return result.success ? result.receipts : [];
-    } catch (error) {
-        console.error('Ошибка загрузки расписок:', error);
-        return [];
-    }
+function getEmployeeReceipts(employeeLogin) {
+    return getReceipts({ employeeLogin });
 }
 
-// Получить счётчик для специальности
-async function getReceiptCounter(specialtyCode) {
-    // Эта логика теперь на сервере
-    try {
-        const response = await fetch(`${API_BASE_URL}/receipts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'getCounter', specialtyCode })
-        });
-        const result = await response.json();
-        return result.success ? result.counter : 1;
-    } catch (error) {
-        console.error('Ошибка получения счётчика:', error);
-        return Date.now();
-    }
+function getReceiptCounter(specialtyCode) {
+    const counters = JSON.parse(localStorage.getItem(STORAGE_KEYS.COUNTERS) || '{}');
+    const current = counters[specialtyCode] || 0;
+    counters[specialtyCode] = current + 1;
+    localStorage.setItem(STORAGE_KEYS.COUNTERS, JSON.stringify(counters));
+    return current + 1;
 }
 
 // ========== СТАТИСТИКА ==========
 
-// Получить статистику системы
-async function getSystemStats() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/stats`);
-        const result = await response.json();
-        if (result.success) {
-            return result.stats;
-        }
-        return {
-            totalEmployees: 0,
-            totalReceipts: 0,
-            todayReceipts: 0,
-            activeUsers: 0,
-            employeeStats: [],
-            specialtyStats: {},
-            monthlyStats: {},
-            lastReceipts: []
-        };
-    } catch (error) {
-        console.error('Ошибка загрузки статистики:', error);
-        return {
-            totalEmployees: 0,
-            totalReceipts: 0,
-            todayReceipts: 0,
-            activeUsers: 0,
-            employeeStats: [],
-            specialtyStats: {},
-            monthlyStats: {},
-            lastReceipts: []
-        };
-    }
+function getSystemStats() {
+    const users = getAllUsers();
+    const receipts = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECEIPTS) || '[]');
+    const today = new Date().toDateString();
+    const todayReceipts = receipts.filter(r => new Date(r.createdAt).toDateString() === today);
+    
+    const employeeStats = getEmployees().map(emp => ({
+        name: emp.name,
+        login: emp.login,
+        receiptCount: emp.receiptCount || 0,
+        position: emp.position,
+        isActive: emp.isActive
+    }));
+    
+    const specialtyStats = {};
+    receipts.forEach(receipt => {
+        const code = receipt.specialtyCode;
+        if (!specialtyStats[code]) specialtyStats[code] = 0;
+        specialtyStats[code]++;
+    });
+    
+    return {
+        totalEmployees: users.filter(u => u.role === 'employee' || u.role === 'both').length,
+        totalReceipts: receipts.length,
+        todayReceipts: todayReceipts.length,
+        activeUsers: users.filter(u => u.isActive).length,
+        employeeStats,
+        specialtyStats
+    };
 }
 
-// ========== НАСТРОЙКИ ==========
+// ИНИЦИАЛИЗАЦИЯ
+initializeUsers();
 
-// Получить настройки
-async function getSettings() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/settings`);
-        const result = await response.json();
-        if (result.success) {
-            return result.settings;
-        }
-        return {
-            max_photos: 4,
-            company_name: 'Приемная комиссия',
-            company_phone: '(499) 156-40-01'
-        };
-    } catch (error) {
-        console.error('Ошибка загрузки настроек:', error);
-        return {
-            max_photos: 4,
-            company_name: 'Приемная комиссия',
-            company_phone: '(499) 156-40-01'
-        };
-    }
-}
-
-// Сохранить настройки
-async function saveSettings(settings) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Ошибка сохранения настроек:', error);
-        return { success: false, error: error.message };
-    }
-}
-
-// ========== ЭКСПОРТ ДЛЯ ИСПОЛЬЗОВАНИЯ В HTML ==========
-
-// Делаем функции глобальными для использования в HTML
-if (typeof window !== 'undefined') {
-    window.login = login;
-    window.logout = logout;
-    window.checkAuth = checkAuth;
-    window.getCurrentUser = getCurrentUser;
-    window.isAdmin = isAdmin;
-    window.canViewStats = canViewStats;
-    
-    window.getAllUsers = getAllUsers;
-    window.getEmployees = getEmployees;
-    window.addEmployee = addEmployee;
-    window.updateEmployee = updateEmployee;
-    window.deleteEmployee = deleteEmployee;
-    
-    window.saveReceipt = saveReceipt;
-    window.getEmployeeReceipts = getEmployeeReceipts;
-    window.getAllReceipts = getAllReceipts;
-    window.getReceiptCounter = getReceiptCounter;
-    
-    window.getSystemStats = getSystemStats;
-    
-    window.getSettings = getSettings;
-    window.saveSettings = saveSettings;
-}
-
-console.log('✅ auth.js (API version) загружен');
+console.log('✅ auth.js загружен, система готова');

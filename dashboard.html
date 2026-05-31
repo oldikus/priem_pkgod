@@ -89,7 +89,6 @@
             transform: translateY(-2px);
         }
         
-        /* Стили для чекбоксов */
         .checkbox-group {
             display: flex;
             flex-wrap: wrap;
@@ -123,7 +122,6 @@
             accent-color: var(--primary);
         }
         
-        /* Стили для уведомлений */
         .alert {
             padding: 12px 16px;
             border-radius: 12px;
@@ -143,7 +141,6 @@
             border: 1px solid var(--danger);
         }
         
-        /* Спиннер */
         .spinner {
             display: inline-block;
             width: 18px;
@@ -203,7 +200,6 @@
         </div>
         
         <div class="main-content">
-            <!-- Вкладка создания расписки -->
             <div id="createTab" class="tab-content">
                 <div class="form-container">
                     <h2 style="margin-bottom: 24px;">Создание новой расписки</h2>
@@ -240,9 +236,7 @@
                         
                         <div class="form-group">
                             <label>Принятые документы</label>
-                            <div class="checkbox-group" id="documentsCheckboxes">
-                                <!-- Чекбоксы будут загружены из config.js -->
-                            </div>
+                            <div class="checkbox-group" id="documentsCheckboxes"></div>
                         </div>
                         
                         <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -274,7 +268,6 @@
                 </div>
             </div>
             
-            <!-- Вкладка истории расписок -->
             <div id="historyTab" class="tab-content" style="display: none;">
                 <div class="form-container">
                     <h2 style="margin-bottom: 20px;">📋 Мои расписки</h2>
@@ -282,7 +275,6 @@
                 </div>
             </div>
             
-            <!-- Вкладка профиля -->
             <div id="profileTab" class="tab-content" style="display: none;">
                 <div class="form-container">
                     <h2 style="margin-bottom: 24px;">👤 Мой профиль</h2>
@@ -295,16 +287,11 @@
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
-        // ========== КОНФИГУРАЦИЯ ==========
-        const API_BASE_URL = '/.netlify/functions';
-        
-        // Проверка авторизации
         const currentUser = checkAuth();
         if (!currentUser) {
             window.location.href = 'login.html';
         }
         
-        // Если админ или both - показываем кнопку в админку
         if (currentUser.role === 'admin' || currentUser.role === 'both') {
             const adminLink = document.createElement('div');
             adminLink.className = 'nav-item';
@@ -319,7 +306,6 @@
             ${currentUser.login}
         `;
         
-        // Загрузка чекбоксов документов
         function loadDocumentCheckboxes() {
             const config = getConfig();
             const container = document.getElementById('documentsCheckboxes');
@@ -331,7 +317,6 @@
             `).join('');
         }
         
-        // Загрузка специальностей
         function loadSpecialties() {
             const config = getConfig();
             const select = document.getElementById('specialty');
@@ -360,7 +345,6 @@
             }, 5000);
         }
         
-        // Обработка отправки формы (через API)
         document.getElementById('receiptForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -369,7 +353,6 @@
             submitBtn.innerHTML = '<span class="spinner"></span> Создание расписки...';
             submitBtn.disabled = true;
             
-            // Собираем выбранные документы из чекбоксов
             const selectedDocs = Array.from(document.querySelectorAll('#documentsCheckboxes input:checked'))
                 .map(cb => cb.value);
             
@@ -395,55 +378,30 @@
                 return;
             }
             
-            try {
-                const config = getConfig();
-                const specialtyCode = config.specialties[formData.specialty]?.code || 'ОБЩ';
-                
-                // Отправляем через API
-                const response = await fetch(`${API_BASE_URL}/receipts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'create', 
-                        receiptData: {
-                            ...formData,
-                            specialtyCode
-                        } 
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showAlert(`✅ Расписка №${result.receiptNumber} успешно создана!`, 'success');
-                    
-                    // Открываем PDF, если есть
-                    if (result.pdfUrl) {
-                        window.open(result.pdfUrl, '_blank');
-                    } else {
-                        // Если PDF нет, открываем окно печати
-                        openPrintWindow({
-                            ...formData,
-                            receiptNumber: result.receiptNumber
-                        });
-                    }
-                    
-                    // Очищаем форму
-                    document.getElementById('receiptForm').reset();
-                    document.getElementById('photosCount').value = '0';
-                    document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
-                    loadReceiptsHistory();
-                } else {
-                    showAlert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'), 'error');
-                }
-                
-            } catch (error) {
-                console.error('Ошибка:', error);
-                showAlert('❌ Ошибка соединения с сервером', 'error');
-            } finally {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
+            const config = getConfig();
+            const specialtyCode = config.specialties[formData.specialty]?.code || 'ОБЩ';
+            const counter = getReceiptCounter(specialtyCode);
+            const receiptNumber = `${specialtyCode}-${counter}`;
+            
+            const receiptData = {
+                ...formData,
+                receiptNumber,
+                specialtyCode,
+                createdAt: new Date().toISOString()
+            };
+            
+            saveReceipt(receiptData);
+            openPrintWindow(receiptData);
+            
+            showAlert(`✅ Расписка №${receiptNumber} успешно создана!`, 'success');
+            
+            document.getElementById('receiptForm').reset();
+            document.getElementById('photosCount').value = '0';
+            document.querySelectorAll('#documentsCheckboxes input').forEach(cb => cb.checked = false);
+            loadReceiptsHistory();
+            
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         });
         
         function openPrintWindow(receipt) {
@@ -484,41 +442,26 @@
             printWindow.document.close();
         }
         
-        async function loadReceiptsHistory() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/receipts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'getByEmployee', 
-                        employeeLogin: currentUser.login 
-                    })
-                });
-                
-                const result = await response.json();
-                const receipts = result.success ? result.receipts : [];
-                const container = document.getElementById('receiptsList');
-                
-                if (receipts.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">У вас пока нет созданных расписок</p>';
-                    return;
-                }
-                
-                container.innerHTML = receipts.map(receipt => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border);">
-                        <div>
-                            <div style="font-weight: 600; color: var(--primary);">${receipt.receipt_number}</div>
-                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                                ${receipt.student_name} | ${new Date(receipt.created_at).toLocaleDateString('ru-RU')}
-                            </div>
-                        </div>
-                        <button class="btn-print" onclick="window.open('${receipt.pdf_url || '#'}', '_blank')">🖨️ Печать</button>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-                document.getElementById('receiptsList').innerHTML = '<p style="text-align: center; color: var(--danger);">Ошибка загрузки</p>';
+        function loadReceiptsHistory() {
+            const receipts = getEmployeeReceipts(currentUser.login);
+            const container = document.getElementById('receiptsList');
+            
+            if (receipts.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">У вас пока нет созданных расписок</p>';
+                return;
             }
+            
+            container.innerHTML = receipts.map(receipt => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <div style="font-weight: 600; color: var(--primary);">${receipt.receiptNumber}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            ${receipt.fullName} | ${new Date(receipt.createdAt).toLocaleDateString('ru-RU')}
+                        </div>
+                    </div>
+                    <button class="btn-print" onclick='window.open("", "_blank"); this.parentElement.previousElementSibling.click()'>🖨️ Печать</button>
+                </div>
+            `).join('');
         }
         
         function loadProfile() {
@@ -542,7 +485,6 @@
             if (event && event.target) event.target.closest('.nav-item').classList.add('active');
         }
         
-        // Инициализация
         loadSpecialties();
         loadDocumentCheckboxes();
         loadReceiptsHistory();
