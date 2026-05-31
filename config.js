@@ -51,15 +51,15 @@ let SYSTEM_CONFIG = {
           active: true,
           order: 8
       },
-      '15.02.18 Техническая эксплуатация и обслуживание роботизированного производства': {
+      '15.02.18 Техническая эксплуатация и обслуживание роботизированного производства (по отраслям)': {
           code: 'ТРП',
           name: 'Техническая эксплуатация роботизированного производства',
           active: true,
           order: 9
       },
-      '27.02.07 Управление качеством продукции, процессов и услуг': {
+      '27.02.07 Управление качеством продукции, процессов и услуг (по отраслям)': {
           code: 'УК',
-          name: 'Управление качеством',
+          name: 'Управление качеством продукции, процессов и услуг (по отраслям)',
           active: true,
           order: 10
       },
@@ -105,14 +105,15 @@ let SYSTEM_CONFIG = {
 // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С КОНФИГУРАЦИЕЙ ==========
 
 function getConfig() {
-  var saved = localStorage.getItem('system_config');
+  const saved = localStorage.getItem('system_config');
   if (saved) {
       try {
-          var parsed = JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          // Глубокое слияние
           SYSTEM_CONFIG = {
-              specialties: Object.assign({}, SYSTEM_CONFIG.specialties, parsed.specialties || {}),
+              specialties: { ...SYSTEM_CONFIG.specialties, ...(parsed.specialties || {}) },
               documentTypes: parsed.documentTypes || SYSTEM_CONFIG.documentTypes,
-              settings: Object.assign({}, SYSTEM_CONFIG.settings, parsed.settings || {})
+              settings: { ...SYSTEM_CONFIG.settings, ...(parsed.settings || {}) }
           };
       } catch (e) {
           console.warn('Ошибка парсинга конфигурации');
@@ -130,29 +131,20 @@ function saveConfig(config) {
 // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 
 function getActiveSpecialties() {
-  var config = getConfig();
-  var entries = Object.entries(config.specialties);
-  var filtered = [];
-  for (var i = 0; i < entries.length; i++) {
-      var item = entries[i];
-      if (item[1].active) {
-          filtered.push(item);
-      }
-  }
-  filtered.sort(function(a, b) { return a[1].order - b[1].order; });
-  return filtered.map(function(item) {
-      return {
-          value: item[0],
-          label: item[1].code + ' - ' + item[1].name,
-          code: item[1].code
-      };
-  });
+  const config = getConfig();
+  return Object.entries(config.specialties)
+      .filter(([_, data]) => data.active)
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([key, data]) => ({
+          value: key,
+          label: `${data.code} - ${data.name}`,
+          code: data.code
+      }));
 }
 
 function getSpecialtyCode(specialtyName) {
-  var config = getConfig();
-  var spec = config.specialties[specialtyName];
-  return spec ? spec.code : 'ОБЩ';
+  const config = getConfig();
+  return config.specialties[specialtyName]?.code || 'ОБЩ';
 }
 
 function getDocumentTypes() {
@@ -160,121 +152,34 @@ function getDocumentTypes() {
 }
 
 function getSpecialtyByCode(code) {
-  var config = getConfig();
-  var entries = Object.entries(config.specialties);
-  for (var i = 0; i < entries.length; i++) {
-      var name = entries[i][0];
-      var data = entries[i][1];
-      if (data.code === code) {
-          return name;
-      }
+  const config = getConfig();
+  for (const [name, data] of Object.entries(config.specialties)) {
+      if (data.code === code) return name;
   }
   return null;
 }
 
-function getSpecialtyNameByCode(code) {
-  var config = getConfig();
-  var entries = Object.entries(config.specialties);
-  for (var i = 0; i < entries.length; i++) {
-      var data = entries[i][1];
-      if (data.code === code) {
-          return data.name;
-      }
-  }
-  return null;
-}
-
-function getAllSpecialties() {
-  var config = getConfig();
-  var entries = Object.entries(config.specialties);
-  entries.sort(function(a, b) { return a[1].order - b[1].order; });
-  return entries.map(function(item) {
-      return {
-          fullName: item[0],
-          code: item[1].code,
-          name: item[1].name,
-          active: item[1].active,
-          order: item[1].order
-      };
-  });
-}
-
-function updateSpecialty(fullName, data) {
-  var config = getConfig();
-  if (config.specialties[fullName]) {
-      config.specialties[fullName] = Object.assign({}, config.specialties[fullName], data);
-      saveConfig(config);
-      return true;
-  }
-  return false;
-}
-
-function addSpecialty(fullName, code, name, order) {
-  var config = getConfig();
-  if (config.specialties[fullName]) {
-      return false;
-  }
-  config.specialties[fullName] = {
-      code: code,
-      name: name,
-      active: true,
-      order: order || 99
-  };
+function updateSpecialty(name, data) {
+  const config = getConfig();
+  config.specialties[name] = { ...config.specialties[name], ...data };
   saveConfig(config);
-  return true;
-}
-
-function removeSpecialty(fullName) {
-  var config = getConfig();
-  if (config.specialties[fullName]) {
-      delete config.specialties[fullName];
-      saveConfig(config);
-      return true;
-  }
-  return false;
 }
 
 function addDocumentType(doc) {
-  var config = getConfig();
-  if (config.documentTypes.indexOf(doc) === -1) {
+  const config = getConfig();
+  if (!config.documentTypes.includes(doc)) {
       config.documentTypes.push(doc);
       saveConfig(config);
-      return true;
   }
-  return false;
 }
 
 function removeDocumentType(doc) {
-  var config = getConfig();
-  var index = config.documentTypes.indexOf(doc);
+  const config = getConfig();
+  const index = config.documentTypes.indexOf(doc);
   if (index !== -1) {
       config.documentTypes.splice(index, 1);
       saveConfig(config);
-      return true;
   }
-  return false;
-}
-
-function updateDocumentType(oldName, newName) {
-  var config = getConfig();
-  var index = config.documentTypes.indexOf(oldName);
-  if (index !== -1) {
-      config.documentTypes[index] = newName;
-      saveConfig(config);
-      return true;
-  }
-  return false;
-}
-
-function getSystemSettings() {
-  return getConfig().settings;
-}
-
-function updateSystemSettings(settings) {
-  var config = getConfig();
-  config.settings = Object.assign({}, config.settings, settings);
-  saveConfig(config);
-  return true;
 }
 
 // ========== ЭКСПОРТ ДЛЯ ГЛОБАЛЬНОГО ИСПОЛЬЗОВАНИЯ ==========
@@ -285,16 +190,9 @@ if (typeof window !== 'undefined') {
   window.getSpecialtyCode = getSpecialtyCode;
   window.getDocumentTypes = getDocumentTypes;
   window.getSpecialtyByCode = getSpecialtyByCode;
-  window.getSpecialtyNameByCode = getSpecialtyNameByCode;
-  window.getAllSpecialties = getAllSpecialties;
   window.updateSpecialty = updateSpecialty;
-  window.addSpecialty = addSpecialty;
-  window.removeSpecialty = removeSpecialty;
   window.addDocumentType = addDocumentType;
   window.removeDocumentType = removeDocumentType;
-  window.updateDocumentType = updateDocumentType;
-  window.getSystemSettings = getSystemSettings;
-  window.updateSystemSettings = updateSystemSettings;
 }
 
 console.log('✅ config.js загружен');
