@@ -73,32 +73,6 @@
             padding: 30px;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .stat-card h3 {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 8px;
-        }
-        
-        .stat-number {
-            font-size: 36px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-        
         .form-container {
             background: white;
             border-radius: 20px;
@@ -150,6 +124,18 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .receipts-list {
@@ -180,13 +166,38 @@
             cursor: pointer;
         }
         
-        .employee-badge {
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .spinner {
             display: inline-block;
-            padding: 4px 12px;
-            background: #e5e7eb;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-top: 10px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
         @media (max-width: 768px) {
@@ -235,6 +246,9 @@
             <div id="createTab" class="tab-content">
                 <div class="form-container">
                     <h2 style="margin-bottom: 24px;">Создание новой расписки</h2>
+                    
+                    <div id="alert" class="alert"></div>
+                    
                     <form id="receiptForm">
                         <div class="form-group">
                             <label>ФИО абитуриента *</label>
@@ -291,7 +305,9 @@
                             </div>
                         </div>
                         
-                        <button type="submit" class="submit-btn">📄 Создать расписку</button>
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            📄 Создать расписку
+                        </button>
                     </form>
                 </div>
             </div>
@@ -317,6 +333,10 @@
     <script src="config.js"></script>
     <script src="auth.js"></script>
     <script>
+        // ========== КОНФИГУРАЦИЯ ==========
+        // ⚠️ ВСТАВЬТЕ СВОЙ URL ОТ GOOGLE APPS SCRIPT!
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzQs5DtZDu8_O4pL7r49GuR0lDKd5Kgd4-fZGsH2eunZ7WAzH-HoMB8GHV0QQgxDaoH/exec';
+        
         // Проверка авторизации
         const currentUser = checkAuth();
         if (!currentUser) {
@@ -339,6 +359,7 @@
         function loadSpecialties() {
             const config = getConfig();
             const select = document.getElementById('specialty');
+            select.innerHTML = '<option value="">Выберите специальность</option>';
             
             Object.entries(config.specialties)
                 .filter(([_, data]) => data.active)
@@ -354,9 +375,25 @@
         // Подстановка данных сотрудника
         document.getElementById('employeeField').value = `${currentUser.name} (${currentUser.position})`;
         
+        // Показ уведомления
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+        
         // Обработка отправки формы
         document.getElementById('receiptForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner"></span> Создание...';
+            submitBtn.disabled = true;
             
             const formData = {
                 fullName: document.getElementById('fullName').value,
@@ -373,35 +410,67 @@
                 employeePosition: currentUser.position
             };
             
-            // Получаем код специальности
-            const config = getConfig();
-            const specialtyCode = config.specialties[formData.specialty]?.code || 'ОБЩ';
+            // Валидация
+            if (!formData.fullName) {
+                showAlert('Пожалуйста, заполните ФИО абитуриента', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
             
-            // Генерируем номер расписки
-            const counter = getReceiptCounter(specialtyCode);
-            const receiptNumber = `${specialtyCode}-${counter}`;
+            if (!formData.specialty) {
+                showAlert('Пожалуйста, выберите специальность', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
             
-            // Сохраняем расписку
-            const receiptData = {
-                ...formData,
-                receiptNumber,
-                specialtyCode,
-                createdAt: new Date().toISOString()
-            };
-            
-            saveReceipt(receiptData);
-            
-            // Здесь будет вызов Google Apps Script для создания PDF
-            // Временно показываем уведомление
-            alert(`✅ Расписка №${receiptNumber} успешно создана!`);
-            
-            // Очищаем форму
-            e.target.reset();
-            document.getElementById('photosCount').value = '0';
-            
-            // Обновляем историю
-            if (document.getElementById('historyTab').style.display !== 'none') {
-                loadReceiptsHistory();
+            try {
+                // Отправляем запрос в Google Apps Script
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`✅ Расписка №${result.receiptNumber} успешно создана!`, 'success');
+                    
+                    // Открываем PDF в новой вкладке
+                    if (result.pdfUrl) {
+                        window.open(result.pdfUrl, '_blank');
+                    }
+                    
+                    // Сохраняем в локальное хранилище
+                    const receiptData = {
+                        ...formData,
+                        receiptNumber: result.receiptNumber,
+                        specialtyCode: getSpecialtyCode(formData.specialty),
+                        pdfUrl: result.pdfUrl,
+                        createdAt: new Date().toISOString()
+                    };
+                    saveReceipt(receiptData);
+                    
+                    // Очищаем форму
+                    document.getElementById('receiptForm').reset();
+                    document.getElementById('photosCount').value = '0';
+                    
+                    // Обновляем историю
+                    loadReceiptsHistory();
+                } else {
+                    showAlert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'), 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showAlert('❌ Ошибка соединения. Проверьте API_URL', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         });
         
@@ -423,9 +492,18 @@
                             ${receipt.fullName} | ${new Date(receipt.createdAt).toLocaleDateString('ru-RU')}
                         </div>
                     </div>
-                    <button class="btn-print" onclick="printReceipt('${receipt.receiptNumber}')">🖨️ Печать</button>
+                    <button class="btn-print" onclick="printReceipt('${receipt.pdfUrl || receipt.receiptNumber}')">🖨️ Печать</button>
                 </div>
             `).join('');
+        }
+        
+        // Печать расписки
+        function printReceipt(url) {
+            if (url && url.startsWith('http')) {
+                window.open(url, '_blank');
+            } else {
+                alert('PDF ссылка не найдена');
+            }
         }
         
         // Загрузка профиля
@@ -455,15 +533,7 @@
                     <label>Создано расписок</label>
                     <input type="text" value="${myStats?.receiptCount || 0}" readonly style="background: #f3f4f6;">
                 </div>
-                <div class="form-group">
-                    <label>Дата регистрации</label>
-                    <input type="text" value="${new Date().toLocaleDateString('ru-RU')}" readonly style="background: #f3f4f6;">
-                </div>
             `;
-        }
-        
-        function printReceipt(receiptNumber) {
-            alert(`Печать расписки ${receiptNumber}\n\nФункция печати будет подключена после интеграции с Google Docs`);
         }
         
         function showTab(tab) {
@@ -478,7 +548,9 @@
             
             // Обновляем активный пункт меню
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            event.target.closest('.nav-item').classList.add('active');
+            if (event && event.target) {
+                event.target.closest('.nav-item').classList.add('active');
+            }
         }
         
         // Инициализация

@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему - Приемная комиссия</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -108,6 +113,12 @@
             box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
         }
         
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
         .alert {
             padding: 12px 16px;
             border-radius: 12px;
@@ -119,6 +130,28 @@
             background: #fee2e2;
             color: #991b1b;
             border: 1px solid #fecaca;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
         @keyframes slideUp {
@@ -169,7 +202,7 @@
                     </div>
                 </div>
                 
-                <button type="submit" class="login-btn">Войти в систему</button>
+                <button type="submit" class="login-btn" id="loginBtn">Войти в систему</button>
             </form>
             
             <div style="margin-top: 24px; text-align: center; font-size: 14px; color: #9ca3af;">
@@ -182,6 +215,189 @@
         </div>
     </div>
     
-    <script src="auth.js"></script>
+    <script>
+        // ========== СИСТЕМА АВТОРИЗАЦИИ (встроенная в login.html) ==========
+        
+        const STORAGE_KEYS = {
+            USERS: 'receipt_system_users',
+            CURRENT_USER: 'receipt_system_current_user'
+        };
+        
+        function hashPassword(password) {
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString();
+        }
+        
+        // Инициализация пользователей
+        function initializeUsers() {
+            if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+                const defaultUsers = {
+                    'admin@college.ru': {
+                        id: 'admin_1',
+                        email: 'admin@college.ru',
+                        password: hashPassword('admin123'),
+                        name: 'Администратор Системы',
+                        role: 'admin',
+                        position: 'Главный администратор',
+                        phone: '+7 (499) 156-40-01',
+                        createdAt: new Date().toISOString(),
+                        isActive: true
+                    },
+                    'osokin@college.ru': {
+                        id: 'emp_1',
+                        email: 'osokin@college.ru',
+                        password: hashPassword('123456'),
+                        name: 'Осокин Константин Вячеславович',
+                        role: 'employee',
+                        position: 'Ответственный секретарь',
+                        phone: '+7 (499) 156-40-02',
+                        createdAt: new Date().toISOString(),
+                        isActive: true,
+                        receiptCount: 0
+                    },
+                    'tsygankova@college.ru': {
+                        id: 'emp_2',
+                        email: 'tsygankova@college.ru',
+                        password: hashPassword('123456'),
+                        name: 'Цыганкова Юлия Игоревна',
+                        role: 'employee',
+                        position: 'Заместитель ответственного секретаря',
+                        phone: '+7 (499) 156-40-03',
+                        createdAt: new Date().toISOString(),
+                        isActive: true,
+                        receiptCount: 0
+                    },
+                    'vorobyeva@college.ru': {
+                        id: 'emp_3',
+                        email: 'vorobyeva@college.ru',
+                        password: hashPassword('123456'),
+                        name: 'Воробьева Ирина Алексеевна',
+                        role: 'employee',
+                        position: 'Специалист',
+                        phone: '+7 (499) 156-40-04',
+                        createdAt: new Date().toISOString(),
+                        isActive: true,
+                        receiptCount: 0
+                    },
+                    'khanakova@college.ru': {
+                        id: 'emp_4',
+                        email: 'khanakova@college.ru',
+                        password: hashPassword('123456'),
+                        name: 'Ханакова Анастасия Ивановна',
+                        role: 'employee',
+                        position: 'Специалист',
+                        phone: '+7 (499) 156-40-05',
+                        createdAt: new Date().toISOString(),
+                        isActive: true,
+                        receiptCount: 0
+                    }
+                };
+                localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(defaultUsers));
+            }
+        }
+        
+        // Функция входа
+        function login(email, password) {
+            const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '{}');
+            const user = users[email];
+            
+            if (!user) {
+                return { success: false, error: 'Пользователь не найден' };
+            }
+            
+            if (!user.isActive) {
+                return { success: false, error: 'Аккаунт деактивирован' };
+            }
+            
+            if (user.password !== hashPassword(password)) {
+                return { success: false, error: 'Неверный пароль' };
+            }
+            
+            // Создаем сессию
+            const session = {
+                userId: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                position: user.position,
+                phone: user.phone,
+                loginTime: new Date().toISOString(),
+                token: Math.random().toString(36).substr(2) + Date.now().toString(36)
+            };
+            
+            localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+            
+            return { success: true, user: session };
+        }
+        
+        // Показ уведомления
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Инициализация
+        initializeUsers();
+        
+        // Обработчик формы входа
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const originalText = loginBtn.innerHTML;
+            
+            // Валидация
+            if (!email || !password) {
+                showAlert('Заполните все поля', 'error');
+                return;
+            }
+            
+            // Показываем загрузку
+            loginBtn.innerHTML = '<span class="spinner"></span> Вход...';
+            loginBtn.disabled = true;
+            
+            // Выполняем вход с небольшой задержкой для имитации
+            setTimeout(() => {
+                const result = login(email, password);
+                
+                if (result.success) {
+                    showAlert('Вход выполнен! Перенаправление...', 'success');
+                    
+                    // Перенаправление в зависимости от роли
+                    setTimeout(() => {
+                        if (result.user.role === 'admin') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'dashboard.html';
+                        }
+                    }, 500);
+                } else {
+                    showAlert(result.error, 'error');
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                }
+            }, 300);
+        });
+        
+        // Добавляем возможность входа по Enter
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
 </body>
 </html>

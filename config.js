@@ -1,5 +1,4 @@
 // ========== КОНФИГУРАЦИЯ СИСТЕМЫ ==========
-// Этот файл синхронизируется с админ-панелью
 
 let SYSTEM_CONFIG = {
     // Специальности
@@ -105,7 +104,6 @@ let SYSTEM_CONFIG = {
   
   // Функции для работы с конфигурацией
   function getConfig() {
-    // Загружаем сохраненную конфигурацию из localStorage
     const saved = localStorage.getItem('system_config');
     if (saved) {
       try {
@@ -119,21 +117,6 @@ let SYSTEM_CONFIG = {
   function saveConfig(config) {
     SYSTEM_CONFIG = config;
     localStorage.setItem('system_config', JSON.stringify(config));
-    
-    // Синхронизируем с Google Apps Script (опционально)
-    syncConfigToBackend(config);
-  }
-  
-  async function syncConfigToBackend(config) {
-    try {
-      const response = await fetch(API_CONFIG_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'syncConfig', config: config })
-      });
-    } catch(e) {
-      console.log('Не удалось синхронизировать с бэкендом');
-    }
   }
   
   function getActiveSpecialties() {
