@@ -5,92 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Приемная комиссия - ЕПК</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Стили для каркаса */
-        .sidebar { width: 280px; background: var(--bg-card); border-right: 1px solid var(--border); position: fixed; height: 100vh; overflow-y: auto; z-index: 100; }
-        .logo-area { padding: 24px; border-bottom: 1px solid var(--border); }
-        .logo-area h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .logo-area p { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
-        .nav-menu { padding: 20px 16px; }
-        .nav-group { margin-bottom: 24px; }
-        .nav-group-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; padding-left: 12px; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 4px; border-radius: 10px; color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .nav-item:hover { background: rgba(79,70,229,0.1); color: var(--text-primary); }
-        .nav-item.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        .nav-divider { height: 1px; background: var(--border); margin: 16px 0; }
-        .main-content { margin-left: 280px; padding: 24px 32px; transition: all 0.3s ease; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-        .greeting h2 { font-size: 24px; font-weight: 700; color: var(--text-primary); }
-        .greeting p { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
-        .user-controls { display: flex; align-items: center; gap: 20px; }
-        .user-info { text-align: right; }
-        .user-name { font-weight: 600; font-size: 14px; }
-        .user-role { font-size: 12px; color: var(--text-secondary); }
-        .logout-btn { padding: 8px 16px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #f87171; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-        .logout-btn:hover { background: var(--danger); color: white; }
-        .page-content { animation: fadeIn 0.3s ease; min-height: 400px; }
-        .loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; display: none; }
-        .loader-spinner { width: 50px; height: 50px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        .theme-customizer { position: relative; }
-        .theme-toggle-btn { width: 40px; height: 40px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; }
-        .theme-toggle-btn:hover { background: var(--primary); color: white; }
-        .customizer-panel { position: absolute; top: 50px; right: 0; width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; display: none; }
-        .customizer-panel.show { display: block; animation: fadeIn 0.2s ease; }
-        .customizer-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-        .customizer-section { margin-bottom: 20px; }
-        .customizer-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; display: block; }
-        .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
-        .color-option { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .color-option.active { border-color: white; box-shadow: 0 0 0 2px var(--primary); }
-        .color-option[data-color="default"] { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
-        .color-option[data-color="blue"] { background: linear-gradient(135deg, #2563eb, #06b6d4); }
-        .color-option[data-color="green"] { background: linear-gradient(135deg, #059669, #10b981); }
-        .color-option[data-color="orange"] { background: linear-gradient(135deg, #ea580c, #f97316); }
-        .color-option[data-color="purple"] { background: linear-gradient(135deg, #9333ea, #d946ef); }
-        .color-option[data-color="pink"] { background: linear-gradient(135deg, #ec4899, #f43f5e); }
-        .color-option[data-color="cyan"] { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-        .primary-color-picker { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
-        .primary-color-picker input { width: 50px; height: 40px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); cursor: pointer; }
-        .theme-options, .style-options, .layout-options { display: flex; gap: 8px; flex-wrap: wrap; }
-        .theme-option, .style-option, .layout-option { padding: 6px 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
-        .theme-option.active, .style-option.active, .layout-option.active { background: var(--primary); color: white; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); z-index: 1000; } .main-content { margin-left: 0; } }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="sidebar">
         <div class="logo-area">
             <h1>📄 Приемная комиссия</h1>
-            <p>Единая платформа</p>
+            <p>ЕПК - Единая платформа</p>
         </div>
         <div class="nav-menu">
             <div class="nav-group">
                 <div class="nav-group-title">ОСНОВНОЕ</div>
-                <div class="nav-item active" data-page="home"><span>🏠</span> Главная</div>
-                <div class="nav-item" data-page="create"><span>📝</span> Создать расписку</div>
-                <div class="nav-item" data-page="history"><span>📋</span> Мои расписки</div>
-                <div class="nav-item" data-page="profile"><span>👤</span> Профиль</div>
-            </div>
-            <div class="nav-group">
-                <div class="nav-group-title">ПРИЕМНАЯ КАМПАНИЯ</div>
-                <div class="nav-item" data-page="rating"><span>🏆</span> Рейтинговые списки</div>
-                <div class="nav-item" data-page="export"><span>📤</span> Экспорт в ФИС ГИА</div>
+                <div class="nav-item active" data-tab="create">
+                    <span>📝</span> Создать расписку
+                </div>
+                <div class="nav-item" data-tab="history">
+                    <span>📋</span> Мои расписки
+                </div>
+                <div class="nav-item" data-tab="profile">
+                    <span>👤</span> Профиль
+                </div>
             </div>
             <div class="nav-group" id="statsGroup" style="display: none;">
                 <div class="nav-group-title">АНАЛИТИКА</div>
-                <div class="nav-item" data-page="stats"><span>📊</span> Статистика</div>
-                <div class="nav-item" data-page="charts"><span>📈</span> Графики</div>
+                <div class="nav-item" data-tab="stats">
+                    <span>📊</span> Статистика
+                </div>
             </div>
             <div class="nav-divider" id="adminDivider" style="display: none;"></div>
             <div class="nav-group" id="adminGroup" style="display: none;">
                 <div class="nav-group-title">УПРАВЛЕНИЕ</div>
-                <div class="nav-item" data-page="admin"><span>⚙️</span> Админ панель</div>
+                <div class="nav-item" data-tab="admin">
+                    <span>⚙️</span> Админ панель
+                </div>
             </div>
         </div>
     </div>
@@ -106,7 +53,8 @@
                     <div class="theme-toggle-btn" id="themeToggleBtn">🎨</div>
                     <div class="customizer-panel" id="customizerPanel">
                         <h4>Кастомайзер темы</h4>
-                        <p style="font-size: 11px; margin-bottom: 16px;">Персонализируйте интерфейс</p>
+                        <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;">Вы можете персонализировать тему для своей работы</p>
+                        
                         <div class="customizer-section">
                             <span class="customizer-label">Основной цвет</span>
                             <div class="color-options">
@@ -115,14 +63,9 @@
                                 <div class="color-option" data-color="green"></div>
                                 <div class="color-option" data-color="orange"></div>
                                 <div class="color-option" data-color="purple"></div>
-                                <div class="color-option" data-color="pink"></div>
-                                <div class="color-option" data-color="cyan"></div>
-                            </div>
-                            <div class="primary-color-picker">
-                                <span style="font-size: 12px;">Свой цвет:</span>
-                                <input type="color" id="customColorPicker" value="#4f46e5">
                             </div>
                         </div>
+                        
                         <div class="customizer-section">
                             <span class="customizer-label">Тема</span>
                             <div class="theme-options">
@@ -131,6 +74,7 @@
                                 <div class="theme-option" data-theme="system">Системная</div>
                             </div>
                         </div>
+                        
                         <div class="customizer-section">
                             <span class="customizer-label">Оформление</span>
                             <div class="style-options">
@@ -138,6 +82,7 @@
                                 <div class="style-option" data-style="outlined">С обводкой</div>
                             </div>
                         </div>
+                        
                         <div class="customizer-section">
                             <span class="customizer-label">Контент</span>
                             <div class="layout-options">
@@ -147,18 +92,61 @@
                         </div>
                     </div>
                 </div>
-                <div class="user-info"><div class="user-name" id="userName"></div><div class="user-role" id="userRole"></div></div>
+                
+                <div class="user-info">
+                    <div class="user-name" id="userName"></div>
+                    <div class="user-role" id="userRole"></div>
+                </div>
                 <button class="logout-btn" onclick="logout()">Выйти</button>
             </div>
         </div>
-
-        <div id="pageContent">
-            <div class="loader-overlay" id="loaderOverlay"><div class="loader-spinner"></div></div>
-            <div style="text-align: center; padding: 40px; color: var(--text-secondary);" id="loadingMessage">Загрузка...</div>
+        
+        <div id="createTab" class="tab-content active">
+            <div class="form-container">
+                <h2>📝 Создание новой расписки</h2>
+                <div id="alert" class="alert"></div>
+                <form id="receiptForm">
+                    <div class="form-group"><label>ФИО абитуриента *</label><input type="text" id="fullName" required placeholder="Иванов Иван Иванович"></div>
+                    <div class="form-group"><label>Специальность *</label><select id="specialty" required><option value="">Выберите специальность</option></select></div>
+                    <div class="form-row"><div class="form-group"><label>Номер аттестата/диплома</label><input type="text" id="diplomaNumber" placeholder="№ документа"></div><div class="form-group"><label>Дата выдачи</label><input type="date" id="diplomaDate"></div></div>
+                    <div class="form-group"><label>Кем выдан аттестат</label><input type="text" id="diplomaIssuedBy" placeholder="Учебное заведение"></div>
+                    <div class="form-group"><label>Принятые документы</label><div class="checkbox-group" id="documentsCheckboxes"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Количество фотографий (0-4)</label><input type="number" id="photosCount" min="0" max="4" value="0"></div><div class="form-group"><label>Баллы ГИА</label><input type="text" id="score" placeholder="Баллы"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Город получения аттестата</label><input type="text" id="city" placeholder="Город"></div><div class="form-group"><label>Сотрудник</label><input type="text" id="employeeField" readonly></div></div>
+                    <button type="submit" class="submit-btn" id="submitBtn">📄 Создать расписку</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="historyTab" class="tab-content">
+            <div class="form-container"><h2>📋 Мои расписки</h2><div id="receiptsList"></div></div>
+        </div>
+        
+        <div id="profileTab" class="tab-content">
+            <div class="form-container"><h2>👤 Мой профиль</h2><div id="profileInfo"></div></div>
+        </div>
+        
+        <div id="statsTab" class="tab-content">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="stats-table-container">
+                <div class="stats-table-header"><h3>🏆 Рейтинг сотрудников</h3></div>
+                <table class="stats-table"><thead><tr><th>#</th><th>Сотрудник</th><th>Должность</th><th>Расписок</th><th>Статус</th></tr></thead><tbody id="employeeStatsBody"></tbody></table>
+            </div>
+        </div>
+        
+        <div id="adminTab" class="tab-content">
+            <div class="stats-grid" id="adminStatsGrid"></div>
+            <div class="table-container">
+                <div class="table-header"><h3>🔢 Управление нумерацией расписок</h3><button class="add-btn" onclick="resetAllCounters()">🔄 Сбросить ВСЕ счётчики</button></div>
+                <table class="data-table"><thead><tr><th>Код</th><th>Специальность</th><th>Текущий номер</th><th>Новое значение</th><th>Действие</th></tr></thead><tbody id="countersList"></tbody></table>
+            </div>
+            <div class="table-container">
+                <div class="table-header"><h3>👥 Управление сотрудниками</h3><button class="add-btn" onclick="openEmployeeModal()">+ Добавить сотрудника</button></div>
+                <table class="data-table"><thead><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Роль</th><th>Расписок</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="adminEmployeesList"></tbody></table>
+            </div>
         </div>
     </div>
-
-    <!-- Модальные окна -->
+    
     <div id="employeeModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h3 id="employeeModalTitle">Добавить сотрудника</h3><button class="modal-close" onclick="closeEmployeeModal()">&times;</button></div>
@@ -175,403 +163,305 @@
             <div class="modal-footer"><button class="action-btn" onclick="closeEmployeeModal()">Отмена</button><button class="add-btn" onclick="saveEmployee()">Сохранить</button></div>
         </div>
     </div>
-
-    <div id="specialtyModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h3 id="specialtyModalTitle">Добавить специальность</h3><button class="modal-close" onclick="closeSpecialtyModal()">&times;</button></div>
-            <div class="modal-body">
-                <input type="hidden" id="editSpecialtyKey">
-                <div class="form-group"><label>Код *</label><input type="text" id="specialtyCode" placeholder="ЛА"></div>
-                <div class="form-group"><label>Полное название *</label><input type="text" id="specialtyName" placeholder="24.02.01 Производство..."></div>
-                <div class="form-group"><label>Порядок</label><input type="number" id="specialtyOrder" value="99"></div>
-            </div>
-            <div class="modal-footer"><button class="action-btn" onclick="closeSpecialtyModal()">Отмена</button><button class="add-btn" onclick="saveSpecialty()">Сохранить</button></div>
-        </div>
-    </div>
-
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
     <script>
-        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
-        var currentUserData = null;
-        
         // ========== ИНИЦИАЛИЗАЦИЯ ==========
-        function init() {
-            currentUserData = checkAuth();
-            if (!currentUserData) { 
-                window.location.href = 'login.html'; 
-                return; 
-            }
+        (function() {
+            const currentUser = checkAuth();
+            if (!currentUser) { window.location.href = 'login.html'; return; }
             
-            var firstName = currentUserData.name.split(' ')[1] || currentUserData.name.split(' ')[0];
+            // Отображение информации
+            const firstName = currentUser.name.split(' ')[0];
             document.getElementById('userNameShort').innerHTML = firstName;
-            document.getElementById('userName').innerHTML = currentUserData.name;
+            document.getElementById('userName').innerHTML = currentUser.name;
             
-            var roleText = '';
-            if (currentUserData.role === 'admin') roleText = 'Главный администратор';
-            else if (currentUserData.role === 'both') roleText = 'Администратор + Сотрудник';
-            else if (currentUserData.role === 'manager') roleText = 'Руководитель';
-            else roleText = 'Сотрудник архива';
+            let roleText = '';
+            if (currentUser.role === 'admin') roleText = 'Главный администратор';
+            else if (currentUser.role === 'both') roleText = 'Администратор + Сотрудник';
+            else if (currentUser.role === 'manager') roleText = 'Руководитель';
+            else roleText = 'Сотрудник';
             document.getElementById('userRole').innerHTML = roleText;
             
-            if (currentUserData.role === 'admin' || currentUserData.role === 'both' || currentUserData.role === 'manager') {
+            // Показываем доступные разделы
+            if (canViewStats()) {
                 document.getElementById('statsGroup').style.display = 'block';
             }
-            if (currentUserData.role === 'admin' || currentUserData.role === 'both') {
+            if (isAdmin()) {
                 document.getElementById('adminGroup').style.display = 'block';
                 document.getElementById('adminDivider').style.display = 'block';
             }
             
-            loadThemeSettings();
-            setupEventListeners();
-            loadPage('home');
-        }
-        
-        // ========== ЗАГРУЗКА СТРАНИЦ ==========
-        function loadPage(pageName) {
-            var loader = document.getElementById('loaderOverlay');
-            var container = document.getElementById('pageContent');
-            var loadingMsg = document.getElementById('loadingMessage');
-            if (loader) loader.style.display = 'flex';
-            if (loadingMsg) loadingMsg.style.display = 'none';
-            
-            var url = (pageName === 'admin') ? 'pages/admin.html' : 'pages/' + pageName + '.html';
-            
-            fetch(url + '?v=' + Date.now())
-                .then(function(response) {
-                    if (!response.ok) throw new Error('Страница не найдена: ' + url);
-                    return response.text();
-                })
-                .then(function(html) {
-                    if (container) {
-                        container.innerHTML = html;
-                        var scripts = container.querySelectorAll('script');
-                        for (var i = 0; i < scripts.length; i++) {
-                            var oldScript = scripts[i];
-                            var newScript = document.createElement('script');
-                            if (oldScript.src) { 
-                                newScript.src = oldScript.src; 
-                            } else { 
-                                newScript.textContent = oldScript.textContent; 
-                            }
-                            document.body.appendChild(newScript);
-                        }
-                    }
-                    if (loader) loader.style.display = 'none';
-                })
-                .catch(function(error) {
-                    if (container) container.innerHTML = '<div class="empty-state">❌ Ошибка загрузки страницы: ' + pageName + '<br>' + error.message + '</div>';
-                    if (loader) loader.style.display = 'none';
-                });
-            
-            var navItems = document.querySelectorAll('.nav-item');
-            for (var i = 0; i < navItems.length; i++) {
-                var item = navItems[i];
-                if (item.getAttribute('data-page') === pageName) { 
-                    item.classList.add('active'); 
-                } else { 
-                    item.classList.remove('active'); 
-                }
+            // ========== КАСТОМАЙЗЕР ТЕМЫ ==========
+            function toggleCustomizer() {
+                var panel = document.getElementById('customizerPanel');
+                panel.classList.toggle('show');
             }
-        }
-        
-        // ========== КАСТОМАЙЗЕР ТЕМЫ ==========
-        function toggleCustomizer() { 
-            document.getElementById('customizerPanel').classList.toggle('show'); 
-        }
-        
-        function setTheme(theme) {
-            localStorage.setItem('app_theme', theme);
-            if (theme === 'dark') document.body.classList.add('dark');
-            else if (theme === 'light') document.body.classList.remove('dark');
-            else if (theme === 'system') {
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            
+            function setTheme(theme) {
+                localStorage.setItem('app_theme', theme);
+                if (theme === 'dark') {
                     document.body.classList.add('dark');
-                } else {
+                } else if (theme === 'light') {
                     document.body.classList.remove('dark');
+                } else if (theme === 'system') {
+                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.body.classList.add('dark');
+                    } else {
+                        document.body.classList.remove('dark');
+                    }
                 }
-            }
-            var opts = document.querySelectorAll('.theme-option');
-            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
-            var active = document.querySelector('.theme-option[data-theme="' + theme + '"]');
-            if (active) active.classList.add('active');
-        }
-        
-        function setStyle(style) {
-            localStorage.setItem('app_style', style);
-            if (style === 'outlined') document.body.classList.add('outlined');
-            else document.body.classList.remove('outlined');
-            var opts = document.querySelectorAll('.style-option');
-            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
-            var active = document.querySelector('.style-option[data-style="' + style + '"]');
-            if (active) active.classList.add('active');
-        }
-        
-        function setLayout(layout) {
-            localStorage.setItem('app_layout', layout);
-            if (layout === 'compact') document.body.classList.add('compact');
-            else document.body.classList.remove('compact');
-            var opts = document.querySelectorAll('.layout-option');
-            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
-            var active = document.querySelector('.layout-option[data-layout="' + layout + '"]');
-            if (active) active.classList.add('active');
-        }
-        
-        function setThemeColor(color) {
-            var colors = { 
-                default: '#4f46e5', 
-                blue: '#2563eb', 
-                green: '#059669', 
-                orange: '#ea580c', 
-                purple: '#9333ea', 
-                pink: '#ec4899', 
-                cyan: '#06b6d4' 
-            };
-            var primaryColor = colors[color] || color;
-            document.documentElement.style.setProperty('--primary', primaryColor);
-            document.documentElement.style.setProperty('--primary-hover', primaryColor + 'cc');
-            localStorage.setItem('app_color', color);
-            var opts = document.querySelectorAll('.color-option');
-            for (var i = 0; i < opts.length; i++) opts[i].classList.remove('active');
-            var active = document.querySelector('.color-option[data-color="' + color + '"]');
-            if (active) active.classList.add('active');
-        }
-        
-        function loadThemeSettings() {
-            var savedTheme = localStorage.getItem('app_theme') || 'light';
-            var savedStyle = localStorage.getItem('app_style') || 'standard';
-            var savedLayout = localStorage.getItem('app_layout') || 'standard';
-            var savedColor = localStorage.getItem('app_color') || 'default';
-            setTheme(savedTheme);
-            setStyle(savedStyle);
-            setLayout(savedLayout);
-            setThemeColor(savedColor);
-            var picker = document.getElementById('customColorPicker');
-            if (picker) picker.value = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4f46e5';
-        }
-        
-        // ========== МОДАЛЬНЫЕ ОКНА ==========
-        function openEmployeeModal() {
-            var modal = document.getElementById('employeeModal');
-            if (modal) {
-                document.getElementById('employeeModalTitle').innerHTML = 'Добавить сотрудника';
-                document.getElementById('editLogin').value = '';
-                document.getElementById('empName').value = '';
-                document.getElementById('empLogin').value = '';
-                document.getElementById('empPassword').value = '';
-                document.getElementById('empPosition').value = '';
-                document.getElementById('empPhone').value = '';
-                document.getElementById('empRole').value = 'employee';
-                document.getElementById('empStatus').value = 'true';
-                modal.style.display = 'flex';
-            }
-        }
-        
-        function closeEmployeeModal() {
-            var modal = document.getElementById('employeeModal');
-            if (modal) modal.style.display = 'none';
-        }
-        
-        function openSpecialtyModal() {
-            var modal = document.getElementById('specialtyModal');
-            if (modal) {
-                document.getElementById('specialtyModalTitle').innerHTML = 'Добавить специальность';
-                document.getElementById('editSpecialtyKey').value = '';
-                document.getElementById('specialtyCode').value = '';
-                document.getElementById('specialtyName').value = '';
-                document.getElementById('specialtyOrder').value = '99';
-                modal.style.display = 'flex';
-            }
-        }
-        
-        function closeSpecialtyModal() {
-            var modal = document.getElementById('specialtyModal');
-            if (modal) modal.style.display = 'none';
-        }
-        
-        function openDocumentModal() {
-            var newDoc = prompt('Введите название документа:');
-            if (newDoc && newDoc.trim()) {
-                var config = getConfig();
-                config.documentTypes.push(newDoc.trim());
-                saveConfig(config);
-                showToast('Документ добавлен', 'success');
-                var activePage = document.querySelector('.nav-item.active');
-                if (activePage && activePage.getAttribute('data-page') === 'admin') {
-                    loadPage('admin');
-                }
-            }
-        }
-        
-        function saveEmployee() {
-            var editLogin = document.getElementById('editLogin').value;
-            var login = document.getElementById('empLogin').value;
-            var name = document.getElementById('empName').value;
-            var password = document.getElementById('empPassword').value;
-            var position = document.getElementById('empPosition').value;
-            var phone = document.getElementById('empPhone').value;
-            var role = document.getElementById('empRole').value;
-            var isActive = document.getElementById('empStatus').value === 'true';
-            
-            if (!name || !login) {
-                showToast('Заполните обязательные поля', 'error');
-                return;
+                document.querySelectorAll('.theme-option').forEach(function(opt) { opt.classList.remove('active'); });
+                var activeOpt = document.querySelector('.theme-option[data-theme="' + theme + '"]');
+                if (activeOpt) activeOpt.classList.add('active');
             }
             
-            var result;
-            if (editLogin) {
-                var updates = { 
-                    name: name, 
-                    position: position, 
-                    phone: phone, 
-                    role: role, 
-                    isActive: isActive 
+            function setStyle(style) {
+                localStorage.setItem('app_style', style);
+                if (style === 'outlined') {
+                    document.body.classList.add('outlined');
+                } else {
+                    document.body.classList.remove('outlined');
+                }
+                document.querySelectorAll('.style-option').forEach(function(opt) { opt.classList.remove('active'); });
+                var activeOpt = document.querySelector('.style-option[data-style="' + style + '"]');
+                if (activeOpt) activeOpt.classList.add('active');
+            }
+            
+            function setLayout(layout) {
+                localStorage.setItem('app_layout', layout);
+                if (layout === 'compact') {
+                    document.body.classList.add('compact');
+                } else {
+                    document.body.classList.remove('compact');
+                }
+                document.querySelectorAll('.layout-option').forEach(function(opt) { opt.classList.remove('active'); });
+                var activeOpt = document.querySelector('.layout-option[data-layout="' + layout + '"]');
+                if (activeOpt) activeOpt.classList.add('active');
+            }
+            
+            function setThemeColor(color) {
+                var colors = {
+                    default: { primary: '#4f46e5', secondary: '#7c3aed' },
+                    blue: { primary: '#2563eb', secondary: '#06b6d4' },
+                    green: { primary: '#059669', secondary: '#10b981' },
+                    orange: { primary: '#ea580c', secondary: '#f97316' },
+                    purple: { primary: '#9333ea', secondary: '#d946ef' }
                 };
-                if (password) updates.password = password;
-                result = updateEmployee(editLogin, updates);
-            } else {
-                if (!password) {
-                    showToast('Введите пароль', 'error');
-                    return;
-                }
-                result = addEmployee({ 
-                    login: login, 
-                    name: name, 
-                    password: password, 
-                    position: position, 
-                    phone: phone, 
-                    role: role 
-                });
+                var c = colors[color];
+                document.documentElement.style.setProperty('--primary', c.primary);
+                document.documentElement.style.setProperty('--secondary', c.secondary);
+                localStorage.setItem('app_color', color);
+                document.querySelectorAll('.color-option').forEach(function(opt) { opt.classList.remove('active'); });
+                var activeOpt = document.querySelector('.color-option[data-color="' + color + '"]');
+                if (activeOpt) activeOpt.classList.add('active');
             }
             
-            if (result.success) {
-                showToast(editLogin ? 'Сотрудник обновлён' : 'Сотрудник добавлен', 'success');
-                closeEmployeeModal();
-                var activePage = document.querySelector('.nav-item.active');
-                if (activePage && activePage.getAttribute('data-page') === 'admin') {
-                    loadPage('admin');
-                }
-            } else {
-                showToast(result.error, 'error');
-            }
-        }
-        
-        function saveSpecialty() {
-            var oldKey = document.getElementById('editSpecialtyKey').value;
-            var code = document.getElementById('specialtyCode').value;
-            var name = document.getElementById('specialtyName').value;
-            var order = parseInt(document.getElementById('specialtyOrder').value);
-            
-            if (!code || !name) {
-                showToast('Заполните все поля', 'error');
-                return;
+            function loadThemeSettings() {
+                var savedTheme = localStorage.getItem('app_theme') || 'light';
+                var savedStyle = localStorage.getItem('app_style') || 'standard';
+                var savedLayout = localStorage.getItem('app_layout') || 'standard';
+                var savedColor = localStorage.getItem('app_color') || 'default';
+                setTheme(savedTheme);
+                setStyle(savedStyle);
+                setLayout(savedLayout);
+                setThemeColor(savedColor);
             }
             
-            var config = getConfig();
-            if (oldKey && oldKey !== name) delete config.specialties[oldKey];
-            config.specialties[name] = { 
-                code: code, 
-                name: name.split(' ').slice(1).join(' ') || name, 
-                active: true, 
-                order: order 
-            };
-            saveConfig(config);
-            closeSpecialtyModal();
-            var activePage = document.querySelector('.nav-item.active');
-            if (activePage && activePage.getAttribute('data-page') === 'admin') {
-                loadPage('admin');
-            }
-            showToast('Специальность сохранена', 'success');
-        }
-        
-        // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
-        function showToast(msg, type) {
-            var toast = document.createElement('div');
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.right = '20px';
-            toast.style.background = 'var(--bg-card)';
-            toast.style.borderLeft = '4px solid ' + (type === 'success' ? 'var(--success)' : 'var(--danger)');
-            toast.style.padding = '12px 20px';
-            toast.style.borderRadius = '10px';
-            toast.style.zIndex = '1100';
-            toast.style.color = 'var(--text-primary)';
-            toast.innerHTML = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() { toast.remove(); }, 3000);
-        }
-        
-        function logout() { 
-            localStorage.removeItem('receipt_system_current_user'); 
-            window.location.href = 'login.html'; 
-        }
-        
-        function setupEventListeners() {
             document.getElementById('themeToggleBtn').onclick = toggleCustomizer;
-            document.getElementById('customColorPicker').onchange = function() { 
-                setThemeColor(this.value); 
-            };
-            
-            var colorOpts = document.querySelectorAll('.color-option');
-            for (var i = 0; i < colorOpts.length; i++) {
-                colorOpts[i].onclick = function() { 
-                    setThemeColor(this.getAttribute('data-color')); 
-                };
-            }
-            
-            var themeOpts = document.querySelectorAll('.theme-option');
-            for (var i = 0; i < themeOpts.length; i++) {
-                themeOpts[i].onclick = function() { 
-                    setTheme(this.getAttribute('data-theme')); 
-                };
-            }
-            
-            var styleOpts = document.querySelectorAll('.style-option');
-            for (var i = 0; i < styleOpts.length; i++) {
-                styleOpts[i].onclick = function() { 
-                    setStyle(this.getAttribute('data-style')); 
-                };
-            }
-            
-            var layoutOpts = document.querySelectorAll('.layout-option');
-            for (var i = 0; i < layoutOpts.length; i++) {
-                layoutOpts[i].onclick = function() { 
-                    setLayout(this.getAttribute('data-layout')); 
-                };
-            }
-            
-            var navItems = document.querySelectorAll('.nav-item');
-            for (var i = 0; i < navItems.length; i++) {
-                navItems[i].onclick = function(e) {
-                    e.preventDefault();
-                    var page = this.getAttribute('data-page');
-                    loadPage(page);
-                };
-            }
+            document.querySelectorAll('.theme-option').forEach(function(opt) {
+                opt.onclick = function() { setTheme(this.getAttribute('data-theme')); };
+            });
+            document.querySelectorAll('.style-option').forEach(function(opt) {
+                opt.onclick = function() { setStyle(this.getAttribute('data-style')); };
+            });
+            document.querySelectorAll('.layout-option').forEach(function(opt) {
+                opt.onclick = function() { setLayout(this.getAttribute('data-layout')); };
+            });
+            document.querySelectorAll('.color-option').forEach(function(opt) {
+                opt.onclick = function() { setThemeColor(this.getAttribute('data-color')); };
+            });
             
             document.addEventListener('click', function(e) {
                 var panel = document.getElementById('customizerPanel');
                 var btn = document.getElementById('themeToggleBtn');
-                if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) { 
-                    panel.classList.remove('show'); 
+                if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
+                    panel.classList.remove('show');
                 }
             });
-        }
-        
-        // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ДОСТУПА ИЗ СТРАНИЦ ==========
-        window.getCurrentUser = function() { return currentUserData; };
-        window.showToast = showToast;
-        window.openEmployeeModal = openEmployeeModal;
-        window.closeEmployeeModal = closeEmployeeModal;
-        window.openSpecialtyModal = openSpecialtyModal;
-        window.closeSpecialtyModal = closeSpecialtyModal;
-        window.openDocumentModal = openDocumentModal;
-        window.saveEmployee = saveEmployee;
-        window.saveSpecialty = saveSpecialty;
-        window.logout = logout;
-        
-        // Запуск
-        init();
+            
+            loadThemeSettings();
+            
+            // ========== ЗАГРУЗКА СПЕЦИАЛЬНОСТЕЙ ИЗ CONFIG ==========
+            function loadSpecialties() {
+                var specialties = getActiveSpecialties();
+                var select = document.getElementById('specialty');
+                select.innerHTML = '<option value="">Выберите специальность</option>';
+                for (var i = 0; i < specialties.length; i++) {
+                    var opt = document.createElement('option');
+                    opt.value = specialties[i].value;
+                    opt.textContent = specialties[i].label;
+                    select.appendChild(opt);
+                }
+            }
+            
+            function loadDocumentCheckboxes() {
+                var docTypes = getDocumentTypes();
+                var container = document.getElementById('documentsCheckboxes');
+                var html = '';
+                for (var i = 0; i < docTypes.length; i++) {
+                    var doc = docTypes[i];
+                    html += '<label class="checkbox-item"><input type="checkbox" value="' + doc.replace(/'/g, "\\'") + '"><span>' + doc + '</span></label>';
+                }
+                container.innerHTML = html;
+            }
+            
+            document.getElementById('employeeField').value = currentUser.name + ' (' + currentUser.position + ')';
+            
+            function showAlert(msg, type) {
+                var el = document.getElementById('alert');
+                el.textContent = msg;
+                el.className = 'alert alert-' + type;
+                el.style.display = 'block';
+                setTimeout(function() { el.style.display = 'none'; }, 4000);
+            }
+            
+            function loadReceiptsHistory() {
+                var list = getEmployeeReceipts(currentUser.login);
+                var container = document.getElementById('receiptsList');
+                if (!list.length) {
+                    container.innerHTML = '<div class="empty-state">📭 У вас пока нет созданных расписок</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < list.length; i++) {
+                    var r = list[i];
+                    html += '<div class="receipt-card"><div><div class="receipt-number">' + r.receiptNumber + '</div><div class="receipt-student">' + r.fullName + '</div><div class="receipt-date">' + new Date(r.createdAt).toLocaleDateString('ru-RU') + '</div></div><button class="btn-print" onclick="window.printReceipt(' + JSON.stringify(r).replace(/'/g, "\\'") + ')">🖨️ Печать</button></div>';
+                }
+                container.innerHTML = html;
+            }
+            
+            function loadProfile() {
+                var roleTxt = currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'both' ? 'Администратор + Сотрудник' : (currentUser.role === 'manager' ? 'Руководитель' : 'Сотрудник'));
+                var html = '<div class="profile-field"><label>ФИО</label><input type="text" value="' + currentUser.name + '" readonly></div>';
+                html += '<div class="profile-field"><label>Логин</label><input type="text" value="' + currentUser.login + '" readonly></div>';
+                html += '<div class="profile-field"><label>Должность</label><input type="text" value="' + (currentUser.position || '') + '" readonly></div>';
+                html += '<div class="profile-field"><label>Телефон</label><input type="text" value="' + (currentUser.phone || 'Не указан') + '" readonly></div>';
+                html += '<div class="profile-field"><label>Роль</label><input type="text" value="' + roleTxt + '" readonly></div>';
+                document.getElementById('profileInfo').innerHTML = html;
+            }
+            
+            function loadStats() {
+                var stats = getSystemStats();
+                document.getElementById('statsGrid').innerHTML = 
+                    '<div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value">' + (stats.totalReceipts || 0) + '</div><div class="stat-label">Всего расписок</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">' + (stats.todayReceipts || 0) + '</div><div class="stat-label">Сегодня</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value">' + (stats.totalEmployees || 0) + '</div><div class="stat-label">Сотрудников</div></div>' +
+                    '<div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">' + (stats.totalReceipts > 0 ? Math.round((stats.todayReceipts / stats.totalReceipts) * 100) : 0) + '%</div><div class="stat-label">Активность сегодня</div></div>';
+                var sorted = (stats.employeeStats || []).slice();
+                sorted.sort(function(a, b) { return (b.receiptCount || 0) - (a.receiptCount || 0); });
+                var html = '';
+                for (var i = 0; i < sorted.length; i++) {
+                    var e = sorted[i];
+                    var rankClass = '';
+                    if (i === 0) rankClass = ' rank-1';
+                    else if (i === 1) rankClass = ' rank-2';
+                    else if (i === 2) rankClass = ' rank-3';
+                    html += '<tr><td><span class="rank-badge' + rankClass + '">' + (i+1) + '</span></td><td><strong>' + e.name + '</strong></td><td>' + (e.position || '-') + '</td><td style="font-weight:700;color:var(--primary)">' + (e.receiptCount || 0) + '</td><td><span class="status-badge ' + (e.isActive ? 'status-active' : 'status-inactive') + '">' + (e.isActive ? 'Активен' : 'Неактивен') + '</span></td></tr>';
+                }
+                document.getElementById('employeeStatsBody').innerHTML = html;
+            }
+            
+            // Обработка создания расписки
+            document.getElementById('receiptForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var btn = document.getElementById('submitBtn');
+                var original = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner"></span> Создание...';
+                btn.disabled = true;
+                
+                var docs = [];
+                var checkboxes = document.querySelectorAll('#documentsCheckboxes input:checked');
+                for (var i = 0; i < checkboxes.length; i++) {
+                    docs.push(checkboxes[i].value);
+                }
+                
+                var specialtyValue = document.getElementById('specialty').value;
+                var specialtyCode = getSpecialtyCode(specialtyValue);
+                
+                var data = {
+                    fullName: document.getElementById('fullName').value,
+                    specialty: specialtyValue,
+                    specialtyCode: specialtyCode,
+                    diplomaNumber: document.getElementById('diplomaNumber').value,
+                    diplomaDate: document.getElementById('diplomaDate').value,
+                    diplomaIssuedBy: document.getElementById('diplomaIssuedBy').value,
+                    documents: docs.join('\n'),
+                    photosCount: document.getElementById('photosCount').value,
+                    score: document.getElementById('score').value,
+                    city: document.getElementById('city').value,
+                    employee: currentUser.name,
+                    employeeLogin: currentUser.login,
+                    employeePosition: currentUser.position,
+                    receiptNumber: specialtyCode + '-' + getReceiptCounter(specialtyCode)
+                };
+                
+                if (!data.fullName || !data.specialty) {
+                    showAlert('Заполните обязательные поля', 'error');
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                saveReceipt(data);
+                window.printReceipt(data);
+                showAlert('✅ Расписка №' + data.receiptNumber + ' создана!', 'success');
+                document.getElementById('receiptForm').reset();
+                document.getElementById('photosCount').value = '0';
+                var allCheckboxes = document.querySelectorAll('#documentsCheckboxes input');
+                for (var i = 0; i < allCheckboxes.length; i++) { allCheckboxes[i].checked = false; }
+                if (document.getElementById('historyTab').classList.contains('active')) loadReceiptsHistory();
+                btn.innerHTML = original;
+                btn.disabled = false;
+            });
+            
+            function switchTab(tabId) {
+                var tabs = document.querySelectorAll('.tab-content');
+                for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+                document.getElementById(tabId + 'Tab').classList.add('active');
+                if (tabId === 'history') loadReceiptsHistory();
+                if (tabId === 'profile') loadProfile();
+                if (tabId === 'stats') loadStats();
+                if (tabId === 'admin' && isAdmin()) loadAdminPanel();
+            }
+            
+            var navItems = document.querySelectorAll('.nav-item[data-tab]');
+            for (var i = 0; i < navItems.length; i++) {
+                navItems[i].addEventListener('click', (function(item) {
+                    return function() {
+                        var id = item.getAttribute('data-tab');
+                        switchTab(id);
+                        var allNav = document.querySelectorAll('.nav-item');
+                        for (var j = 0; j < allNav.length; j++) { allNav[j].classList.remove('active'); }
+                        item.classList.add('active');
+                    };
+                })(navItems[i]));
+            }
+            
+            // Функция печати
+            window.printReceipt = function(receipt) {
+                var now = new Date();
+                var w = window.open('', '_blank');
+                w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписка №' + receipt.receiptNumber + '</title><style>body{font-family:"Times New Roman",serif;padding:40px;max-width:800px;margin:0 auto;background:white;color:black;}.header{text-align:center;margin-bottom:30px;}h3{font-size:18px;font-weight:bold;margin:20px 0;}.content{line-height:1.6;}.signature{margin-top:50px;}button{padding:10px 20px;background:#4CAF50;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}@media print{.no-print{display:none;}}</style></head><body><div class="no-print" style="text-align:center;margin-bottom:20px;"><button onclick="window.print()">🖨️ Печать</button><button onclick="window.close()">✖️ Закрыть</button></div><div class="header"><h3>РАСПИСКА</h3><p>о приёме документов</p></div><div class="content"><p>Настоящая расписка выдана абитуриенту <strong>' + receipt.fullName + '</strong> о том, что от него приняты следующие документы:</p><ul>' + (receipt.documents || '').split('\n').filter(function(d){ return d.trim(); }).map(function(d){ return '<li>' + d.trim() + '</li>'; }).join('') + '</ul><p><strong>Специальность:</strong> ' + receipt.specialty + '</p><p><strong>Номер расписки:</strong> ' + receipt.receiptNumber + '</p><p><strong>Дата выдачи:</strong> ' + now.toLocaleDateString('ru-RU') + '</p><div class="signature"><p>____________________</p><p><strong>' + receipt.employee + '</strong></p><p>' + receipt.employeePosition + '</p></div></div><script>setTimeout(function(){window.print();},500);<\/script></body></html>');
+                w.document.close();
+            };
+            
+            loadSpecialties();
+            loadDocumentCheckboxes();
+            loadReceiptsHistory();
+        })();
     </script>
 </body>
 </html>
