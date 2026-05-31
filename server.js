@@ -1,4 +1,3 @@
-// server.js - простой сервер для вашего сайта
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -6,7 +5,6 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Подключение к БД
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
@@ -14,9 +12,7 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '.')));
 
-// ========== API ЭНДПОИНТЫ ==========
-
-// Вход пользователя
+// API: вход
 app.post('/api/login', async (req, res) => {
     const { login, password } = req.body;
     try {
@@ -45,19 +41,17 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Получить все расписки
+// API: получить расписки
 app.get('/api/receipts', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM receipts ORDER BY created_at DESC'
-        );
+        const result = await pool.query('SELECT * FROM receipts ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (err) {
         res.json([]);
     }
 });
 
-// Сохранить расписку
+// API: сохранить расписку
 app.post('/api/receipts', async (req, res) => {
     const { receipt_number, full_name, specialty, specialty_code, score, documents, employee, employee_login, employee_position } = req.body;
     try {
@@ -72,19 +66,17 @@ app.post('/api/receipts', async (req, res) => {
     }
 });
 
-// Получить сотрудников
+// API: получить сотрудников
 app.get('/api/employees', async (req, res) => {
     try {
-        const result = await pool.query(
-            "SELECT * FROM users WHERE role != 'admin'"
-        );
+        const result = await pool.query("SELECT * FROM users WHERE role != 'admin'");
         res.json(result.rows);
     } catch (err) {
         res.json([]);
     }
 });
 
-// Получить статистику
+// API: статистика
 app.get('/api/stats', async (req, res) => {
     try {
         const users = await pool.query("SELECT * FROM users");
@@ -114,5 +106,4 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`✅ Сервер запущен на порту ${PORT}`);
-    console.log(`🌐 Открыть: http://localhost:${PORT}`);
 });
