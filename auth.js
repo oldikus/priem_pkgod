@@ -1,4 +1,4 @@
-// auth.js (Supabase версия без import)
+// auth.js (Supabase версия с отладкой)
 const STORAGE_KEYS = {
     CURRENT_USER: 'receipt_system_current_user'
 };
@@ -6,16 +6,23 @@ const STORAGE_KEYS = {
 // Ждем загрузки Supabase
 function waitForSupabase() {
     return new Promise((resolve) => {
-        if (window.supabase) {
-            resolve(window.supabase);
+        if (window.supabaseClient) {
+            resolve(window.supabaseClient);
             return;
         }
         const checkInterval = setInterval(() => {
-            if (window.supabase) {
+            if (window.supabaseClient) {
                 clearInterval(checkInterval);
-                resolve(window.supabase);
+                resolve(window.supabaseClient);
             }
         }, 100);
+        
+        // Таймаут через 5 секунд
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            console.error('❌ Таймаут: Supabase не загрузился');
+            resolve(null);
+        }, 5000);
     });
 }
 
@@ -29,39 +36,59 @@ async function hashPassword(password) {
 
 // Вход через Supabase
 async function login(login, password) {
+    console.log('🔐 Попытка входа:', login);
+    
     try {
-        await waitForSupabase();
+        const supabase = await waitForSupabase();
+        
+        if (!supabase) {
+            console.error('❌ Supabase не инициализирован');
+            return { success: false, error: 'Ошибка подключения к базе данных' };
+        }
+        
+        console.log('✅ Supabase готов');
         
         // Хешируем пароль
         const hashedPassword = await hashPassword(password);
+        console.log('Пароль захэширован');
         
         // Ищем пользователя
-        const { data: users, error } = await window.supabase
+        const { data: users, error } = await supabase
             .from('users')
             .select('*')
             .eq('login', login);
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Ошибка запроса:', error);
+            return { success: false, error: 'Ошибка базы данных: ' + error.message };
+        }
+        
+        console.log('Результат запроса:', users);
         
         if (!users || users.length === 0) {
+            console.log('❌ Пользователь не найден');
             return { success: false, error: 'Пользователь не найден' };
         }
         
         const user = users[0];
+        console.log('Найден пользователь:', user.login, user.role);
         
-        // Проверка пароля (сравниваем с хешем)
+        // Проверка пароля
         let passwordValid = false;
         
         if (user.password === hashedPassword) {
             passwordValid = true;
+            console.log('✅ Пароль верный (хеш)');
         } else if (user.password === password) {
-            // Для обратной совместимости с plain паролями
             passwordValid = true;
+            console.log('✅ Пароль верный (plain), обновляем...');
             // Обновляем пароль на хеш
-            await window.supabase
+            await supabase
                 .from('users')
                 .update({ password: hashedPassword })
                 .eq('login', login);
+        } else {
+            console.log('❌ Неверный пароль');
         }
         
         if (!passwordValid) {
@@ -69,6 +96,7 @@ async function login(login, password) {
         }
         
         if (!user.is_active) {
+            console.log('❌ Аккаунт деактивирован');
             return { success: false, error: 'Аккаунт деактивирован' };
         }
         
@@ -83,10 +111,11 @@ async function login(login, password) {
         };
         
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+        console.log('✅ Вход выполнен успешно');
         return { success: true, user: session };
         
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('❌ Критическая ошибка:', error);
         return { success: false, error: error.message };
     }
 }
@@ -98,7 +127,7 @@ function logout() {
 
 function checkAuth() {
     const user = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    if (!user && !window.location.pathname.includes('login.html')) {
+    if (!user && !window.location.pathname.includes('login.html') && !window.location.pathname.includes('login')) {
         window.location.href = 'login.html';
         return null;
     }
@@ -113,9 +142,10 @@ function getCurrentUser() {
 // ========== РАБОТА С ДАННЫМИ ==========
 
 async function getAllReceipts() {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return [];
     
-    const { data, error } = await window.supabase
+    const { data, error } = await supabase
         .from('receipts')
         .select('*')
         .order('created_at', { ascending: false });
@@ -128,9 +158,10 @@ async function getAllReceipts() {
 }
 
 async function saveReceipt(receiptData) {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) throw new Error('Supabase не инициализирован');
     
-    const { data, error } = await window.supabase
+    const { data, error } = await supabase
         .from('receipts')
         .insert([receiptData])
         .select();
@@ -140,9 +171,10 @@ async function saveReceipt(receiptData) {
 }
 
 async function getEmployeeReceipts(employeeLogin) {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return [];
     
-    const { data, error } = await window.supabase
+    const { data, error } = await supabase
         .from('receipts')
         .select('*')
         .eq('employee_login', employeeLogin)
@@ -153,9 +185,10 @@ async function getEmployeeReceipts(employeeLogin) {
 }
 
 async function getEmployees() {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return [];
     
-    const { data, error } = await window.supabase
+    const { data, error } = await supabase
         .from('users')
         .select('*')
         .neq('role', 'admin');
@@ -165,9 +198,10 @@ async function getEmployees() {
 }
 
 async function getAllUsers() {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return [];
     
-    const { data, error } = await window.supabase
+    const { data, error } = await supabase
         .from('users')
         .select('*');
     
@@ -176,11 +210,12 @@ async function getAllUsers() {
 }
 
 async function addEmployee(employeeData) {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return { success: false, error: 'Supabase не инициализирован' };
     
     const hashedPassword = await hashPassword(employeeData.password);
     
-    const { data, error } = await window.supabase
+    const { data, error } = await supabase
         .from('users')
         .insert([{
             login: employeeData.login,
@@ -199,14 +234,14 @@ async function addEmployee(employeeData) {
 }
 
 async function updateEmployee(login, updates) {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return { success: false, error: 'Supabase не инициализирован' };
     
-    // Если обновляем пароль, хешируем его
     if (updates.password) {
         updates.password = await hashPassword(updates.password);
     }
     
-    const { data, error } = await window.supabase
+    const { error } = await supabase
         .from('users')
         .update(updates)
         .eq('login', login);
@@ -216,9 +251,10 @@ async function updateEmployee(login, updates) {
 }
 
 async function deleteEmployee(login) {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return { success: false, error: 'Supabase не инициализирован' };
     
-    const { error } = await window.supabase
+    const { error } = await supabase
         .from('users')
         .delete()
         .eq('login', login);
@@ -265,7 +301,19 @@ async function getSystemStats() {
 }
 
 async function getConfig() {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) {
+        // Возвращаем стандартную конфигурацию
+        return {
+            documentTypes: ['Паспорт (копия)', 'Аттестат (копия)', 'СНИЛС (копия)', 'Фотография 3x4', 'Заявление'],
+            specialties: {},
+            settings: {
+                maxPhotosCount: 4,
+                companyName: 'Приемная комиссия',
+                companyPhone: '(499) 156-40-01'
+            }
+        };
+    }
     
     const config = {
         documentTypes: [],
@@ -278,7 +326,7 @@ async function getConfig() {
     };
     
     // Загружаем специальности
-    const { data: specialties } = await window.supabase
+    const { data: specialties } = await supabase
         .from('specialties')
         .select('*')
         .eq('active', true)
@@ -296,7 +344,7 @@ async function getConfig() {
     }
     
     // Загружаем типы документов
-    const { data: docs } = await window.supabase
+    const { data: docs } = await supabase
         .from('document_types')
         .select('name')
         .eq('active', true);
@@ -306,7 +354,7 @@ async function getConfig() {
     }
     
     // Загружаем настройки
-    const { data: settings } = await window.supabase
+    const { data: settings } = await supabase
         .from('settings')
         .select('*');
     
@@ -322,9 +370,9 @@ async function getConfig() {
 }
 
 async function saveConfig(config) {
-    await waitForSupabase();
+    const supabase = await waitForSupabase();
+    if (!supabase) return { success: false, error: 'Supabase не инициализирован' };
     
-    // Сохраняем настройки
     const settings = [
         { key: 'max_photos_count', value: String(config.settings.maxPhotosCount) },
         { key: 'company_name', value: config.settings.companyName },
@@ -332,7 +380,7 @@ async function saveConfig(config) {
     ];
     
     for (const setting of settings) {
-        await window.supabase
+        await supabase
             .from('settings')
             .upsert(setting, { onConflict: 'key' });
     }
@@ -346,6 +394,23 @@ function getReceiptCounter(specialtyCode) {
     counters[specialtyCode] = current + 1;
     localStorage.setItem('receipt_system_counters', JSON.stringify(counters));
     return current + 1;
+}
+
+// Функция для показа уведомлений
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.padding = '12px 20px';
+    toast.style.backgroundColor = type === 'error' ? '#ef4444' : '#10b981';
+    toast.style.color = 'white';
+    toast.style.borderRadius = '8px';
+    toast.style.zIndex = '10000';
+    toast.style.fontSize = '14px';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 
 // Сохраняем функции в глобальный объект window
@@ -365,5 +430,6 @@ window.getSystemStats = getSystemStats;
 window.getConfig = getConfig;
 window.saveConfig = saveConfig;
 window.getReceiptCounter = getReceiptCounter;
+window.showToast = showToast;
 
 console.log('✅ auth.js (Supabase version) загружен');
